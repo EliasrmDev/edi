@@ -1,0 +1,20 @@
+{
+  "name": "edi-text-intelligence",
+  "private": true,
+  "packageManager": "pnpm@9.1.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r --if-present run test",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "clean": "pnpm -r run clean",
+    "db:migrate": "pnpm --filter @edi/api run db:migrate",
+    "db:generate": "pnpm --filter @edi/api run db:generate",
+    "docker:up": "docker compose -f infrastructure/docker-compose.yml up -d",
+    "docker:down": "docker compose -f infrastructure/docker-compose.yml down"
+  }
+}

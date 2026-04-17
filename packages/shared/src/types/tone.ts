@@ -1,0 +1,35 @@
+export type ToneType = 'voseo-cr' | 'tuteo' | 'ustedeo';
+
+export type TransformationType =
+  | 'uppercase'
+  | 'lowercase'
+  | 'sentence-case'
+  | 'remove-formatting'
+  | 'correct-orthography'
+  | 'tone-voseo-cr'
+  | 'tone-tuteo'
+  | 'tone-ustedeo';
+
+export type TransformationSource = 'local' | 'ai-validated' | 'ai-fallback';
+
+export interface TransformationRequest {
+  text: string;
+  transformation: TransformationType;
+  tone?: ToneType;
+  locale: 'es-CR' | 'es-419' | 'es';
+  requestAIValidation: boolean;
+}
+
+export interface TransformationResult {
+  original: string;
+  result: string;
+  transformation: TransformationType;
+  source: TransformationSource;
+  warnings: TransformationWarning[];
+  processingMs: number;
+}
+
+export interface TransformationWarning {
+  code: string;
+  message: string;
+}

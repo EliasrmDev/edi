@@ -1,0 +1,71 @@
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: edi
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: edi_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edi -d edi_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Hono API
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-3001}:3001"
+    env_file:
+      - .env.example
+    environment:
+      DATABASE_URL: postgresql://edi:password@postgres:5432/edi_dev
+      API_PORT: "3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # pg-boss Workers
+  # ---------------------------------------------------------------------------
+  workers:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.workers
+    restart: unless-stopped
+    env_file:
+      - .env.example
+    environment:
+      DATABASE_URL: postgresql://edi:password@postgres:5432/edi_dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Adminer — local dev only
+  # ---------------------------------------------------------------------------
+  adminer:
+    image: adminer:4
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    profiles:
+      - dev
+
+volumes:
+  pgdata:
