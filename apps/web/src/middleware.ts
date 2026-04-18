@@ -29,13 +29,14 @@ export function middleware(request: NextRequest): NextResponse {
 
   // Generate a per-request nonce for CSP
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const isDev = process.env.NODE_ENV === 'development';
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-    `style-src 'self' 'nonce-${nonce}'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    `style-src 'self'${isDev ? " 'unsafe-inline'" : ` 'nonce-${nonce}'`}`,
     `img-src 'self' data: blob:`,
     `font-src 'self'`,
-    `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}`,
+    `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}${isDev ? ' ws://localhost:* ws://127.0.0.1:*' : ''}`,
     `form-action 'self'`,
     `base-uri 'self'`,
     `frame-ancestors 'none'`,

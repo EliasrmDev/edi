@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 const nextConfig: NextConfig = {
   transpilePackages: ['@edi/shared'],
   reactStrictMode: true,
@@ -30,11 +32,11 @@ const nextConfig: NextConfig = {
           key: 'Content-Security-Policy',
           value: [
             "default-src 'self'",
-            `script-src 'self' 'strict-dynamic'`,
-            `style-src 'self'`,
+            `script-src 'self' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+            `style-src 'self'${isDev ? " 'unsafe-inline'" : ''}`,
             `img-src 'self' data: blob:`,
             `font-src 'self'`,
-            `connect-src 'self' ${apiUrl}`,
+            `connect-src 'self' ${apiUrl}${isDev ? ' ws://localhost:* ws://127.0.0.1:*' : ''}`,
             `form-action 'self'`,
             `base-uri 'self'`,
             `frame-ancestors 'none'`,

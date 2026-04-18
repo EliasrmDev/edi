@@ -107,7 +107,7 @@ describe('TransformationRequestSchema', () => {
 
     for (const transformation of types) {
       const result = TransformationRequestSchema.safeParse({ text: 'hola', transformation });
-      expect(result.success).toBe(true, `Expected "${transformation}" to be valid`);
+      expect(result.success, `Expected "${transformation}" to be valid`).toBe(true);
     }
   });
 
