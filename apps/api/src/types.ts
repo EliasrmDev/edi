@@ -8,6 +8,7 @@ export interface AppVariables {
     email: string;
     emailVerified: boolean;
     role: string;
+    hasPassword: boolean;
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date | null;

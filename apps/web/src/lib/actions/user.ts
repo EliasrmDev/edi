@@ -1,19 +1,35 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import type { User, UserProfile } from '@edi/shared';
 import { getAuthHeader } from '@/lib/session';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 
-export type ProfileError = 'DISPLAY_NAME_TOO_LONG' | 'SERVER_ERROR';
+export type ProfileError =
+  | 'DISPLAY_NAME_TOO_LONG'
+  | 'INVALID_PASSWORD'
+  | 'PASSWORD_TOO_SHORT'
+  | 'PASSWORD_TOO_LONG'
+  | 'PASSWORD_TOO_COMMON'
+  | 'PASSWORD_CONTAINS_EMAIL'
+  | 'VALIDATION_ERROR'
+  | 'SERVER_ERROR';
 export type UpdateProfileState = { error?: ProfileError; success?: boolean } | null;
 export type DeletionState = { error?: string; success?: boolean } | null;
 export type PrivacyState = { error?: string; success?: boolean } | null;
 
 export interface CurrentUser {
-  user: User;
+  user: User & { hasPassword: boolean };
   profile: UserProfile;
+}
+
+async function clearAuthCookies(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete('session');
+  cookieStore.delete('next-auth.session-token');
+  cookieStore.delete('__Secure-next-auth.session-token');
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
@@ -24,8 +40,14 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       fetch(`${API_URL}/api/auth/me`, { headers: { Authorization: authHeader }, cache: 'no-store' }),
       fetch(`${API_URL}/api/users/profile`, { headers: { Authorization: authHeader }, cache: 'no-store' }),
     ]);
+    // If the API session is revoked or expired, clear stale cookies so the
+    // middleware won't block the subsequent redirect to /login.
+    if (meRes.status === 401 || profileRes.status === 401) {
+      await clearAuthCookies();
+      return null;
+    }
     if (!meRes.ok || !profileRes.ok) return null;
-    const meBody = (await meRes.json()) as { data?: { user: User } };
+    const meBody = (await meRes.json()) as { data?: { user: User & { hasPassword: boolean } } };
     const profileBody = (await profileRes.json()) as { data?: { profile: UserProfile } };
     const user = meBody.data?.user;
     const profile = profileBody.data?.profile;
@@ -168,7 +190,7 @@ export async function changePasswordAction(
   const currentPassword = formData.get('currentPassword');
   const newPassword = formData.get('newPassword');
 
-  if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+  if (typeof newPassword !== 'string' || !newPassword) {
     return { error: 'SERVER_ERROR' };
   }
 
@@ -176,20 +198,38 @@ export async function changePasswordAction(
 
   let res: Response;
   try {
-    res = await fetch(`${API_URL}/api/auth/change-password`, {
+    res = await fetch(`${API_URL}/api/users/change-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: cookie },
-      body: JSON.stringify({ currentPassword, newPassword }),
+      body: JSON.stringify({
+        ...(typeof currentPassword === 'string' && currentPassword ? { currentPassword } : {}),
+        newPassword,
+      }),
     });
   } catch {
     return { error: 'SERVER_ERROR' };
   }
 
   if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: { code?: string } };
-    const code = body.error?.code as ProfileError | undefined;
-    return { error: code ?? 'SERVER_ERROR' };
+    const body = (await res.json().catch(() => ({}))) as {
+      error?: { code?: string; details?: Record<string, string[]> };
+    };
+    const code = body.error?.code;
+
+    // Zod fires before the service layer — map field-level errors to specific codes
+    if (code === 'VALIDATION_ERROR') {
+      const pwErrors = body.error?.details?.['newPassword'] ?? [];
+      if (pwErrors.some((e) => e.toLowerCase().includes('least'))) return { error: 'PASSWORD_TOO_SHORT' };
+      if (pwErrors.some((e) => e.toLowerCase().includes('most'))) return { error: 'PASSWORD_TOO_LONG' };
+    }
+
+    return { error: (code as ProfileError) ?? 'SERVER_ERROR' };
   }
 
-  redirect('/account?success=password-changed');
+  // Password changed — clear all auth cookies so the user is forced to
+  // re-authenticate. This prevents the stale-session issue where the old
+  // OAuth session stays active after a password set/change, blocking access
+  // to the login page.
+  await clearAuthCookies();
+  redirect('/login?success=password-changed');
 }

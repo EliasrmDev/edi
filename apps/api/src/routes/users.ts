@@ -42,7 +42,7 @@ const UpdateProfileSchema = z
   );
 
 const ChangePasswordSchema = z.object({
-  currentPassword: z.string().min(1),
+  currentPassword: z.string().min(1).optional(),
   newPassword: z.string().min(12).max(128),
 });
 
@@ -96,23 +96,29 @@ usersRouter.post('/change-password', async (c) => {
 
   // Fetch current user to get password hash
   const dbUser = await findUserById(user.id);
-  if (!dbUser || !dbUser.passwordHash) {
+  if (!dbUser) {
     throw new AppError('USER_NOT_FOUND', 'User not found', 404);
   }
 
-  // Verify current password
-  const valid = await verifyPassword(dbUser.passwordHash, body.currentPassword);
-  if (!valid) {
-    await writeAuditLog({
-      userId: user.id,
-      action: 'user.change_password',
-      outcome: 'failure',
-      ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1',
-      userAgent: c.req.header('User-Agent'),
-      metadata: { reason: 'invalid_current_password' },
-    });
-    throw new AppError('INVALID_PASSWORD', 'Current password is incorrect', 401);
+  if (dbUser.passwordHash) {
+    // User already has a password — require current password verification
+    if (!body.currentPassword) {
+      throw new AppError('INVALID_PASSWORD', 'Current password is required', 400);
+    }
+    const valid = await verifyPassword(dbUser.passwordHash, body.currentPassword);
+    if (!valid) {
+      await writeAuditLog({
+        userId: user.id,
+        action: 'user.change_password',
+        outcome: 'failure',
+        ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1',
+        userAgent: c.req.header('User-Agent'),
+        metadata: { reason: 'invalid_current_password' },
+      });
+      throw new AppError('INVALID_PASSWORD', 'Current password is incorrect', 401);
+    }
   }
+  // OAuth-only users (no passwordHash): skip current password check — they're setting a password for the first time
 
   // Validate and hash new password
   validatePasswordStrength(body.newPassword, dbUser.email);

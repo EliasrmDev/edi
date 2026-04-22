@@ -72,7 +72,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
               'hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2',
               'focus-visible:ring-blue-500 rounded',
               // Adjust for the label that Input renders above; target the input height
-              props.label ? 'top-[calc(50%+14px)]' : 'top-1/2',
+              props.label ? 'top-[calc(50%+25px)]' : 'top-1/2',
             )}
             aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             aria-pressed={visible}

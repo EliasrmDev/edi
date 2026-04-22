@@ -320,6 +320,7 @@ auth.get('/me', requireAuth(), async (c) => {
         email: user.email,
         emailVerified: user.emailVerified,
         role: user.role,
+        hasPassword: user.hasPassword,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { loginAction, signInWithGoogleAction, signInWithMicrosoftAction, type LoginState } from '@/lib/actions/auth';
 import { Input } from '@/components/ui/Input';
 import { PasswordInput } from '@/components/ui/PasswordInput';
@@ -22,6 +23,8 @@ function SubmitButton() {
 export default function LoginPage() {
   const [state, formAction] = useActionState<LoginState, FormData>(loginAction, null);
   const alertRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+  const passwordChanged = searchParams.get('success') === 'password-changed';
 
   useEffect(() => {
     if (state?.error) {
@@ -38,6 +41,14 @@ export default function LoginPage() {
           Registrate gratis
         </Link>
       </p>
+
+      {passwordChanged && (
+        <div className="mt-4">
+          <Alert variant="success">
+            Tu contraseña fue configurada. Iniciá sesión con tu correo electrónico o con Google.
+          </Alert>
+        </div>
+      )}
 
       {state?.error && (
         <div className="mt-4" ref={alertRef} tabIndex={-1}>

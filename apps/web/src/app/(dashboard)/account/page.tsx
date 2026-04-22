@@ -1,68 +1,13 @@
-'use client';
-
-import { useActionState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useFormStatus } from 'react-dom';
-import { changePasswordAction, type UpdateProfileState } from '@/lib/actions/user';
-import { PasswordInput } from '@/components/ui/PasswordInput';
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/lib/actions/user';
 import { Button } from '@/components/ui/Button';
-import { Alert } from '@/components/ui/Alert';
-import { errorMessage } from '@/lib/utils';
+import { ChangePasswordSection } from './_ChangePasswordSection';
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" loading={pending} className="w-full sm:w-auto">
-      Cambiar contraseña
-    </Button>
-  );
-}
+export default async function AccountPage() {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) redirect('/login');
 
-function ChangePasswordForm() {
-  const [state, formAction] = useActionState<UpdateProfileState, FormData>(
-    changePasswordAction,
-    null,
-  );
-  const alertRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (state?.error) alertRef.current?.focus();
-  }, [state]);
-
-  return (
-    <form action={formAction} className="space-y-4" noValidate>
-      {state?.error && (
-        <div ref={alertRef} tabIndex={-1}>
-          <Alert variant="error">{errorMessage(state.error)}</Alert>
-        </div>
-      )}
-      {state?.success && (
-        <Alert variant="success">Contraseña actualizada correctamente.</Alert>
-      )}
-
-      <PasswordInput
-        label="Contraseña actual"
-        name="currentPassword"
-        required
-        autoComplete="current-password"
-      />
-      <PasswordInput
-        label="Nueva contraseña"
-        name="newPassword"
-        required
-        showStrength
-        autoComplete="new-password"
-        description="Mínimo 8 caracteres"
-      />
-
-      <div className="pt-1">
-        <SubmitButton />
-      </div>
-    </form>
-  );
-}
-
-export default function AccountPage() {
   return (
     <div className="max-w-xl space-y-8">
       <div>
@@ -72,11 +17,7 @@ export default function AccountPage() {
         </p>
       </div>
 
-      {/* Change password */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-base font-semibold text-gray-900">Cambiar contraseña</h2>
-        <ChangePasswordForm />
-      </section>
+      <ChangePasswordSection hasPassword={currentUser.user.hasPassword} />
 
       {/* Danger zone */}
       <section className="rounded-xl border border-gray-200 bg-white shadow-sm">

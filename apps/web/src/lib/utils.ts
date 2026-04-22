@@ -21,6 +21,14 @@ export function errorMessage(code: string): string {
     INVALID_KEY_FORMAT: 'El formato de la clave no es válido para este proveedor.',
     CREDENTIAL_NOT_FOUND: 'No se encontró la credencial.',
     DELETION_ALREADY_REQUESTED: 'Ya existe una solicitud de eliminación pendiente.',
+    DISPLAY_NAME_TOO_LONG: 'El nombre es demasiado largo (máx. 100 caracteres).',
+    INVALID_PASSWORD: 'La contraseña actual es incorrecta.',
+    PASSWORD_TOO_SHORT: 'La contraseña debe tener al menos 12 caracteres.',
+    PASSWORD_TOO_LONG: 'La contraseña es demasiado larga (máx. 128 caracteres).',
+    PASSWORD_TOO_COMMON: 'La contraseña es demasiado común. Elegí una más segura.',
+    PASSWORD_CONTAINS_EMAIL: 'La contraseña no puede contener tu correo electrónico.',
+    VALIDATION_ERROR: 'Los datos ingresados no son válidos.',
+    INTERNAL_SERVER_ERROR: 'Error interno del servidor. Por favor intentá más tarde.',
     SERVER_ERROR: 'Error del servidor. Por favor intentá más tarde.',
   };
   return messages[code] ?? 'Ocurrió un error inesperado.';
