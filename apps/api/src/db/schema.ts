@@ -234,6 +234,29 @@ export const deletionRequests = pgTable(
   }),
 );
 
+// ---------------------------------------------------------------------------
+// oauth_accounts
+// ---------------------------------------------------------------------------
+export const oauthAccounts = pgTable(
+  'oauth_accounts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(),
+    providerAccountId: text('provider_account_id').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueProviderAccount: uniqueIndex('oauth_accounts_provider_account_idx').on(
+      table.provider,
+      table.providerAccountId,
+    ),
+    userIdIdx: index('oauth_accounts_user_id_idx').on(table.userId),
+  }),
+);
+
 // ===========================================================================
 // RELATIONS
 // ===========================================================================
@@ -253,6 +276,14 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [quotaLimits.userId],
   }),
   deletionRequests: many(deletionRequests),
+  oauthAccounts: many(oauthAccounts),
+}));
+
+export const oauthAccountsRelations = relations(oauthAccounts, ({ one }) => ({
+  user: one(users, {
+    fields: [oauthAccounts.userId],
+    references: [users.id],
+  }),
 }));
 
 export const userProfilesRelations = relations(userProfiles, ({ one }) => ({

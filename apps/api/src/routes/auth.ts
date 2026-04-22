@@ -1,6 +1,9 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types.js';
 import { z } from 'zod';
+import { db } from '../db/index.js';
+import { users, userProfiles, quotaLimits, oauthAccounts } from '../db/schema.js';
+import { eq, and } from 'drizzle-orm';
 import { findUserByEmail, createUser, toSafeUser } from '../services/users/UserService.js';
 import { validatePasswordStrength, hashPassword, verifyPassword } from '../services/auth/PasswordService.js';
 import { createSession, revokeSession, revokeAllUserSessions } from '../services/auth/SessionService.js';
@@ -41,6 +44,13 @@ const ResetPasswordSchema = z.object({
 
 const ResendVerificationSchema = z.object({
   email: z.string().email(),
+});
+
+const OAuthSigninSchema = z.object({
+  provider: z.string().min(1).max(100),
+  providerAccountId: z.string().min(1).max(255),
+  email: z.string().email().max(255),
+  displayName: z.string().max(100).nullable().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -313,6 +323,104 @@ auth.get('/me', requireAuth(), async (c) => {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
+    },
+  });
+});
+
+// ---- POST /auth/oauth/signin  (server-to-server: called by Next.js during OAuth flow) ----
+auth.post('/oauth/signin', strictLimiter(), async (c) => {
+  const body = OAuthSigninSchema.parse(await c.req.json());
+  const { provider, providerAccountId, email, displayName } = body;
+  const ip = getClientIP(c);
+  const ua = c.req.header('User-Agent') ?? null;
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // 1. Find by provider account ID (survives email changes)
+  const existingAccount = await db
+    .select({ userId: oauthAccounts.userId })
+    .from(oauthAccounts)
+    .where(
+      and(
+        eq(oauthAccounts.provider, provider),
+        eq(oauthAccounts.providerAccountId, providerAccountId),
+      ),
+    )
+    .limit(1);
+
+  let userId: string;
+
+  if (existingAccount[0]) {
+    userId = existingAccount[0].userId;
+  } else {
+    // 2. Find by email (enables linking to existing email/password account)
+    const existingUser = await findUserByEmail(normalizedEmail);
+    if (existingUser) {
+      userId = existingUser.id;
+      await db
+        .insert(oauthAccounts)
+        .values({ userId, provider, providerAccountId })
+        .onConflictDoNothing();
+    } else {
+      // 3. Create new OAuth user (emailVerified = true — provider has already verified it)
+      userId = await db.transaction(async (tx) => {
+        const now = new Date();
+        const dailyReset = new Date(now);
+        dailyReset.setHours(24, 0, 0, 0);
+        const monthlyReset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+        const [newUser] = await tx
+          .insert(users)
+          .values({
+            email: normalizedEmail,
+            passwordHash: null,
+            emailVerified: true,
+            role: 'user',
+          })
+          .returning({ id: users.id });
+        if (!newUser) throw new Error('Failed to create OAuth user');
+
+        await tx.insert(userProfiles).values({
+          userId: newUser.id,
+          displayName: displayName ?? null,
+          defaultTone: 'voseo-cr',
+          preferredLocale: 'es-CR',
+          retainHistory: false,
+        });
+        await tx.insert(quotaLimits).values({
+          userId: newUser.id,
+          dailyAiRequests: Number(process.env.DEFAULT_DAILY_AI_QUOTA) || 100,
+          monthlyAiRequests: 1000,
+          dailyUsed: 0,
+          monthlyUsed: 0,
+          resetDailyAt: dailyReset,
+          resetMonthlyAt: monthlyReset,
+        });
+        await tx.insert(oauthAccounts).values({
+          userId: newUser.id,
+          provider,
+          providerAccountId,
+        });
+        return newUser.id;
+      });
+    }
+  }
+
+  const session = await createSession(userId, ip, ua);
+  await writeAuditLog({
+    userId,
+    action: 'user.oauth_signin',
+    outcome: 'success',
+    ipAddress: ip,
+    userAgent: ua ?? undefined,
+    metadata: { provider },
+  });
+
+  return c.json({
+    data: {
+      userId,
+      email: normalizedEmail,
+      sessionToken: session.token,
+      expiresAt: session.expiresAt.toISOString(),
     },
   });
 });

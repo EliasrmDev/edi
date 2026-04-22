@@ -41,7 +41,16 @@ export function createModalHTML(_initialText: string): string {
         </div>
 
         <div class="edi-action-group">
-          <span class="edi-group-label" id="grp-tone">Tono</span>
+          <span class="edi-group-label" id="grp-unicode">Estilo Unicode</span>
+          <div role="group" aria-labelledby="grp-unicode">
+            <button id="btn-fmt-bold" type="button" title="Negrita Unicode" aria-label="Negrita Unicode">𝐍𝐞𝐠𝐫𝐢𝐭𝐚</button>
+            <button id="btn-fmt-italic" type="button" title="Cursiva Unicode" aria-label="Cursiva Unicode">𝐶𝑢𝑟𝑠𝑖𝑣𝑎</button>
+            <button id="btn-fmt-bold-italic" type="button" title="Negrita Cursiva Unicode" aria-label="Negrita Cursiva Unicode">𝑵𝒆𝒈.𝑪𝒖𝒓.</button>
+            <button id="btn-fmt-bold-script" type="button" title="Caligrafía / Script Unicode" aria-label="Caligrafía Script Unicode">𝓢𝓬𝓻𝓲𝓹𝓽</button>
+            <button id="btn-fmt-mono" type="button" title="Monoespacio Unicode" aria-label="Monoespacio Unicode">𝙼𝚘𝚗𝚘</button>
+            <button id="btn-fmt-wide" type="button" title="Ancho completo (Fullwidth)" aria-label="Ancho completo Fullwidth Unicode">Ａｎｃｈｏ</button>
+          </div>
+        </div>
           <div role="group" aria-labelledby="grp-tone">
             <button id="btn-voseo" type="button">Voseo (CR)</button>
             <button id="btn-tuteo" type="button">Tuteo</button>

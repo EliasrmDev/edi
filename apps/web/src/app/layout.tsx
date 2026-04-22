@@ -5,24 +5,53 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'EDI Text Intelligence',
-    template: '%s | EDI Text Intelligence',
+    default: 'EDI — Extensión Chrome para edición de texto y conversión de imágenes',
+    template: '%s | EDI',
   },
   description:
-    'Edición inteligente de texto en español con localización para Costa Rica — voseo, tono, ortografía.',
+    'Extensión Chrome gratuita: editá texto en español con IA (voseo, tuteo, ortografía) y convertí imágenes WebP a JPG/PNG — 100 % local, sin subir archivos.',
   metadataBase: new URL(process.env.WEB_URL ?? 'http://localhost:3000'),
   openGraph: {
-    title: 'EDI Text Intelligence',
-    description: 'Edición inteligente de texto en español con localización para Costa Rica.',
+    title: 'EDI — Edición de texto y conversión de imágenes en Chrome',
+    description:
+      'Transformá texto en español y convertí WebP a JPG/PNG directamente en el navegador. Gratis, de código abierto, sin cuenta.',
     locale: 'es_CR',
     type: 'website',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'EDI — Extensión Chrome para edición de texto y conversión de imágenes',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'EDI — Edición de texto y conversión de imágenes en Chrome',
+    description:
+      'Transformá texto en español y convertí WebP a JPG/PNG directamente en el navegador. Gratis y de código abierto.',
+    images: ['/og-image.png'],
   },
   robots: { index: true, follow: true },
+  manifest: '/site.webmanifest',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#6366f1' },
+    { media: '(prefers-color-scheme: dark)', color: '#4f46e5' },
+  ],
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

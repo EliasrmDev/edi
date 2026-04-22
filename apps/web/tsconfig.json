@@ -29,7 +29,9 @@
       ]
     },
     "allowJs": true,
-    "noEmit": true
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false
   },
   "include": [
     "src/**/*.ts",

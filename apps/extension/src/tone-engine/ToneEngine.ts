@@ -4,7 +4,16 @@ import { voseoTransformer } from './transformers/VoseoTransformer';
 import { tuteoTransformer } from './transformers/TuteoTransformer';
 import { ustedeoTransformer } from './transformers/UstedeoTransformer';
 import { toUpperCase, toLowerCase, toSentenceCase } from './formatters/CaseFormatter';
-import { removeFormatting } from './formatters/CleanFormatter';
+import {
+  removeFormatting,
+  stripUnicodeStyles,
+  toUnicodeBold,
+  toUnicodeItalic,
+  toUnicodeBoldItalic,
+  toUnicodeBoldScript,
+  toUnicodeMonospace,
+  toUnicodeFullwidth,
+} from './formatters/CleanFormatter';
 import type { EngineTransformationResult } from './types';
 
 /**
@@ -34,13 +43,13 @@ export class ToneEngine {
   private _dispatch(text: string, transformation: TransformationType): EngineTransformationResult {
     switch (transformation) {
       case 'uppercase':
-        return { result: toUpperCase(text), source: 'local', warnings: [] };
+        return { result: toUpperCase(stripUnicodeStyles(text)), source: 'local', warnings: [] };
 
       case 'lowercase':
-        return { result: toLowerCase(text), source: 'local', warnings: [] };
+        return { result: toLowerCase(stripUnicodeStyles(text)), source: 'local', warnings: [] };
 
       case 'sentence-case':
-        return { result: toSentenceCase(text), source: 'local', warnings: [] };
+        return { result: toSentenceCase(stripUnicodeStyles(text)), source: 'local', warnings: [] };
 
       case 'remove-formatting':
         return { result: removeFormatting(text), source: 'local', warnings: [] };
@@ -101,6 +110,24 @@ export class ToneEngine {
         }
         return { result, source: 'local', warnings };
       }
+
+      case 'format-unicode-bold':
+        return { result: toUnicodeBold(removeFormatting(text)), source: 'local', warnings: [] };
+
+      case 'format-unicode-italic':
+        return { result: toUnicodeItalic(removeFormatting(text)), source: 'local', warnings: [] };
+
+      case 'format-unicode-bold-italic':
+        return { result: toUnicodeBoldItalic(removeFormatting(text)), source: 'local', warnings: [] };
+
+      case 'format-unicode-bold-script':
+        return { result: toUnicodeBoldScript(removeFormatting(text)), source: 'local', warnings: [] };
+
+      case 'format-unicode-monospace':
+        return { result: toUnicodeMonospace(removeFormatting(text)), source: 'local', warnings: [] };
+
+      case 'format-unicode-fullwidth':
+        return { result: toUnicodeFullwidth(removeFormatting(text)), source: 'local', warnings: [] };
 
       case 'correct-orthography': {
         // Local orthography correction handles only the most common, unambiguous

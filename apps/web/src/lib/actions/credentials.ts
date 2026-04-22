@@ -1,8 +1,8 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ProviderCredential, ProviderId } from '@edi/shared';
+import { getAuthHeader } from '@/lib/session';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 
@@ -16,19 +16,11 @@ export type CreateCredentialState = { error?: CredentialError } | null;
 export type DeleteCredentialState = { error?: string } | null;
 export type VerifyCredentialState = { error?: string; success?: boolean } | null;
 
-async function getAuthHeader(): Promise<string> {
-  const cookieStore = await cookies();
-  return cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
-}
-
 export async function getCredentials(): Promise<ProviderCredential[]> {
   const cookie = await getAuthHeader();
   try {
     const res = await fetch(`${API_URL}/api/credentials`, {
-      headers: { Cookie: cookie },
+      headers: { Authorization: cookie },
       cache: 'no-store',
     });
     if (!res.ok) return [];
@@ -58,7 +50,7 @@ export async function createCredentialAction(
   try {
     res = await fetch(`${API_URL}/api/credentials`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      headers: { 'Content-Type': 'application/json', Authorization: cookie },
       body: JSON.stringify({
         provider,
         rawKey,
@@ -95,7 +87,7 @@ export async function deleteCredentialAction(
   try {
     res = await fetch(`${API_URL}/api/credentials/${credentialId}`, {
       method: 'DELETE',
-      headers: { Cookie: cookie },
+      headers: { Authorization: cookie },
     });
   } catch {
     return { error: 'SERVER_ERROR' };
@@ -118,7 +110,7 @@ export async function verifyCredentialAction(
   try {
     res = await fetch(`${API_URL}/api/credentials/${credentialId}/verify`, {
       method: 'POST',
-      headers: { Cookie: cookie },
+      headers: { Authorization: cookie },
     });
   } catch {
     return { error: 'SERVER_ERROR' };

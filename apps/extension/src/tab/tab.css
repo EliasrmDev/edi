@@ -1,0 +1,94 @@
+/* ═══════════════════════════════════════════════════════════════
+   tab.css — Responsive overrides for the full-tab converter view
+   Loaded after popup.css; inherits all design tokens and components.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Page shell ────────────────────────────────────────────────── */
+body {
+  width: 100%;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(99,102,241,.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(139,92,246,.10) 0%, transparent 55%),
+    var(--c-surf-2);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 16px 64px;
+  box-sizing: border-box;
+}
+
+/* ─── App card ──────────────────────────────────────────────────── */
+.app {
+  width: 100%;
+  max-width: 600px;
+  min-width: 320px;
+  border-radius: var(--radius);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.06),
+    0 8px 32px rgba(0,0,0,.10),
+    0 2px 8px rgba(0,0,0,.06);
+  overflow: hidden;
+  background: var(--c-surface);
+}
+
+@media (prefers-color-scheme: dark) {
+  .app {
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.06),
+      0 8px 32px rgba(0,0,0,.40),
+      0 2px 8px rgba(0,0,0,.20);
+  }
+}
+
+/* ─── Header ────────────────────────────────────────────────────── */
+.header {
+  padding: 1.2rem 1.6rem;
+}
+
+/* ─── Dropzone — taller in tab view ────────────────────────────── */
+.dropzone {
+  min-height: 220px;
+}
+
+/* ─── Preview — taller in tab view ─────────────────────────────── */
+.preview-img,
+.quality-preview-img {
+  max-height: 420px;
+}
+
+/* ─── Batch list ─────────────────────────────────────────────────── */
+.batch-list {
+  max-height: 420px;
+}
+
+/* ─── Format buttons — slightly wider ───────────────────────────── */
+.format-btn {
+  min-width: 70px;
+}
+
+/* ─── Page images — two-column grid on wider screens ───────────── */
+@media (min-width: 520px) {
+  .page-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+
+/* ─── Footer — consistent spacing ──────────────────────────────── */
+.footer {
+  padding: 14px 16px;
+}
+
+/* ─── Mobile ─────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  body {
+    padding: 0.5rem;
+  }
+
+  .app {
+    border-radius: 0;
+    min-width: unset;
+  }
+}

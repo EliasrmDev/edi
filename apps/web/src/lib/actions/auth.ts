@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { signIn } from '@/lib/auth';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 
@@ -20,20 +21,13 @@ export type RegisterState = { error?: AuthError; success?: boolean } | null;
 export type ForgotPasswordState = { success?: boolean; error?: AuthError } | null;
 export type ResetPasswordState = { error?: AuthError; success?: boolean } | null;
 
-async function forwardSessionCookie(res: Response): Promise<void> {
-  const setCookieHeader = res.headers.get('set-cookie');
-  if (!setCookieHeader) return;
-
-  const mainPart = setCookieHeader.split(';')[0] ?? '';
-  const eqIdx = mainPart.indexOf('=');
-  if (eqIdx < 0) return;
-
-  const name = mainPart.slice(0, eqIdx).trim();
-  const value = mainPart.slice(eqIdx + 1).trim();
-  if (!name || !value) return;
+async function storeSessionToken(res: Response): Promise<void> {
+  const body = (await res.json().catch(() => ({}))) as { data?: { token?: string } };
+  const token = body.data?.token;
+  if (!token) return;
 
   const cookieStore = await cookies();
-  cookieStore.set(name, value, {
+  cookieStore.set('session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
@@ -72,7 +66,7 @@ export async function loginAction(
     return { error: 'INVALID_CREDENTIALS' };
   }
 
-  await forwardSessionCookie(res);
+  await storeSessionToken(res);
   redirect('/dashboard');
 }
 
@@ -122,7 +116,7 @@ export async function logoutAction(): Promise<void> {
     try {
       await fetch(`${API_URL}/api/auth/logout`, {
         method: 'POST',
-        headers: { Cookie: `session=${sessionToken}` },
+        headers: { Authorization: `Bearer ${sessionToken}` },
       });
     } catch {
       // Clear cookie regardless of API call result
@@ -130,6 +124,8 @@ export async function logoutAction(): Promise<void> {
   }
 
   cookieStore.delete('session');
+  cookieStore.delete('next-auth.session-token');
+  cookieStore.delete('__Secure-next-auth.session-token');
   redirect('/login');
 }
 
@@ -185,4 +181,12 @@ export async function resetPasswordAction(
   }
 
   return { success: true };
+}
+
+export async function signInWithGoogleAction(): Promise<void> {
+  await signIn('google', { redirectTo: '/dashboard' });
+}
+
+export async function signInWithMicrosoftAction(): Promise<void> {
+  await signIn('microsoft-entra-id', { redirectTo: '/dashboard' });
 }

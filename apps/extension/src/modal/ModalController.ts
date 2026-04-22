@@ -98,6 +98,12 @@ export class ModalController {
       ['#btn-voseo', 'tone-voseo-cr'],
       ['#btn-tuteo', 'tone-tuteo'],
       ['#btn-ustedeo', 'tone-ustedeo'],
+      ['#btn-fmt-bold', 'format-unicode-bold'],
+      ['#btn-fmt-italic', 'format-unicode-italic'],
+      ['#btn-fmt-bold-italic', 'format-unicode-bold-italic'],
+      ['#btn-fmt-bold-script', 'format-unicode-bold-script'],
+      ['#btn-fmt-mono', 'format-unicode-monospace'],
+      ['#btn-fmt-wide', 'format-unicode-fullwidth'],
     ];
 
     for (const [selector, transformation] of localButtons) {

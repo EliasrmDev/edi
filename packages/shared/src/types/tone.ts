@@ -8,7 +8,13 @@ export type TransformationType =
   | 'correct-orthography'
   | 'tone-voseo-cr'
   | 'tone-tuteo'
-  | 'tone-ustedeo';
+  | 'tone-ustedeo'
+  | 'format-unicode-bold'
+  | 'format-unicode-italic'
+  | 'format-unicode-bold-italic'
+  | 'format-unicode-bold-script'
+  | 'format-unicode-monospace'
+  | 'format-unicode-fullwidth';
 
 export type TransformationSource = 'local' | 'ai-validated' | 'ai-fallback';
 

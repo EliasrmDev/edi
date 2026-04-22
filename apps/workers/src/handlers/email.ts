@@ -109,7 +109,7 @@ async function sendEmail(data: SendEmailJob): Promise<void> {
     return;
   }
 
-  const from = process.env.SMTP_FROM ?? 'noreply@edi.app';
+  const from = process.env.SMTP_FROM ?? 'noreply@edi.eliasrm.dev';
   const { subject, html } = templateFn(variables);
 
   await transporter.sendMail({ from, to, subject, html });

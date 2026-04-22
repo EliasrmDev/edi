@@ -1,8 +1,8 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { User, UserProfile } from '@edi/shared';
+import { getAuthHeader } from '@/lib/session';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 
@@ -16,24 +16,21 @@ export interface CurrentUser {
   profile: UserProfile;
 }
 
-async function getAuthHeader(): Promise<string> {
-  const cookieStore = await cookies();
-  return cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
-}
-
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const cookie = await getAuthHeader();
+  const authHeader = await getAuthHeader();
+  if (!authHeader) return null;
   try {
-    const res = await fetch(`${API_URL}/api/auth/me`, {
-      headers: { Cookie: cookie },
-      cache: 'no-store',
-    });
-    if (!res.ok) return null;
-    const body = (await res.json()) as { data?: CurrentUser };
-    return body.data ?? null;
+    const [meRes, profileRes] = await Promise.all([
+      fetch(`${API_URL}/api/auth/me`, { headers: { Authorization: authHeader }, cache: 'no-store' }),
+      fetch(`${API_URL}/api/users/profile`, { headers: { Authorization: authHeader }, cache: 'no-store' }),
+    ]);
+    if (!meRes.ok || !profileRes.ok) return null;
+    const meBody = (await meRes.json()) as { data?: { user: User } };
+    const profileBody = (await profileRes.json()) as { data?: { profile: UserProfile } };
+    const user = meBody.data?.user;
+    const profile = profileBody.data?.profile;
+    if (!user || !profile) return null;
+    return { user, profile };
   } catch {
     return null;
   }
@@ -53,7 +50,7 @@ export async function updateProfileAction(
   try {
     res = await fetch(`${API_URL}/api/users/profile`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      headers: { 'Content-Type': 'application/json', Authorization: cookie },
       body: JSON.stringify({
         displayName: typeof displayName === 'string' ? displayName || null : undefined,
         defaultTone: typeof defaultTone === 'string' ? defaultTone : undefined,
@@ -88,7 +85,7 @@ export async function requestDeletionAction(
   try {
     res = await fetch(`${API_URL}/api/users/request-deletion`, {
       method: 'POST',
-      headers: { Cookie: cookie, 'Content-Type': 'application/json' },
+      headers: { Authorization: cookie, 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
     });
   } catch {
@@ -112,7 +109,7 @@ export async function cancelDeletionAction(
   try {
     res = await fetch(`${API_URL}/api/users/cancel-deletion`, {
       method: 'POST',
-      headers: { Cookie: cookie },
+      headers: { Authorization: cookie },
     });
   } catch {
     return { error: 'SERVER_ERROR' };
@@ -134,7 +131,7 @@ export async function updatePrivacyAction(
   try {
     res = await fetch(`${API_URL}/api/users/profile`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      headers: { 'Content-Type': 'application/json', Authorization: cookie },
       body: JSON.stringify({ retainHistory }),
     });
   } catch {
@@ -154,7 +151,7 @@ export async function exportDataAction(
   try {
     res = await fetch(`${API_URL}/api/users/export-data`, {
       method: 'POST',
-      headers: { Cookie: cookie },
+      headers: { Authorization: cookie },
     });
   } catch {
     return { error: 'SERVER_ERROR' };
@@ -181,7 +178,7 @@ export async function changePasswordAction(
   try {
     res = await fetch(`${API_URL}/api/auth/change-password`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      headers: { 'Content-Type': 'application/json', Authorization: cookie },
       body: JSON.stringify({ currentPassword, newPassword }),
     });
   } catch {

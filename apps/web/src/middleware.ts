@@ -1,20 +1,24 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { auth } from '@/lib/auth';
 
 const SESSION_COOKIE = 'session';
 
 const PROTECTED_PREFIXES = ['/dashboard', '/profile', '/credentials', '/account'];
 const AUTH_PREFIXES = ['/login', '/register'];
 
-export function middleware(request: NextRequest): NextResponse {
-  const { pathname } = request.nextUrl;
-  const sessionToken = request.cookies.get(SESSION_COOKIE)?.value;
-  const isAuthenticated = !!sessionToken;
+export default auth(function middleware(
+  req: NextRequest & { auth?: { user?: { apiSession?: string } } | null },
+): NextResponse {
+  const { pathname } = req.nextUrl;
+  const sessionToken = req.cookies.get(SESSION_COOKIE)?.value;
+  const oauthApiSession = req.auth?.user?.apiSession;
+  const isAuthenticated = !!sessionToken || !!oauthApiSession;
 
   // Protect dashboard routes
   if (PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
     if (!isAuthenticated) {
-      const url = new URL('/login', request.url);
+      const url = new URL('/login', req.url);
       url.searchParams.set('redirect', pathname);
       return NextResponse.redirect(url);
     }
@@ -23,7 +27,7 @@ export function middleware(request: NextRequest): NextResponse {
   // Redirect authenticated users away from auth pages
   if (AUTH_PREFIXES.some((p) => pathname.startsWith(p))) {
     if (isAuthenticated) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+      return NextResponse.redirect(new URL('/dashboard', req.url));
     }
   }
 
@@ -34,7 +38,7 @@ export function middleware(request: NextRequest): NextResponse {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
     `style-src 'self'${isDev ? " 'unsafe-inline'" : ` 'nonce-${nonce}'`}`,
-    `img-src 'self' data: blob:`,
+    `img-src 'self' data: blob: https://lh3.googleusercontent.com`,
     `font-src 'self'`,
     `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}${isDev ? ' ws://localhost:* ws://127.0.0.1:*' : ''}`,
     `form-action 'self'`,
@@ -44,10 +48,22 @@ export function middleware(request: NextRequest): NextResponse {
     `upgrade-insecure-requests`,
   ].join('; ');
 
-  const requestHeaders = new Headers(request.headers);
+  const requestHeaders = new Headers(req.headers);
   requestHeaders.set('x-nonce', nonce);
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
+
+  // Bridge OAuth session into the session cookie for Hono API compatibility
+  if (oauthApiSession && !sessionToken) {
+    response.cookies.set(SESSION_COOKIE, oauthApiSession, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60,
+    });
+  }
+
   response.headers.set('Content-Security-Policy', csp);
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
@@ -58,7 +74,7 @@ export function middleware(request: NextRequest): NextResponse {
   );
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   return response;
-}
+});
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|ico)$).*)'],

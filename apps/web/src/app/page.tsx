@@ -1,13 +1,25 @@
+import { CTASection } from '@/components/landing/CTASection';
+import { FAQ } from '@/components/landing/FAQ';
+import { Features } from '@/components/landing/Features';
+import { Footer } from '@/components/landing/Footer';
+import { Hero } from '@/components/landing/Hero';
+import { HowItWorks } from '@/components/landing/HowItWorks';
+import { Navbar } from '@/components/landing/Navbar';
+import { Privacy } from '@/components/landing/Privacy';
+
 export default function HomePage() {
   return (
-    <main>
-      <section aria-labelledby="hero-heading">
-        <h1 id="hero-heading">EDI Text Intelligence</h1>
-        <p>
-          Edición inteligente de texto en español con localización para Costa Rica.
-          Transformá, corregí y adaptá tu texto con inteligencia artificial.
-        </p>
-      </section>
-    </main>
+    <>
+      <Navbar />
+      <main id="main-content">
+        <Hero />
+        <Features />
+        <HowItWorks />
+        <Privacy />
+        <FAQ />
+        <CTASection />
+      </main>
+      <Footer />
+    </>
   );
 }

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EDI</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app">
+
+    <!-- ─── Header ──────────────────────────────────────────────────── -->
+    <header class="header">
+      <div class="brand">
+        <svg class="brand-icon" width="22" height="22" viewBox="0 0 22 22" fill="none"
+             aria-hidden="true" focusable="false">
+          <rect width="22" height="22" rx="6" fill="url(#grad)"/>
+          <defs>
+            <linearGradient id="grad" x1="0" y1="0" x2="22" y2="22">
+              <stop offset="0%" stop-color="#818cf8"/>
+              <stop offset="100%" stop-color="#6366f1"/>
+            </linearGradient>
+          </defs>
+          <path d="M4 7 L7.5 15 L11 9.5 L14.5 15 L18 7"
+                transform="rotate(90 11 11)"
+                stroke="white" stroke-width="2.2" stroke-linecap="round"
+                stroke-linejoin="round" fill="none"/>
+        </svg>
+        <span class="brand-name">EDI</span>
+        <span class="badge" aria-label="Runs locally">LOCAL</span>
+      </div>
+
+      <!-- ─── Mode nav ─────────────────────────────────────────────── -->
+      <nav class="mode-nav" role="tablist" aria-label="Modo de edición">
+        <button class="mode-btn active" data-mode="images" role="tab"
+                aria-selected="true" aria-controls="mode-images" id="mode-tab-images">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+            <rect x="1" y="1.5" width="11" height="10" rx="2"
+                  stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="4" cy="5" r="1" fill="currentColor"/>
+            <path d="M1 9l2.5-3 2.5 2.5 1.5-2L12 10"
+                  stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Imágenes
+        </button>
+        <button class="mode-btn" data-mode="text" role="tab"
+                aria-selected="false" aria-controls="mode-text" id="mode-tab-text">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+            <path d="M2 3h9M2 6.5h6M2 10h4"
+                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Texto
+        </button>
+      </nav>
+    </header>
+
+    <!-- ─── Imágenes mode ───────────────────────────────────────────────── -->
+    <div id="mode-images" role="tabpanel" aria-labelledby="mode-tab-images">
+
+    <!-- ─── Tabs ──────────────────────────────────────────────────── -->
+    <nav class="tabs" role="tablist" aria-label="Conversion mode">
+      <button class="tab active" data-tab="convert" role="tab"
+              aria-selected="true" aria-controls="panel-convert" id="tab-convert">
+        Convert File
+      </button>
+      <button class="tab" data-tab="page" role="tab"
+              aria-selected="false" aria-controls="panel-page" id="tab-page">
+        Page Images
+      </button>
+    </nav>
+
+    <!-- ─── Convert panel ────────────────────────────────────────────── -->
+    <div id="panel-convert" class="panel" role="tabpanel"
+         aria-labelledby="tab-convert">
+
+      <div id="dropzone" class="dropzone" role="button" tabindex="0"
+           aria-label="Drop images here or click to browse files">
+        <div id="dropzoneContent" class="dropzone-content">
+          <svg class="dropzone-icon" width="40" height="40" viewBox="0 0 40 40"
+               fill="none" aria-hidden="true">
+            <rect width="40" height="40" rx="10" fill="currentColor" fill-opacity=".08"/>
+            <path d="M20 12v12M14 18l6-6 6 6" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 28h16" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round"/>
+          </svg>
+          <p class="dropzone-title">Drop image here</p>
+          <p class="dropzone-sub">or <strong>click to browse</strong></p>
+          <p class="dropzone-hint">WebP · JPG · PNG · multiple files supported</p>
+        </div>
+      </div>
+
+      <!-- ─── Single-file options ──────────────────────────────────────── -->
+      <div id="options" class="options" hidden>
+        <div class="format-selector" role="group" aria-label="Output format">
+          <button class="format-btn active" data-format="image/jpeg"
+                  aria-pressed="true" type="button">JPG</button>
+          <button class="format-btn" data-format="image/png"
+                  aria-pressed="false" type="button">PNG</button>
+        </div>
+
+        <div id="qualityGroup" class="quality-group">
+          <div class="quality-header">
+            <label for="quality" class="quality-label">Quality</label>
+            <span id="qualityValue" class="quality-badge" aria-live="polite">92%</span>
+          </div>
+          <input type="range" id="quality" class="quality-slider"
+                 min="1" max="100" value="92"
+                 aria-label="JPEG quality percentage">
+          <div class="quality-marks" aria-hidden="true">
+            <span>Low</span><span>Medium</span><span>High</span>
+          </div>
+          <div id="qualityPreviewWrap" class="quality-preview-wrap" hidden>
+            <p class="preview-label">Preview</p>
+            <img id="qualityPreviewImg" class="quality-preview-img" alt="JPEG quality preview">
+            <p id="qualityPreviewMeta" class="preview-meta" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <div class="preview-wrap" aria-label="Image preview" hidden>
+          <p class="preview-label">Original</p>
+          <img id="preview" class="preview-img" alt="" src="">
+          <p id="previewMeta" class="preview-meta" aria-live="polite"></p>
+        </div>
+
+        <div id="progressWrap" class="progress-wrap" hidden aria-live="polite">
+          <div class="progress-header">
+            <span id="progressStage" class="progress-stage">Converting…</span>
+            <span id="progressPct" class="progress-pct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="progressFill" class="progress-fill"
+                 role="progressbar" aria-valuenow="0"
+                 aria-valuemin="0" aria-valuemax="100"
+                 aria-label="Conversion progress"></div>
+          </div>
+        </div>
+
+        <div class="convert-row">
+          <a id="convertBtn" class="convert-btn" href="#">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                 aria-hidden="true" class="btn-icon">
+              <path d="M2 8a6 6 0 1 0 6-6" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round"/>
+              <path d="M5 5.5L8 2l3 3.5" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Convert &amp; Download
+          </a>
+        </div>
+
+        <div id="resultInfo" class="result-info" hidden
+             role="status" aria-live="polite" aria-atomic="true"></div>
+      </div>
+
+      <!-- ─── Batch panel ────────────────────────────────────────────── -->
+      <div id="batchPanel" class="batch-panel" hidden>
+        <div class="batch-header">
+          <span id="batchCount" class="batch-count"></span>
+          <div class="format-selector batch-format" role="group" aria-label="Output format">
+            <button class="format-btn active" data-format="image/jpeg"
+                    aria-pressed="true" type="button">JPG</button>
+            <button class="format-btn" data-format="image/png"
+                    aria-pressed="false" type="button">PNG</button>
+          </div>
+        </div>
+
+        <div id="batchQualityGroup" class="quality-group batch-quality">
+          <div class="quality-header">
+            <label for="batchQuality" class="quality-label">Quality</label>
+            <span id="batchQualityValue" class="quality-badge" aria-live="polite">92%</span>
+          </div>
+          <input type="range" id="batchQuality" class="quality-slider"
+                 min="1" max="100" value="92" aria-label="JPEG quality percentage">
+        </div>
+
+        <div id="batchList" class="batch-list" aria-live="polite" aria-label="Files to convert"></div>
+
+        <div id="batchProgressWrap" class="progress-wrap" hidden aria-live="polite">
+          <div class="progress-header">
+            <span id="batchProgressStage" class="progress-stage">Converting…</span>
+            <span id="batchProgressPct" class="progress-pct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="batchProgressFill" class="progress-fill"
+                 role="progressbar" aria-valuenow="0"
+                 aria-valuemin="0" aria-valuemax="100"
+                 aria-label="Batch conversion progress"></div>
+          </div>
+          <p id="batchProgressFile" class="progress-file"></p>
+        </div>
+
+        <div class="batch-actions">
+          <button id="batchConvertBtn" class="convert-btn batch-convert-btn" type="button">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                 aria-hidden="true" class="btn-icon">
+              <path d="M2 8a6 6 0 1 0 6-6" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round"/>
+              <path d="M5 5.5L8 2l3 3.5" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Convert All
+          </button>
+          <button id="batchCancelBtn" class="cancel-btn" type="button" hidden
+                  aria-label="Cancel batch conversion">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round"/>
+            </svg>
+            Cancel
+          </button>
+        </div>
+
+        <div id="batchResultInfo" class="result-info" hidden
+             role="status" aria-live="polite" aria-atomic="true"></div>
+
+        <button id="batchClearBtn" class="batch-clear-btn" type="button">
+          ← Add different files
+        </button>
+      </div>
+    </div>
+
+    <!-- ─── Page images panel ─────────────────────────────────────────── -->
+    <div id="panel-page" class="panel" role="tabpanel"
+         aria-labelledby="tab-page" hidden>
+      <div id="pageImagesContainer" aria-live="polite" aria-busy="false"></div>
+    </div>
+
+    <!-- ─── Settings panel ───────────────────────────────────────────── -->
+    <div id="panel-settings" class="settings-panel"
+         aria-label="Settings">
+
+      <div class="settings-group">
+        <label class="settings-label" for="defaultFormat">Formato por defecto</label>
+        <select id="defaultFormat" class="settings-select">
+          <option value="image/jpeg">JPG — tamaño menor, fondo blanco</option>
+          <option value="image/png">PNG — sin pérdida, preserva transparencia</option>
+        </select>
+      </div>
+      <button id="saveSettings" class="save-btn" type="button">
+        Guardar ajustes
+      </button>
+    </div>
+    </div><!-- /mode-images -->
+
+    <!-- ─── Texto mode ─────────────────────────────────────────────────── -->
+    <div id="mode-text" class="settings-panel" hidden
+         role="tabpanel" aria-labelledby="mode-tab-text">
+      <div class="settings-group settings-toggle-group">
+        <div class="settings-toggle-row">
+          <div>
+            <span class="settings-label">Botón flotante EDI ✏️</span>
+            <p class="settings-hint">Muestra el botón al seleccionar texto en cualquier página</p>
+          </div>
+          <button id="floatingBtnToggle" class="toggle-btn" type="button"
+                  role="switch" aria-checked="true"
+                  aria-label="Activar o desactivar el botón flotante EDI">
+            <span class="toggle-thumb"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- ─── Footer ───────────────────────────────────────────────────── -->
+    <footer class="footer">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+           aria-hidden="true" focusable="false">
+        <path d="M6 1a5 5 0 1 0 0 10A5 5 0 0 0 6 1ZM6 4v3M6 8.5v.1"
+              stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      Conversion runs <strong>locally</strong> — images never leave your device.
+    </footer>
+
+  </div>
+
+  <script type="module" src="popup.ts"></script>
+</body>
+</html>
