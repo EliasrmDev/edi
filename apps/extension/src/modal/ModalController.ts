@@ -11,6 +11,26 @@ export interface ModalOptions {
   onClose: () => void;
 }
 
+interface CredentialItem {
+  id: string;
+  provider: string;
+  label: string;
+  isActive: boolean;
+  isExpired: boolean;
+}
+
+const PROVIDER_LABELS: Record<string, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  'google-ai': 'Google AI',
+};
+
+const AI_MODELS: Record<string, string> = {
+  openai: 'gpt-4o-mini',
+  anthropic: 'claude-3-5-haiku-20241022',
+  'google-ai': 'gemini-1.5-flash',
+};
+
 export class ModalController {
   private readonly shadowHost: HTMLElement;
   private readonly shadowRoot: ShadowRoot;
@@ -56,6 +76,9 @@ export class ModalController {
     this.runLocalPreprocess();
 
     this.shadowRoot.querySelector<HTMLTextAreaElement>('#edi-text')?.focus();
+
+    // Load credentials for the AI bar (non-blocking)
+    void this.loadCredentials();
   }
 
   close(): void {
@@ -310,5 +333,127 @@ export class ModalController {
       panel?.removeEventListener('keydown', this.keydownHandler);
       this.keydownHandler = null;
     }
+  }
+
+  // ── AI credential picker ────────────────────────────────────────────────────
+
+  async loadCredentials(): Promise<void> {
+    const stored = await chrome.storage.local.get(['authToken']) as { authToken?: string };
+    if (!stored.authToken) return;
+
+    const response = await chrome.runtime.sendMessage({
+      type: 'PROXY_API_CALL',
+      payload: { endpoint: '/api/credentials', method: 'GET' },
+    }) as { error?: string; status?: number; data?: { data?: CredentialItem[] } };
+
+    if (response.error || !response.data?.data) return;
+
+    const creds = response.data.data;
+    this.renderCredentialBar(creds);
+  }
+
+  private renderCredentialBar(creds: CredentialItem[]): void {
+    const statusText = this.shadowRoot.querySelector<HTMLElement>('#edi-ai-status-text');
+    const picker = this.shadowRoot.querySelector<HTMLElement>('#edi-cred-picker');
+    const toggleBtn = this.shadowRoot.querySelector<HTMLButtonElement>('#edi-ai-toggle');
+
+    if (!statusText || !picker || !toggleBtn) return;
+
+    const active = creds.find((c) => c.isActive && !c.isExpired) ?? null;
+
+    // Update status text
+    if (active) {
+      const provLabel = PROVIDER_LABELS[active.provider] ?? active.provider;
+      const model = AI_MODELS[active.provider] ?? '';
+      statusText.textContent = `${provLabel} · ${active.label}${model ? ` · ${model}` : ''}`;
+    } else {
+      statusText.textContent = 'Sin clave de IA activa';
+    }
+
+    // Only show "Cambiar" if there are multiple credentials
+    toggleBtn.hidden = creds.length <= 1;
+
+    // Build picker items
+    picker.innerHTML = '';
+    for (const cred of creds) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'edi-cred-item';
+      btn.setAttribute('role', 'option');
+      btn.setAttribute('aria-selected', String(cred.isActive));
+      if (cred.isExpired) btn.disabled = true;
+
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'edi-cred-info';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'edi-cred-name';
+      nameSpan.textContent = `${PROVIDER_LABELS[cred.provider] ?? cred.provider} · ${cred.label}`;
+
+      const metaSpan = document.createElement('span');
+      metaSpan.className = 'edi-cred-meta';
+      metaSpan.textContent = cred.isExpired
+        ? 'Expirada'
+        : (AI_MODELS[cred.provider] ?? '');
+
+      infoDiv.appendChild(nameSpan);
+      infoDiv.appendChild(metaSpan);
+
+      const activateBtn = document.createElement('button');
+      activateBtn.type = 'button';
+      activateBtn.className = 'edi-cred-activate';
+      activateBtn.textContent = cred.isActive ? 'Activa' : 'Usar';
+      activateBtn.disabled = cred.isActive || cred.isExpired;
+
+      activateBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!cred.isActive && !cred.isExpired) {
+          void this.activateCredential(cred.id, creds);
+        }
+      });
+
+      btn.appendChild(infoDiv);
+      btn.appendChild(activateBtn);
+      picker.appendChild(btn);
+    }
+
+    // Toggle button
+    toggleBtn.addEventListener('click', () => {
+      const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+      toggleBtn.setAttribute('aria-expanded', String(!expanded));
+      picker.hidden = expanded;
+    });
+  }
+
+  private async activateCredential(credentialId: string, currentCreds: CredentialItem[]): Promise<void> {
+    const statusText = this.shadowRoot.querySelector<HTMLElement>('#edi-ai-status-text');
+    if (statusText) statusText.textContent = 'Cambiando…';
+
+    const response = await chrome.runtime.sendMessage({
+      type: 'PROXY_API_CALL',
+      payload: {
+        endpoint: `/api/credentials/${credentialId}/activate`,
+        method: 'PATCH',
+      },
+    }) as { error?: string; status?: number; data?: { data?: CredentialItem } };
+
+    if (response.error || !response.data?.data) {
+      if (statusText) statusText.textContent = 'Error al cambiar la clave';
+      return;
+    }
+
+    // Update local creds state and re-render
+    const updated = currentCreds.map((c) => ({
+      ...c,
+      isActive: c.id === credentialId,
+    }));
+
+    // Close the picker after activating
+    const picker = this.shadowRoot.querySelector<HTMLElement>('#edi-cred-picker');
+    const toggleBtn = this.shadowRoot.querySelector<HTMLButtonElement>('#edi-ai-toggle');
+    if (picker) picker.hidden = true;
+    if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+
+    this.renderCredentialBar(updated);
   }
 }

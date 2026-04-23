@@ -119,3 +119,17 @@ export async function verifyCredentialAction(
   if (!res.ok) return { error: 'Verification failed. Check the key is still valid.' };
   return { success: true };
 }
+
+export async function activateCredentialAction(credentialId: string): Promise<{ error?: string }> {
+  const cookie = await getAuthHeader();
+  try {
+    const res = await fetch(`${API_URL}/api/credentials/${credentialId}/activate`, {
+      method: 'PATCH',
+      headers: { Authorization: cookie },
+    });
+    if (!res.ok) return { error: 'SERVER_ERROR' };
+    return {};
+  } catch {
+    return { error: 'SERVER_ERROR' };
+  }
+}

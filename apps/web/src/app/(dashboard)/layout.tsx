@@ -22,6 +22,15 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    href: '/transform',
+    label: 'Editor',
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+      </svg>
+    ),
+  },
+  {
     href: '/profile',
     label: 'Perfil',
     icon: (
@@ -167,7 +176,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white lg:hidden"
         aria-label="Navegación móvil"
       >
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           {navItems.map((item) => {
             const isActive = currentPath === item.href || currentPath.startsWith(item.href + '/');
             return (

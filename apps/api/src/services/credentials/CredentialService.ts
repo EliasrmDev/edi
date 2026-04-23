@@ -456,4 +456,65 @@ export class CredentialService {
 
     return toProviderCredential(updatedRow);
   }
+
+  /**
+   * Set a credential as the single active one for a user.
+   * Deactivates all other credentials, then activates the selected one.
+   */
+  async setActive(
+    credentialId: string,
+    userId: string,
+  ): Promise<ProviderCredential> {
+    const now = new Date();
+
+    // Ownership check
+    const rows = await this.db
+      .select(SAFE_COLUMNS)
+      .from(providerCredentials)
+      .where(
+        and(
+          eq(providerCredentials.id, credentialId),
+          eq(providerCredentials.userId, userId),
+          isNull(providerCredentials.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    const row = rows[0];
+    if (!row) {
+      throw new AppError('CREDENTIAL_NOT_FOUND', 'Credential not found', 404);
+    }
+
+    // Deactivate all other credentials for this user
+    await this.db
+      .update(providerCredentials)
+      .set({ isActive: false, updatedAt: now })
+      .where(
+        and(
+          eq(providerCredentials.userId, userId),
+          isNull(providerCredentials.deletedAt),
+        ),
+      );
+
+    // Activate the selected credential
+    const updated = await this.db
+      .update(providerCredentials)
+      .set({ isActive: true, updatedAt: now })
+      .where(eq(providerCredentials.id, credentialId))
+      .returning(SAFE_COLUMNS);
+
+    const updatedRow = updated[0];
+    if (!updatedRow) throw new Error('Failed to activate credential');
+
+    await this.audit.log({
+      userId,
+      action: 'credential.activated',
+      resourceType: 'provider_credential',
+      resourceId: credentialId,
+      outcome: 'success',
+      metadata: { provider: updatedRow.provider },
+    });
+
+    return toProviderCredential(updatedRow);
+  }
 }

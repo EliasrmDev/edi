@@ -199,6 +199,113 @@ button[id^="btn-"]:disabled {
 
 #edi-apply:hover { background: #1e40af; }
 
+/* ── AI provider bar ──────────────────────────────────────────────────────── */
+
+#edi-ai-bar {
+  background: #f8f9ff;
+  border: 1px solid #e0e7ff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#edi-ai-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#edi-ai-status-text {
+  font-size: 0.8125rem;
+  color: #4338ca;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#edi-ai-toggle {
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  background: #eef2ff;
+  color: #4338ca;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms;
+}
+#edi-ai-toggle:hover { background: #e0e7ff; }
+#edi-ai-toggle[aria-expanded="true"] { background: #c7d2fe; }
+
+#edi-cred-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edi-cred-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+.edi-cred-item:hover:not(:disabled) { border-color: #a5b4fc; background: #f5f3ff; }
+.edi-cred-item[aria-selected="true"] {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+.edi-cred-item:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.edi-cred-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.edi-cred-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.edi-cred-meta {
+  font-size: 0.6875rem;
+  color: #6b7280;
+}
+
+.edi-cred-activate {
+  font-size: 0.6875rem;
+  padding: 2px 8px;
+  border: 1px solid #6366f1;
+  border-radius: 4px;
+  background: #6366f1;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.edi-cred-activate:hover { background: #4f46e5; }
+.edi-cred-activate[disabled] {
+  background: #c7d2fe;
+  border-color: #c7d2fe;
+  color: #6366f1;
+  cursor: default;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }

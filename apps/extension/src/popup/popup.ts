@@ -19,6 +19,7 @@ import {
   stemName,
 } from '../image-converter/converter';
 import type { Format, ConvertRequest, WorkerMsg } from '../image-converter/types';
+import { transformText } from '../tone-engine';
 
 // ─── WorkerManager ─────────────────────────────────────────────────────────
 
@@ -184,6 +185,20 @@ const modeBtns = Array.from(
 const modeImages = $('mode-images');
 const modeText = $('mode-text');
 
+// ─── Text mode DOM refs ────────────────────────────────────────────────────
+
+const textPanelEditor = $('text-panel-editor');
+const textPanelSettings = $('text-panel-settings');
+const miniEditorTextarea = $<HTMLTextAreaElement>('mini-editor-textarea');
+const miniEditorStatus = $('mini-editor-status');
+const miniCopyBtn = $<HTMLButtonElement>('mini-copy-btn');
+const aiInfoCard = $('ai-info-card');
+const aiCredentialList = $('ai-credential-list');
+const aiNoCredential = $('ai-no-credential');
+const textTabBtns = Array.from(
+  document.querySelectorAll<HTMLButtonElement>('.text-tab'),
+);
+
 const fileInput = document.createElement('input');
 fileInput.type = 'file';
 fileInput.accept = 'image/webp,image/jpeg,image/png,image/*';
@@ -203,6 +218,8 @@ document.addEventListener('DOMContentLoaded', () => {
       setupQualitySlider();
       setupConvertBtn();
       if (batchPanel) setupBatch();
+      setupTextTabs();
+      setupMiniEditor();
       setupAuth();
 
       const imageUrl = new URLSearchParams(location.search).get('imageUrl');
@@ -1210,6 +1227,292 @@ function escHtml(str: string): string {
 
 const API_BASE: string = import.meta.env['VITE_API_URL'] ?? 'http://localhost:3001';
 
+// ─── AI provider/model constants ──────────────────────────────────────────
+
+const PROVIDER_LABELS: Record<string, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  'google-ai': 'Google AI',
+};
+
+const AI_MODELS: Record<string, string> = {
+  openai: 'gpt-4o-mini',
+  anthropic: 'claude-3-5-haiku-20241022',
+  'google-ai': 'gemini-1.5-flash',
+};
+
+// ─── Text sub-tabs ────────────────────────────────────────────────────────
+
+function setupTextTabs(): void {
+  textTabBtns.forEach((btn) => {
+    btn.addEventListener('click', () =>
+      switchTextTab((btn.dataset['textTab'] ?? 'editor') as 'editor' | 'settings'),
+    );
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        btn.click();
+      }
+    });
+  });
+}
+
+function switchTextTab(tab: 'editor' | 'settings'): void {
+  textTabBtns.forEach((b) => {
+    const active = b.dataset['textTab'] === tab;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', String(active));
+  });
+  textPanelEditor.hidden = tab !== 'editor';
+  textPanelSettings.hidden = tab !== 'settings';
+}
+
+// ─── Mini editor ─────────────────────────────────────────────────────────
+
+function setMiniStatus(
+  message: string,
+  type: 'success' | 'error' | 'warning' | '',
+): void {
+  miniEditorStatus.textContent = message;
+  miniEditorStatus.setAttribute('data-type', type);
+  miniEditorStatus.hidden = !message;
+}
+
+function setupMiniEditor(): void {
+  // Local + AI transform buttons
+  const transformBtns = Array.from(
+    document.querySelectorAll<HTMLButtonElement>(
+      '#text-panel-editor [data-transform]',
+    ),
+  );
+
+  const AI_TRANSFORMS = new Set([
+    'tone-voseo-cr',
+    'tone-tuteo',
+    'tone-ustedeo',
+    'correct-orthography',
+  ]);
+
+  transformBtns.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const transformation = btn.dataset['transform'] ?? '';
+      const text = miniEditorTextarea.value;
+
+      if (!text.trim()) {
+        setMiniStatus('Escribí o pegá texto primero.', 'warning');
+        return;
+      }
+
+      if (AI_TRANSFORMS.has(transformation)) {
+        await runMiniAITransform(btn, transformation, text);
+      } else {
+        try {
+          const result = transformText(
+            text,
+            transformation as Parameters<typeof transformText>[1],
+          );
+          miniEditorTextarea.value = result.result;
+          setMiniStatus('', '');
+        } catch {
+          setMiniStatus('Error al transformar el texto.', 'error');
+        }
+      }
+    });
+  });
+
+  // Copy button
+  miniCopyBtn?.addEventListener('click', () => {
+    const text = miniEditorTextarea.value;
+    if (!text) return;
+    void navigator.clipboard.writeText(text).then(
+      () => setMiniStatus('¡Copiado!', 'success'),
+      () => setMiniStatus('No se pudo copiar. Usá Ctrl+C.', 'error'),
+    );
+  });
+}
+
+async function runMiniAITransform(
+  _btn: HTMLButtonElement,
+  transformation: string,
+  text: string,
+): Promise<void> {
+  const stored = await chrome.storage.local.get(['authToken']) as {
+    authToken?: string;
+  };
+
+  if (!stored.authToken) {
+    setMiniStatus('Iniciá sesión en Ajustes para usar funciones de IA.', 'warning');
+    return;
+  }
+
+  const allBtns = Array.from(
+    document.querySelectorAll<HTMLButtonElement>('#text-panel-editor [data-transform]'),
+  );
+  allBtns.forEach((b) => { b.disabled = true; });
+  setMiniStatus('Procesando…', '');
+
+  try {
+    const res = await fetch(`${API_BASE}/api/transform`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${stored.authToken}`,
+      },
+      body: JSON.stringify({
+        text,
+        transformation,
+        locale: 'es-CR',
+        requestAIValidation: true,
+      }),
+    });
+
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: { code?: string; message?: string };
+      };
+      const code = body.error?.code ?? '';
+      const MINI_ERRORS: Record<string, string> = {
+        QUOTA_EXCEEDED: 'Límite diario de IA alcanzado.',
+        QUOTA_LIMIT_EXCEEDED: 'Límite diario de IA alcanzado.',
+        NO_ACTIVE_CREDENTIAL: 'No tenés claves de IA configuradas.',
+        UNAUTHORIZED: 'Sesión expirada. Iniciá sesión de nuevo.',
+      };
+      setMiniStatus(MINI_ERRORS[code] ?? 'Error del servidor. Intentá de nuevo.', 'error');
+      return;
+    }
+
+    const data = (await res.json()) as {
+      data?: { result?: string; warnings?: { message: string }[] };
+    };
+
+    const result = data.data?.result;
+    if (typeof result === 'string') {
+      miniEditorTextarea.value = result;
+      const warning = data.data?.warnings?.[0]?.message;
+      if (warning) {
+        setMiniStatus(warning, 'warning');
+      } else {
+        setMiniStatus('', '');
+      }
+    }
+  } catch {
+    setMiniStatus('Sin conexión. Verificá tu red.', 'error');
+  } finally {
+    allBtns.forEach((b) => { b.disabled = false; });
+  }
+}
+
+// ─── AI credential info ───────────────────────────────────────────────────
+
+interface CredentialInfo {
+  id: string;
+  provider: string;
+  label: string;
+  isActive: boolean;
+  isExpired: boolean;
+}
+
+function renderCredentialList(creds: CredentialInfo[]): void {
+  if (creds.length === 0) {
+    aiInfoCard.hidden = true;
+    aiNoCredential.hidden = false;
+    return;
+  }
+
+  aiNoCredential.hidden = true;
+  aiInfoCard.hidden = false;
+
+  if (!aiCredentialList) return;
+  aiCredentialList.innerHTML = '';
+
+  for (const cred of creds) {
+    const item = document.createElement('div');
+    item.className = 'ai-cred-item' + (cred.isActive ? ' ai-cred-item--active' : '');
+
+    const info = document.createElement('div');
+    info.className = 'ai-cred-info';
+
+    const name = document.createElement('span');
+    name.className = 'ai-cred-name';
+    name.textContent = `${PROVIDER_LABELS[cred.provider] ?? cred.provider} · ${cred.label}`;
+
+    const meta = document.createElement('span');
+    meta.className = 'ai-cred-meta';
+    meta.textContent = cred.isExpired
+      ? 'Expirada'
+      : (AI_MODELS[cred.provider] ?? '');
+
+    info.appendChild(name);
+    info.appendChild(meta);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ai-cred-activate-btn';
+    btn.textContent = cred.isActive ? 'Activa' : 'Usar';
+    btn.disabled = cred.isActive || cred.isExpired;
+
+    if (!cred.isActive && !cred.isExpired) {
+      btn.addEventListener('click', () => {
+        void activateCredential(cred.id, creds);
+      });
+    }
+
+    item.appendChild(info);
+    item.appendChild(btn);
+    aiCredentialList.appendChild(item);
+  }
+}
+
+async function activateCredential(credentialId: string, currentCreds: CredentialInfo[]): Promise<void> {
+  const stored = await chrome.storage.local.get(['authToken']) as { authToken?: string };
+  if (!stored.authToken) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/credentials/${credentialId}/activate`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${stored.authToken}` },
+    });
+    if (!res.ok) return;
+
+    const updated = currentCreds.map((c) => ({ ...c, isActive: c.id === credentialId }));
+    renderCredentialList(updated);
+  } catch {
+    // non-fatal
+  }
+}
+
+/** @deprecated kept for call-sites that pass null to clear */
+function renderAIInfo(_cred: null): void {
+  renderCredentialList([]);
+}
+
+async function loadAICredential(token: string): Promise<void> {
+  try {
+    const res = await fetch(`${API_BASE}/api/credentials`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      renderAIInfo(null);
+      return;
+    }
+    const body = (await res.json()) as {
+      data?: { id?: string; provider?: string; label?: string; isActive?: boolean; isExpired?: boolean }[];
+    };
+    const creds: CredentialInfo[] = (body.data ?? [])
+      .filter((c): c is Required<typeof c> => !!c.id && !!c.provider && !!c.label)
+      .map((c) => ({
+        id: c.id,
+        provider: c.provider,
+        label: c.label,
+        isActive: c.isActive ?? false,
+        isExpired: c.isExpired ?? false,
+      }));
+    renderCredentialList(creds);
+  } catch {
+    renderAIInfo(null);
+  }
+}
+
 interface MeResponse {
   data?: {
     user?: { email?: string; displayName?: string | null };
@@ -1288,6 +1591,7 @@ async function checkAndRenderAuth(): Promise<void> {
 
   if (!stored.authToken || !stored.tokenExpiresAt || Date.now() > stored.tokenExpiresAt) {
     await chrome.storage.local.remove(['authToken', 'tokenExpiresAt', 'authUserEmail', 'authUserName']);
+    renderAIInfo(null);
     showAuthState('logged-out');
     return;
   }
@@ -1368,6 +1672,7 @@ async function doLogout(): Promise<void> {
   }
 
   await chrome.storage.local.remove(['authToken', 'tokenExpiresAt', 'authUserEmail', 'authUserName']);
+  renderAIInfo(null);
   showAuthState('logged-out');
 }
 
@@ -1387,6 +1692,8 @@ function renderLoggedIn(displayName: string | null, email: string, token: string
 
   // Load quota in background
   void loadQuota(token);
+  // Load AI credential info in background
+  void loadAICredential(token);
 }
 
 async function loadQuota(token: string): Promise<void> {

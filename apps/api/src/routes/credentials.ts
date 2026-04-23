@@ -158,4 +158,14 @@ credentialsRouter.delete('/:id', async (c) => {
   return c.json({ data: { message: 'Credential deleted. Hard deletion scheduled in 7 days.' } });
 });
 
+// ---- PATCH /credentials/:id/activate — set as the active credential ----
+credentialsRouter.patch('/:id/activate', async (c) => {
+  const user = c.get('user');
+  const id = c.req.param('id');
+
+  const credential = await credentialService.setActive(id, user.id);
+
+  return c.json({ data: credential });
+});
+
 export default credentialsRouter;

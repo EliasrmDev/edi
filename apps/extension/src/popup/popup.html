@@ -245,86 +245,175 @@
     </div><!-- /mode-images -->
 
     <!-- ─── Texto mode ─────────────────────────────────────────────────── -->
-    <div id="mode-text" class="settings-panel" hidden
-         role="tabpanel" aria-labelledby="mode-tab-text">
+    <div id="mode-text" hidden role="tabpanel" aria-labelledby="mode-tab-text">
 
-      <!-- Floating button toggle -->
-      <div class="settings-group settings-toggle-group">
-        <div class="settings-toggle-row">
-          <div>
-            <span class="settings-label">Botón flotante EDI ✏️</span>
-            <p class="settings-hint">Muestra el botón al seleccionar texto en cualquier página</p>
+      <!-- ─── Text sub-tab nav ──────────────────────────────────────── -->
+      <nav class="text-tabs" role="tablist" aria-label="Opciones de texto">
+        <button class="text-tab active" data-text-tab="editor" role="tab"
+                aria-selected="true" aria-controls="text-panel-editor" id="text-tab-editor">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M1.5 8.5L8 2l2 2-6.5 6.5H1.5V8.5z"
+                  stroke="currentColor" stroke-width="1.4"
+                  stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+          Editor
+        </button>
+        <button class="text-tab" data-text-tab="settings" role="tab"
+                aria-selected="false" aria-controls="text-panel-settings" id="text-tab-settings">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <circle cx="6" cy="6" r="1.5" stroke="currentColor" stroke-width="1.4"/>
+            <path d="M6 1v1.2M6 9.8V11M1 6h1.2M9.8 6H11M2.4 2.4l.85.85M8.75 8.75l.85.85M9.6 2.4l-.85.85M3.25 8.75l-.85.85"
+                  stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          Ajustes
+        </button>
+      </nav>
+
+      <!-- ─── Editor panel ──────────────────────────────────────────── -->
+      <div id="text-panel-editor" class="text-panel settings-panel" role="tabpanel"
+           aria-labelledby="text-tab-editor">
+
+        <textarea id="mini-editor-textarea" class="mini-editor-textarea"
+                  rows="5" spellcheck="true" lang="es"
+                  placeholder="Escribí o pegá tu texto aquí…"
+                  aria-label="Texto a editar"></textarea>
+
+        <div id="mini-editor-status" class="mini-editor-status" hidden
+             role="status" aria-live="polite" aria-atomic="true"></div>
+
+        <!-- Formato -->
+        <div class="mini-group">
+          <span class="mini-group-label">Formato</span>
+          <div class="mini-btns-row">
+            <button class="mini-btn" type="button" data-transform="uppercase">MAYÚS</button>
+            <button class="mini-btn" type="button" data-transform="lowercase">minus</button>
+            <button class="mini-btn" type="button" data-transform="sentence-case">Oración</button>
+            <button class="mini-btn" type="button" data-transform="remove-formatting">Quitar fmt</button>
           </div>
-          <button id="floatingBtnToggle" class="toggle-btn" type="button"
-                  role="switch" aria-checked="true"
-                  aria-label="Activar o desactivar el botón flotante EDI">
-            <span class="toggle-thumb"></span>
+        </div>
+
+        <!-- Tono -->
+        <div class="mini-group">
+          <span class="mini-group-label">Tono</span>
+          <div class="mini-btns-row">
+            <button class="mini-btn mini-btn--ai" type="button" data-transform="tone-voseo-cr">Voseo CR</button>
+            <button class="mini-btn mini-btn--ai" type="button" data-transform="tone-tuteo">Tuteo</button>
+            <button class="mini-btn mini-btn--ai" type="button" data-transform="tone-ustedeo">Ustedeo</button>
+          </div>
+        </div>
+
+        <!-- IA + Copiar -->
+        <div class="mini-group mini-group--row">
+          <button class="mini-btn mini-btn--ai" type="button" data-transform="correct-orthography">
+            ✦ Ortografía
+          </button>
+          <button id="mini-copy-btn" class="mini-btn mini-btn--copy" type="button">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <rect x="4" y="4" width="7" height="7" rx="1.5"
+                    stroke="currentColor" stroke-width="1.4"/>
+              <path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1"
+                    stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            Copiar
           </button>
         </div>
-      </div>
 
-      <!-- ─── Auth section ─────────────────────────────────────────── -->
-      <div id="auth-section" class="auth-section">
+      </div><!-- /text-panel-editor -->
 
-        <!-- State: loading -->
-        <div id="auth-loading" class="auth-loading" aria-live="polite" hidden>
-          <span class="auth-spinner" aria-hidden="true"></span>
-          <span>Verificando sesión…</span>
+      <!-- ─── Ajustes panel ─────────────────────────────────────────── -->
+      <div id="text-panel-settings" class="text-panel settings-panel" hidden
+           role="tabpanel" aria-labelledby="text-tab-settings">
+
+        <!-- AI credential list -->
+        <div id="ai-info-card" class="ai-info-card" hidden>
+          <span class="settings-label">Proveedor de IA</span>
+          <div id="ai-credential-list" class="ai-credential-list">
+            <!-- populated by popup.ts -->
+          </div>
         </div>
+        <p id="ai-no-credential" class="settings-hint" hidden>
+          No tenés claves configuradas. Agregá una desde la web.
+        </p>
 
-        <!-- State: logged out -->
-        <div id="auth-logged-out">
-          <p class="auth-heading">Iniciá sesión</p>
-          <p class="settings-hint" style="margin-bottom:10px">
-            Necesitás una cuenta EDI para usar la corrección con IA.
-          </p>
-          <div id="auth-error" class="auth-error" hidden role="alert"></div>
-          <form id="auth-form" novalidate>
-            <div class="auth-field">
-              <label for="auth-email" class="settings-label">Correo electrónico</label>
-              <input id="auth-email" class="auth-input" type="email"
-                     autocomplete="email" placeholder="vos@ejemplo.com" required />
+        <!-- Floating button toggle -->
+        <div class="settings-group settings-toggle-group">
+          <div class="settings-toggle-row">
+            <div>
+              <span class="settings-label">Botón flotante EDI ✏️</span>
+              <p class="settings-hint">Muestra el botón al seleccionar texto en cualquier página</p>
             </div>
-            <div class="auth-field">
-              <label for="auth-password" class="settings-label">Contraseña</label>
-              <input id="auth-password" class="auth-input" type="password"
-                     autocomplete="current-password" placeholder="••••••••••••" required />
-            </div>
-            <button id="auth-submit" class="save-btn auth-submit-btn" type="submit">
-              Iniciar sesión
+            <button id="floatingBtnToggle" class="toggle-btn" type="button"
+                    role="switch" aria-checked="true"
+                    aria-label="Activar o desactivar el botón flotante EDI">
+              <span class="toggle-thumb"></span>
             </button>
-          </form>
-          <p class="auth-or">
-            <span>o</span>
-          </p>
-          <a id="auth-open-web" class="auth-web-link" href="#" role="button">
-            Iniciar sesión desde la web
-          </a>
+          </div>
         </div>
 
-        <!-- State: logged in -->
-        <div id="auth-logged-in" hidden>
-          <div class="auth-user-card">
-            <div class="auth-avatar" aria-hidden="true" id="auth-avatar">?</div>
-            <div class="auth-user-info">
-              <span class="auth-user-name" id="auth-user-name">—</span>
-              <span class="auth-user-email" id="auth-user-email">—</span>
-            </div>
-          </div>
-          <div id="auth-quota" class="auth-quota" hidden>
-            <span class="settings-label">Correcciones IA hoy</span>
-            <div class="auth-quota-bar">
-              <div id="auth-quota-fill" class="auth-quota-fill" style="width:0%"></div>
-            </div>
-            <span class="auth-quota-text" id="auth-quota-text">0 / 0</span>
-          </div>
-          <button id="auth-logout" class="auth-logout-btn" type="button">
-            Cerrar sesión
-          </button>
-        </div>
+        <!-- ─── Auth section ─────────────────────────────────────────── -->
+        <div id="auth-section" class="auth-section">
 
-      </div><!-- /auth-section -->
-    </div>
+          <!-- State: loading -->
+          <div id="auth-loading" class="auth-loading" aria-live="polite" hidden>
+            <span class="auth-spinner" aria-hidden="true"></span>
+            <span>Verificando sesión…</span>
+          </div>
+
+          <!-- State: logged out -->
+          <div id="auth-logged-out">
+            <p class="auth-heading">Iniciá sesión</p>
+            <p class="settings-hint" style="margin-bottom:10px">
+              Necesitás una cuenta EDI para usar la corrección con IA.
+            </p>
+            <div id="auth-error" class="auth-error" hidden role="alert"></div>
+            <form id="auth-form" novalidate>
+              <div class="auth-field">
+                <label for="auth-email" class="settings-label">Correo electrónico</label>
+                <input id="auth-email" class="auth-input" type="email"
+                       autocomplete="email" placeholder="vos@ejemplo.com" required />
+              </div>
+              <div class="auth-field">
+                <label for="auth-password" class="settings-label">Contraseña</label>
+                <input id="auth-password" class="auth-input" type="password"
+                       autocomplete="current-password" placeholder="••••••••••••" required />
+              </div>
+              <button id="auth-submit" class="save-btn auth-submit-btn" type="submit">
+                Iniciar sesión
+              </button>
+            </form>
+            <p class="auth-or">
+              <span>o</span>
+            </p>
+            <a id="auth-open-web" class="auth-web-link" href="#" role="button">
+              Iniciar sesión desde la web
+            </a>
+          </div>
+
+          <!-- State: logged in -->
+          <div id="auth-logged-in" hidden>
+            <div class="auth-user-card">
+              <div class="auth-avatar" aria-hidden="true" id="auth-avatar">?</div>
+              <div class="auth-user-info">
+                <span class="auth-user-name" id="auth-user-name">—</span>
+                <span class="auth-user-email" id="auth-user-email">—</span>
+              </div>
+            </div>
+            <div id="auth-quota" class="auth-quota" hidden>
+              <span class="settings-label">Correcciones IA hoy</span>
+              <div class="auth-quota-bar">
+                <div id="auth-quota-fill" class="auth-quota-fill" style="width:0%"></div>
+              </div>
+              <span class="auth-quota-text" id="auth-quota-text">0 / 0</span>
+            </div>
+            <button id="auth-logout" class="auth-logout-btn" type="button">
+              Cerrar sesión
+            </button>
+          </div>
+
+        </div><!-- /auth-section -->
+      </div><!-- /text-panel-settings -->
+
+    </div><!-- /mode-text -->
     <!-- ─── Footer ───────────────────────────────────────────────────── -->
     <footer class="footer">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none"

@@ -17,6 +17,18 @@ export function createModalHTML(_initialText: string): string {
     </header>
 
     <div id="edi-body">
+      <!-- AI provider bar -->
+      <div id="edi-ai-bar">
+        <div id="edi-ai-info-row">
+          <span id="edi-ai-status-text">Sin clave de IA</span>
+          <button id="edi-ai-toggle" type="button" aria-expanded="false"
+                  aria-controls="edi-cred-picker">Cambiar</button>
+        </div>
+        <div id="edi-cred-picker" hidden role="listbox" aria-label="Seleccionar proveedor de IA">
+          <!-- populated by ModalController -->
+        </div>
+      </div>
+
       <label for="edi-text" id="edi-text-label">Texto a editar</label>
       <textarea
         id="edi-text"

@@ -169,7 +169,7 @@ async function handleAPIProxy(
 ) {
   // SECURITY: strict allowlist — only internal EDI endpoints
   console.log('Proxying API call to', payload.endpoint);
-  const ALLOWED_ENDPOINTS = ['/api/transform', '/api/transform/quota', '/api/auth/me'];
+  const ALLOWED_ENDPOINTS = ['/api/transform', '/api/transform/quota', '/api/auth/me', '/api/credentials'];
   if (!ALLOWED_ENDPOINTS.some((e) => payload.endpoint.startsWith(e))) {
     sendResponse({ error: 'ENDPOINT_NOT_ALLOWED' });
     return;
