@@ -1,0 +1,1 @@
+ALTER TABLE "provider_credentials" ADD COLUMN "selected_model" text;

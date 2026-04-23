@@ -17,6 +17,7 @@ interface CredentialItem {
   label: string;
   isActive: boolean;
   isExpired: boolean;
+  selectedModel: string | null;
 }
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -364,7 +365,7 @@ export class ModalController {
     // Update status text
     if (active) {
       const provLabel = PROVIDER_LABELS[active.provider] ?? active.provider;
-      const model = AI_MODELS[active.provider] ?? '';
+      const model = active.selectedModel ?? AI_MODELS[active.provider] ?? '';
       statusText.textContent = `${provLabel} · ${active.label}${model ? ` · ${model}` : ''}`;
     } else {
       statusText.textContent = 'Sin clave de IA activa';
@@ -394,7 +395,7 @@ export class ModalController {
       metaSpan.className = 'edi-cred-meta';
       metaSpan.textContent = cred.isExpired
         ? 'Expirada'
-        : (AI_MODELS[cred.provider] ?? '');
+        : (cred.selectedModel ?? AI_MODELS[cred.provider] ?? '');
 
       infoDiv.appendChild(nameSpan);
       infoDiv.appendChild(metaSpan);

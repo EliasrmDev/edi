@@ -69,7 +69,7 @@ export class OpenAIAdapter implements ProviderAdapter {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: params.model ?? 'gpt-4o-mini',
           max_tokens: 4096,
           temperature: 0.3,
           messages: [

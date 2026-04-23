@@ -32,6 +32,10 @@ export function CredentialsClient({ credentials, successMessage }: CredentialsCl
   const [, startDeleteTransition] = useTransition();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [showSuccessMsg, setShowSuccessMsg] = useState(!!successMessage);
+  const [showDeleteError, setShowDeleteError] = useState(false);
+  const [showVerifyError, setShowVerifyError] = useState(false);
+  const [showVerifySuccess, setShowVerifySuccess] = useState(false);
   const alertRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,6 +46,34 @@ export function CredentialsClient({ credentials, successMessage }: CredentialsCl
       setVerifyingId(null);
     }
   }, [deleteState, verifyState]);
+
+  useEffect(() => {
+    if (!successMessage) return;
+    setShowSuccessMsg(true);
+    const t = setTimeout(() => setShowSuccessMsg(false), 5000);
+    return () => clearTimeout(t);
+  }, [successMessage]);
+
+  useEffect(() => {
+    if (!deleteState?.error) return;
+    setShowDeleteError(true);
+    const t = setTimeout(() => setShowDeleteError(false), 5000);
+    return () => clearTimeout(t);
+  }, [deleteState]);
+
+  useEffect(() => {
+    if (!verifyState?.error) return;
+    setShowVerifyError(true);
+    const t = setTimeout(() => setShowVerifyError(false), 5000);
+    return () => clearTimeout(t);
+  }, [verifyState]);
+
+  useEffect(() => {
+    if (!verifyState?.success || isVerifyPending) return;
+    setShowVerifySuccess(true);
+    const t = setTimeout(() => setShowVerifySuccess(false), 5000);
+    return () => clearTimeout(t);
+  }, [verifyState, isVerifyPending]);
 
   function handleVerify(id: string) {
     setVerifyingId(id);
@@ -67,12 +99,12 @@ export function CredentialsClient({ credentials, successMessage }: CredentialsCl
 
   return (
     <div>
-      {(successMessage || deleteState?.error || verifyState?.error || verifyState?.success) && (
+      {(showSuccessMsg || showDeleteError || showVerifyError || showVerifySuccess) && (
         <div ref={alertRef} tabIndex={-1} className="mb-5">
-          {successMessage && <Alert variant="success">{successMessage === 'created' ? 'Clave agregada correctamente.' : 'Clave eliminada.'}</Alert>}
-          {deleteState?.error && <Alert variant="error">Error al eliminar la clave.</Alert>}
-          {verifyState?.error && <Alert variant="error">{verifyState.error}</Alert>}
-          {verifyState?.success && !isVerifyPending && <Alert variant="success">¡Clave verificada correctamente!</Alert>}
+          {showSuccessMsg && <Alert variant="success">{successMessage === 'created' ? 'Clave agregada correctamente.' : 'Clave eliminada.'}</Alert>}
+          {showDeleteError && <Alert variant="error">Error al eliminar la clave.</Alert>}
+          {showVerifyError && <Alert variant="error">{verifyState?.error}</Alert>}
+          {showVerifySuccess && !isVerifyPending  && <Alert variant="success">¡Clave verificada correctamente!</Alert>}
         </div>
       )}
 

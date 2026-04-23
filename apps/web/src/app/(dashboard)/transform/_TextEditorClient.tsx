@@ -312,7 +312,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
           )}
           {localActive && (
             <span className="text-xs text-gray-400">
-              Modelo: {AI_MODELS[localActive.provider] ?? '—'}
+              Modelo: {localActive.selectedModel ?? AI_MODELS[localActive.provider] ?? '—'}
             </span>
           )}
         </div>

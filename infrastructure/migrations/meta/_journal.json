@@ -15,6 +15,13 @@
       "when": 1776830085412,
       "tag": "0001_bitter_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776983175940,
+      "tag": "0002_living_nick_fury",
+      "breakpoints": true
     }
   ]
 }

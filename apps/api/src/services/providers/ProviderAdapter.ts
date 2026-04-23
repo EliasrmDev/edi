@@ -10,6 +10,7 @@ export interface ValidateTextParams {
   tone: ToneType | undefined;
   locale: string;
   systemPrompt: string;
+  model?: string;
 }
 
 /**

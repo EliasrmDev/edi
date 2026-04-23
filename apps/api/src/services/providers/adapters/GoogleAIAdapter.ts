@@ -3,7 +3,7 @@ import { ProviderError, type ProviderAdapter, type ValidateTextParams } from '..
 
 // Hardcoded base URL — no user-supplied URLs (SSRF protection)
 const GOOGLE_AI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const MODEL = 'Gemini 2.5 Flash';
+const MODEL = 'gemini-2.5-flash';
 const VERIFY_TIMEOUT_MS = 5_000;
 const GENERATE_TIMEOUT_MS = 30_000;
 
@@ -66,7 +66,8 @@ export class GoogleAIAdapter implements ProviderAdapter {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), GENERATE_TIMEOUT_MS);
 
-    const url = `${GOOGLE_AI_BASE}/models/${MODEL}:generateContent?key=${encodeURIComponent(params.rawKey)}`;
+    const modelId = params.model ?? MODEL;
+    const url = `${GOOGLE_AI_BASE}/models/${encodeURIComponent(modelId)}:generateContent?key=${encodeURIComponent(params.rawKey)}`;
 
     try {
       const res = await fetch(url, {

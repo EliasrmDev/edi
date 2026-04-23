@@ -29,6 +29,7 @@ function toProviderCredential(row: {
   label: string;
   maskedKey: string;
   isActive: boolean;
+  selectedModel: string | null;
   expiresAt: Date | null;
   lastVerifiedAt: Date | null;
   lastUsedAt: Date | null;
@@ -44,6 +45,7 @@ function toProviderCredential(row: {
     maskedKey: row.maskedKey,
     isActive: row.isActive,
     isExpired: row.expiresAt !== null && row.expiresAt < new Date(),
+    selectedModel: row.selectedModel,
     expiresAt: row.expiresAt,
     lastVerifiedAt: row.lastVerifiedAt,
     lastUsedAt: row.lastUsedAt,
@@ -61,6 +63,7 @@ const SAFE_COLUMNS = {
   label: providerCredentials.label,
   maskedKey: providerCredentials.maskedKey,
   isActive: providerCredentials.isActive,
+  selectedModel: providerCredentials.selectedModel,
   expiresAt: providerCredentials.expiresAt,
   lastVerifiedAt: providerCredentials.lastVerifiedAt,
   lastUsedAt: providerCredentials.lastUsedAt,
@@ -207,7 +210,7 @@ export class CredentialService {
   async getForAIUse(
     credentialId: string,
     userId: string,
-  ): Promise<{ rawKey: string; provider: ProviderId }> {
+  ): Promise<{ rawKey: string; provider: ProviderId; selectedModel: string | null }> {
     // Select encryptedKey and ownership fields
     const rows = await this.db
       .select({
@@ -216,6 +219,7 @@ export class CredentialService {
         provider: providerCredentials.provider,
         encryptedKey: providerCredentials.encryptedKey,
         isActive: providerCredentials.isActive,
+        selectedModel: providerCredentials.selectedModel,
         expiresAt: providerCredentials.expiresAt,
       })
       .from(providerCredentials)
@@ -264,7 +268,7 @@ export class CredentialService {
       metadata: { provider: row.provider },
     });
 
-    return { rawKey, provider: row.provider as ProviderId };
+    return { rawKey, provider: row.provider as ProviderId, selectedModel: row.selectedModel };
   }
 
   /**
@@ -452,6 +456,103 @@ export class CredentialService {
       ipAddress,
       userAgent,
       metadata: { provider, newKeyVersion: row.keyVersion + 1 },
+    });
+
+    return toProviderCredential(updatedRow);
+  }
+
+  /**
+   * Set the selected model for a credential.
+   * Validates ownership and that the modelId is a non-empty string.
+   */
+  async updateSelectedModel(
+    credentialId: string,
+    userId: string,
+    modelId: string,
+  ): Promise<ProviderCredential> {
+    const now = new Date();
+
+    // Validate ownership
+    const rows = await this.db
+      .select(SAFE_COLUMNS)
+      .from(providerCredentials)
+      .where(
+        and(
+          eq(providerCredentials.id, credentialId),
+          eq(providerCredentials.userId, userId),
+          isNull(providerCredentials.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    const row = rows[0];
+    if (!row) {
+      throw new AppError('CREDENTIAL_NOT_FOUND', 'Credential not found', 404);
+    }
+
+    const updated = await this.db
+      .update(providerCredentials)
+      .set({ selectedModel: modelId, updatedAt: now })
+      .where(eq(providerCredentials.id, credentialId))
+      .returning(SAFE_COLUMNS);
+
+    const updatedRow = updated[0];
+    if (!updatedRow) throw new Error('Failed to update selected model');
+
+    await this.audit.log({
+      userId,
+      action: 'credential.updated',
+      resourceType: 'provider_credential',
+      resourceId: credentialId,
+      outcome: 'success',
+      metadata: { provider: updatedRow.provider, selectedModel: modelId },
+    });
+
+    return toProviderCredential(updatedRow);
+  }
+
+  /**
+   * Clear the selected model for a credential (sets selectedModel to null).
+   */
+  async clearSelectedModel(
+    credentialId: string,
+    userId: string,
+  ): Promise<ProviderCredential> {
+    const now = new Date();
+
+    const rows = await this.db
+      .select(SAFE_COLUMNS)
+      .from(providerCredentials)
+      .where(
+        and(
+          eq(providerCredentials.id, credentialId),
+          eq(providerCredentials.userId, userId),
+          isNull(providerCredentials.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    const row = rows[0];
+    if (!row) {
+      throw new AppError('CREDENTIAL_NOT_FOUND', 'Credential not found', 404);
+    }
+
+    const updated = await this.db
+      .update(providerCredentials)
+      .set({ selectedModel: null, updatedAt: now })
+      .where(eq(providerCredentials.id, credentialId))
+      .returning(SAFE_COLUMNS);
+
+    const updatedRow = updated[0];
+    if (!updatedRow) throw new Error('Failed to clear selected model');
+
+    await this.audit.log({
+      userId,
+      action: 'credential.updated',
+      resourceType: 'provider_credential',
+      resourceId: credentialId,
+      outcome: 'success',
+      metadata: { provider: updatedRow.provider, selectedModel: null },
     });
 
     return toProviderCredential(updatedRow);

@@ -13,6 +13,7 @@ export interface ProviderCredential {
   maskedKey: string;
   isActive: boolean;
   isExpired: boolean;
+  selectedModel: string | null;
   expiresAt: Date | null;
   lastVerifiedAt: Date | null;
   lastUsedAt: Date | null;

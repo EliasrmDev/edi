@@ -7,6 +7,7 @@ import { apiLimiter, credentialLimiter } from '../middleware/rateLimit.js';
 import { EncryptionService } from '../services/crypto/EncryptionService.js';
 import { AuditService } from '../services/audit/AuditService.js';
 import { CredentialService } from '../services/credentials/CredentialService.js';
+import { ModelFetcherService } from '../services/models/ModelFetcherService.js';
 
 // ---------------------------------------------------------------------------
 // Service instances (module-level singletons)
@@ -14,6 +15,7 @@ import { CredentialService } from '../services/credentials/CredentialService.js'
 const encryption = new EncryptionService();
 const audit = new AuditService();
 const credentialService = new CredentialService(db, encryption, audit);
+const modelFetcherService = new ModelFetcherService(db, encryption);
 
 // ---------------------------------------------------------------------------
 // Zod schemas
@@ -43,6 +45,10 @@ const PaginationSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v ? Math.min(100, Math.max(1, parseInt(v, 10))) : 20)),
+});
+
+const SelectModelSchema = z.object({
+  modelId: z.string().min(1).max(100),
 });
 
 // ---------------------------------------------------------------------------
@@ -164,6 +170,42 @@ credentialsRouter.patch('/:id/activate', async (c) => {
   const id = c.req.param('id');
 
   const credential = await credentialService.setActive(id, user.id);
+
+  return c.json({ data: credential });
+});
+
+// ---- GET /credentials/:id/models — fetch available models from provider API ----
+credentialsRouter.get('/:id/models', apiLimiter(), async (c) => {
+  const user = c.get('user');
+  const id = c.req.param('id');
+
+  const models = await modelFetcherService.fetchModels(id, user.id);
+
+  return c.json({ data: models });
+});
+
+// ---- PATCH /credentials/:id/model — set selected model for a credential ----
+credentialsRouter.patch('/:id/model', async (c) => {
+  const user = c.get('user');
+  const id = c.req.param('id');
+
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = SelectModelSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: 'VALIDATION_ERROR', message: 'modelId must be a non-empty string (max 100 chars)' }, 422);
+  }
+
+  const credential = await credentialService.updateSelectedModel(id, user.id, parsed.data.modelId);
+
+  return c.json({ data: credential });
+});
+
+// ---- DELETE /credentials/:id/model — clear selected model for a credential ----
+credentialsRouter.delete('/:id/model', async (c) => {
+  const user = c.get('user');
+  const id = c.req.param('id');
+
+  const credential = await credentialService.clearSelectedModel(id, user.id);
 
   return c.json({ data: credential });
 });

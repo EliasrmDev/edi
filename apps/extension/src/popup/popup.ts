@@ -1410,6 +1410,7 @@ interface CredentialInfo {
   label: string;
   isActive: boolean;
   isExpired: boolean;
+  selectedModel: string | null;
 }
 
 function renderCredentialList(creds: CredentialInfo[]): void {
@@ -1440,7 +1441,7 @@ function renderCredentialList(creds: CredentialInfo[]): void {
     meta.className = 'ai-cred-meta';
     meta.textContent = cred.isExpired
       ? 'Expirada'
-      : (AI_MODELS[cred.provider] ?? '');
+      : (cred.selectedModel ?? AI_MODELS[cred.provider] ?? '');
 
     info.appendChild(name);
     info.appendChild(meta);
@@ -1496,7 +1497,7 @@ async function loadAICredential(token: string): Promise<void> {
       return;
     }
     const body = (await res.json()) as {
-      data?: { id?: string; provider?: string; label?: string; isActive?: boolean; isExpired?: boolean }[];
+      data?: { id?: string; provider?: string; label?: string; isActive?: boolean; isExpired?: boolean; selectedModel?: string | null }[];
     };
     const creds: CredentialInfo[] = (body.data ?? [])
       .filter((c): c is Required<typeof c> => !!c.id && !!c.provider && !!c.label)
@@ -1506,6 +1507,7 @@ async function loadAICredential(token: string): Promise<void> {
         label: c.label,
         isActive: c.isActive ?? false,
         isExpired: c.isExpired ?? false,
+        selectedModel: c.selectedModel ?? null,
       }));
     renderCredentialList(creds);
   } catch {

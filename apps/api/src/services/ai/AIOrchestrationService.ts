@@ -37,7 +37,7 @@ export class AIOrchestrationService {
     await this.checkQuota(userId);
 
     // Decrypt credential — raw key never leaves this scope
-    const { rawKey, provider } = await this.credentialService.getForAIUse(credentialId, userId);
+    const { rawKey, provider, selectedModel } = await this.credentialService.getForAIUse(credentialId, userId);
 
     const adapter = getAdapter(provider);
     const tone: ToneType = request.tone ?? 'voseo-cr';
@@ -53,6 +53,7 @@ export class AIOrchestrationService {
         tone: request.tone,
         locale: request.locale,
         systemPrompt,
+        model: selectedModel ?? undefined,
       });
 
       const processingMs = Date.now() - start;
