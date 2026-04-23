@@ -30,6 +30,7 @@ function toProviderCredential(row: {
   maskedKey: string;
   isActive: boolean;
   selectedModel: string | null;
+  favoriteModels: string[];
   expiresAt: Date | null;
   lastVerifiedAt: Date | null;
   lastUsedAt: Date | null;
@@ -46,6 +47,7 @@ function toProviderCredential(row: {
     isActive: row.isActive,
     isExpired: row.expiresAt !== null && row.expiresAt < new Date(),
     selectedModel: row.selectedModel,
+    favoriteModels: row.favoriteModels,
     expiresAt: row.expiresAt,
     lastVerifiedAt: row.lastVerifiedAt,
     lastUsedAt: row.lastUsedAt,
@@ -64,6 +66,7 @@ const SAFE_COLUMNS = {
   maskedKey: providerCredentials.maskedKey,
   isActive: providerCredentials.isActive,
   selectedModel: providerCredentials.selectedModel,
+  favoriteModels: providerCredentials.favoriteModels,
   expiresAt: providerCredentials.expiresAt,
   lastVerifiedAt: providerCredentials.lastVerifiedAt,
   lastUsedAt: providerCredentials.lastUsedAt,
@@ -553,6 +556,61 @@ export class CredentialService {
       resourceId: credentialId,
       outcome: 'success',
       metadata: { provider: updatedRow.provider, selectedModel: null },
+    });
+
+    return toProviderCredential(updatedRow);
+  }
+
+  /**
+   * Add or remove a model from the favorites list of a credential.
+   */
+  async toggleFavoriteModel(
+    credentialId: string,
+    userId: string,
+    modelId: string,
+    action: 'add' | 'remove',
+  ): Promise<ProviderCredential> {
+    const now = new Date();
+
+    const rows = await this.db
+      .select(SAFE_COLUMNS)
+      .from(providerCredentials)
+      .where(
+        and(
+          eq(providerCredentials.id, credentialId),
+          eq(providerCredentials.userId, userId),
+          isNull(providerCredentials.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    const row = rows[0];
+    if (!row) {
+      throw new AppError('CREDENTIAL_NOT_FOUND', 'Credential not found', 404);
+    }
+
+    const current = row.favoriteModels ?? [];
+    const next =
+      action === 'add'
+        ? [...new Set([...current, modelId])]
+        : current.filter((id) => id !== modelId);
+
+    const updated = await this.db
+      .update(providerCredentials)
+      .set({ favoriteModels: next, updatedAt: now })
+      .where(eq(providerCredentials.id, credentialId))
+      .returning(SAFE_COLUMNS);
+
+    const updatedRow = updated[0];
+    if (!updatedRow) throw new Error('Failed to update favorite models');
+
+    await this.audit.log({
+      userId,
+      action: 'credential.updated',
+      resourceType: 'provider_credential',
+      resourceId: credentialId,
+      outcome: 'success',
+      metadata: { provider: updatedRow.provider, favoriteModelAction: action, modelId },
     });
 
     return toProviderCredential(updatedRow);

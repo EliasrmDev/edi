@@ -51,6 +51,11 @@ const SelectModelSchema = z.object({
   modelId: z.string().min(1).max(100),
 });
 
+const FavoriteModelSchema = z.object({
+  modelId: z.string().min(1).max(100),
+  action: z.enum(['add', 'remove']),
+});
+
 // ---------------------------------------------------------------------------
 // Route helpers
 // ---------------------------------------------------------------------------
@@ -206,6 +211,27 @@ credentialsRouter.delete('/:id/model', async (c) => {
   const id = c.req.param('id');
 
   const credential = await credentialService.clearSelectedModel(id, user.id);
+
+  return c.json({ data: credential });
+});
+
+// ---- PATCH /credentials/:id/model-favorites — toggle a model favorite ----
+credentialsRouter.patch('/:id/model-favorites', async (c) => {
+  const user = c.get('user');
+  const id = c.req.param('id');
+
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = FavoriteModelSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: 'VALIDATION_ERROR', message: 'modelId and action (add|remove) are required' }, 422);
+  }
+
+  const credential = await credentialService.toggleFavoriteModel(
+    id,
+    user.id,
+    parsed.data.modelId,
+    parsed.data.action,
+  );
 
   return c.json({ data: credential });
 });

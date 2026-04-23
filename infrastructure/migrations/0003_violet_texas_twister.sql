@@ -1,0 +1,1 @@
+ALTER TABLE "provider_credentials" ADD COLUMN "favorite_models" text[] NOT NULL DEFAULT '{}';

@@ -86,3 +86,35 @@ export async function clearCredentialModel(
     return { error: 'Error al desactivar modelo' };
   }
 }
+
+export async function toggleFavoriteModel(
+  credentialId: string,
+  modelId: string,
+  action: 'add' | 'remove',
+): Promise<{ error?: string }> {
+  try {
+    const authHeader = await getAuthHeader();
+    if (!authHeader) return { error: 'No autenticado' };
+
+    const res = await fetch(
+      `${API_URL}/api/credentials/${encodeURIComponent(credentialId)}/model-favorites`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: authHeader,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ modelId, action }),
+      },
+    );
+
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { message?: string };
+      return { error: body.message ?? `Error ${res.status}` };
+    }
+
+    return {};
+  } catch {
+    return { error: 'Error al actualizar favorito' };
+  }
+}

@@ -14,6 +14,7 @@ export interface ProviderCredential {
   isActive: boolean;
   isExpired: boolean;
   selectedModel: string | null;
+  favoriteModels: string[];
   expiresAt: Date | null;
   lastVerifiedAt: Date | null;
   lastUsedAt: Date | null;

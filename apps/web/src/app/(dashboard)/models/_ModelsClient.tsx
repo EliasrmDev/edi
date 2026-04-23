@@ -8,6 +8,7 @@ import {
   getCredentialModels,
   setCredentialModel,
   clearCredentialModel,
+  toggleFavoriteModel,
   type ModelInfo,
 } from '@/lib/actions/models';
 
@@ -22,7 +23,9 @@ interface CredentialState {
   loading: boolean;
   error: string | null;
   selectedModel: string | null;
+  favoriteModels: string[];
   toggling: string | null; // modelId currently being activated/deactivated
+  togglingFav: string | null; // modelId whose favorite is being toggled
 }
 
 // ── Spinner ───────────────────────────────────────────────────────────────────
@@ -53,7 +56,7 @@ function useModels(credentials: ProviderCredential[]) {
     Object.fromEntries(
       credentials.map((c) => [
         c.id,
-        { models: null, loading: true, error: null, selectedModel: c.selectedModel, toggling: null },
+        { models: null, loading: true, error: null, selectedModel: c.selectedModel, favoriteModels: c.favoriteModels, toggling: null, togglingFav: null },
       ]),
     ),
   );
@@ -129,7 +132,27 @@ function useModels(credentials: ProviderCredential[]) {
     [states, deactivateModel],
   );
 
-  return { states, syncCredentials, activateModel, deactivateModel, deactivateAll };
+  const toggleFavorite = useCallback(
+    async (credId: string, modelId: string) => {
+      const state = states[credId];
+      if (!state) return;
+      const isFav = state.favoriteModels.includes(modelId);
+      const action = isFav ? 'remove' : 'add';
+      patch(credId, { togglingFav: modelId });
+      const { error } = await toggleFavoriteModel(credId, modelId, action);
+      if (error) {
+        patch(credId, { togglingFav: null, error });
+      } else {
+        const next = isFav
+          ? state.favoriteModels.filter((id) => id !== modelId)
+          : [...state.favoriteModels, modelId];
+        patch(credId, { togglingFav: null, favoriteModels: next });
+      }
+    },
+    [patch, states],
+  );
+
+  return { states, syncCredentials, activateModel, deactivateModel, deactivateAll, toggleFavorite };
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -139,7 +162,7 @@ interface ModelsClientProps {
 }
 
 export function ModelsClient({ credentials }: ModelsClientProps) {
-  const { states, syncCredentials, activateModel, deactivateModel, deactivateAll } =
+  const { states, syncCredentials, activateModel, deactivateModel, deactivateAll, toggleFavorite } =
     useModels(credentials);
 
   const [activeTab, setActiveTab] = useState<Tab>('all');
@@ -338,14 +361,18 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
             m.name.toLowerCase().includes(q),
         );
 
-        const sorted =
-          sort === 'selected-first'
-            ? [...filtered].sort((a, b) => {
-                const aActive = state.selectedModel === a.id ? 1 : 0;
-                const bActive = state.selectedModel === b.id ? 1 : 0;
-                return bActive - aActive || a.name.localeCompare(b.name);
-              })
-            : [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+        const sorted = (() => {
+          const favs = filtered.filter((m) => state.favoriteModels.includes(m.id));
+          const rest = filtered.filter((m) => !state.favoriteModels.includes(m.id));
+          const byName = (a: ModelInfo, b: ModelInfo) => a.name.localeCompare(b.name);
+          const bySelectedThenName = (a: ModelInfo, b: ModelInfo) => {
+            const aA = state.selectedModel === a.id ? 1 : 0;
+            const bA = state.selectedModel === b.id ? 1 : 0;
+            return bA - aA || byName(a, b);
+          };
+          const sortFn = sort === 'selected-first' ? bySelectedThenName : byName;
+          return [...favs.sort(sortFn), ...rest.sort(sortFn)];
+        })();
 
         return (
           <div
@@ -421,12 +448,14 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
                 {sorted.map((model) => {
                   const isActive = state.selectedModel === model.id;
                   const isToggling = state.toggling === model.id;
+                  const isFav = state.favoriteModels.includes(model.id);
+                  const isTogglingFav = state.togglingFav === model.id;
 
                   return (
                     <div
                       key={model.id}
                       className={`flex items-center justify-between gap-4 px-5 py-3 transition-colors ${
-                        isActive ? 'bg-blue-50/60' : 'hover:bg-gray-50'
+                        isActive ? 'bg-blue-50/60' : isFav ? 'bg-amber-50/40' : 'hover:bg-gray-50'
                       }`}
                     >
                       <div className="min-w-0 flex-1">
@@ -451,7 +480,37 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
                         </div>
                       </div>
 
-                      <div className="shrink-0">
+                      <div className="flex shrink-0 items-center gap-2">
+                        {/* Favorite star */}
+                        <button
+                          type="button"
+                          onClick={() => { void toggleFavorite(cred.id, model.id); }}
+                          disabled={isTogglingFav}
+                          className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors disabled:opacity-40 ${
+                            isFav
+                              ? 'text-amber-400 hover:text-amber-500'
+                              : 'text-gray-300 hover:text-amber-400'
+                          }`}
+                          title={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                          aria-label={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                        >
+                          {isTogglingFav ? (
+                            <Spinner className="h-4 w-4" />
+                          ) : (
+                            <svg
+                              className="h-4 w-4"
+                              viewBox="0 0 24 24"
+                              fill={isFav ? 'currentColor' : 'none'}
+                              stroke="currentColor"
+                              strokeWidth={2}
+                              aria-hidden="true"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                          )}
+                        </button>
+
+                        {/* Activate / En uso */}
                         {isToggling ? (
                           <div className="flex h-8 w-20 items-center justify-center">
                             <Spinner className="h-4 w-4 text-gray-400" />
