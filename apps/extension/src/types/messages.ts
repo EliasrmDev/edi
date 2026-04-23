@@ -28,7 +28,7 @@ export interface ProxyAPIMessage {
 
 export interface StoreAuthTokenMessage {
   type: 'STORE_AUTH_TOKEN';
-  payload: { token: string; expiresAt: number };
+  payload: { token: string; expiresAt: number; email?: string; displayName?: string | null };
 }
 
 export interface TransformTextMessage {

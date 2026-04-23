@@ -203,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setupQualitySlider();
       setupConvertBtn();
       if (batchPanel) setupBatch();
+      setupAuth();
 
       const imageUrl = new URLSearchParams(location.search).get('imageUrl');
       if (imageUrl) loadImageFromUrl(imageUrl);
@@ -1203,4 +1204,223 @@ function escHtml(str: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+// ─── Auth ──────────────────────────────────────────────────────────────────
+
+const API_BASE: string = import.meta.env['VITE_API_URL'] ?? 'http://localhost:3001';
+
+interface MeResponse {
+  data?: {
+    user?: { email?: string; displayName?: string | null };
+  };
+}
+
+interface LoginResponse {
+  data?: { token?: string; expiresAt?: number };
+  error?: { message?: string };
+}
+
+interface QuotaResponse {
+  data?: { daily?: { used?: number; limit?: number } };
+}
+
+function setupAuth(): void {
+  const form = document.getElementById('auth-form') as HTMLFormElement | null;
+  const logoutBtn = document.getElementById('auth-logout');
+  const openWebBtn = document.getElementById('auth-open-web');
+
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = (document.getElementById('auth-email') as HTMLInputElement).value.trim();
+    const password = (document.getElementById('auth-password') as HTMLInputElement).value;
+    void doLogin(email, password);
+  });
+
+  logoutBtn?.addEventListener('click', () => void doLogout());
+
+  openWebBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const extId = chrome.runtime.id;
+    const webUrl = import.meta.env['VITE_WEB_URL'] ?? 'http://localhost:3000';
+    const authUrl = `${webUrl}/extension-auth?extId=${encodeURIComponent(extId)}`;
+
+    void chrome.tabs.create({ url: authUrl }, (tab) => {
+      // Listen for the token being stored — the web page sends STORE_AUTH_TOKEN
+      // via chrome.runtime.sendMessage (externally_connectable), which the service
+      // worker stores in chrome.storage.local, which fires onChanged here.
+      const onTokenStored = (
+        changes: Record<string, chrome.storage.StorageChange>,
+        area: string,
+      ) => {
+        if (area !== 'local' || !('authToken' in changes)) return;
+        if (!changes['authToken']?.newValue) return;
+
+        chrome.storage.onChanged.removeListener(onTokenStored);
+
+        // Close the auth tab (the web page also calls window.close(), but belt-and-suspenders)
+        if (tab?.id) {
+          chrome.tabs.remove(tab.id).catch(() => { /* already closed */ });
+        }
+
+        void checkAndRenderAuth();
+      };
+
+      chrome.storage.onChanged.addListener(onTokenStored);
+    });
+  });
+
+  void checkAndRenderAuth();
+}
+
+async function checkAndRenderAuth(): Promise<void> {
+  // Read local storage only — no network call on popup open.
+  // The token expiry is set by the server at login time; trust it locally
+  // (same approach as the service worker's GET_AUTH_TOKEN handler).
+  const stored = await chrome.storage.local.get([
+    'authToken', 'tokenExpiresAt', 'authUserEmail', 'authUserName',
+  ]) as {
+    authToken?: string;
+    tokenExpiresAt?: number;
+    authUserEmail?: string;
+    authUserName?: string | null;
+  };
+
+  if (!stored.authToken || !stored.tokenExpiresAt || Date.now() > stored.tokenExpiresAt) {
+    await chrome.storage.local.remove(['authToken', 'tokenExpiresAt', 'authUserEmail', 'authUserName']);
+    showAuthState('logged-out');
+    return;
+  }
+
+  renderLoggedIn(stored.authUserName ?? null, stored.authUserEmail ?? '', stored.authToken);
+}
+
+async function doLogin(email: string, password: string): Promise<void> {
+  const submitBtn = document.getElementById('auth-submit') as HTMLButtonElement | null;
+  const errorEl = document.getElementById('auth-error');
+
+  if (errorEl) { errorEl.hidden = true; errorEl.textContent = ''; }
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Iniciando sesión…'; }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const body = (await res.json()) as LoginResponse;
+
+    if (!res.ok) {
+      const msg = body.error?.message ?? 'Correo o contraseña incorrectos.';
+      if (errorEl) { errorEl.textContent = msg; errorEl.hidden = false; }
+      return;
+    }
+
+    const token = body.data?.token;
+    const expiresAt = body.data?.expiresAt;
+
+    if (!token || !expiresAt) {
+      if (errorEl) { errorEl.textContent = 'Respuesta inesperada del servidor.'; errorEl.hidden = false; }
+      return;
+    }
+
+    await chrome.storage.local.set({ authToken: token, tokenExpiresAt: expiresAt, authUserEmail: email });
+
+    // Clear the form
+    (document.getElementById('auth-email') as HTMLInputElement).value = '';
+    (document.getElementById('auth-password') as HTMLInputElement).value = '';
+
+    // Show logged-in state immediately with the email we already have
+    renderLoggedIn(null, email, token);
+
+    // Fetch display name in the background and update the UI if available
+    void fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const meBody = (await res.json()) as MeResponse;
+        const displayName = meBody.data?.user?.displayName ?? null;
+        if (displayName) {
+          await chrome.storage.local.set({ authUserName: displayName });
+          const nameEl = document.getElementById('auth-user-name');
+          const avatarEl = document.getElementById('auth-avatar');
+          if (nameEl) nameEl.textContent = displayName;
+          if (avatarEl) avatarEl.textContent = displayName.charAt(0).toUpperCase();
+        }
+      })
+      .catch(() => { /* display name is non-critical */ });
+  } catch {
+    if (errorEl) { errorEl.textContent = 'Sin conexión. Verificá tu red e intentá de nuevo.'; errorEl.hidden = false; }
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Iniciar sesión'; }
+  }
+}
+
+async function doLogout(): Promise<void> {
+  const stored = await chrome.storage.local.get(['authToken']) as { authToken?: string };
+
+  // Best-effort server logout
+  if (stored.authToken) {
+    fetch(`${API_BASE}/api/auth/logout`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${stored.authToken}` },
+    }).catch(() => { /* ignore */ });
+  }
+
+  await chrome.storage.local.remove(['authToken', 'tokenExpiresAt', 'authUserEmail', 'authUserName']);
+  showAuthState('logged-out');
+}
+
+function renderLoggedIn(displayName: string | null, email: string, token: string): void {
+  const nameEl = document.getElementById('auth-user-name');
+  const emailEl = document.getElementById('auth-user-email');
+  const avatarEl = document.getElementById('auth-avatar');
+
+  const label = displayName ?? email;
+  const initial = label.charAt(0).toUpperCase();
+
+  if (nameEl) nameEl.textContent = displayName ?? email;
+  if (emailEl) emailEl.textContent = displayName ? email : '';
+  if (avatarEl) avatarEl.textContent = initial;
+
+  showAuthState('logged-in');
+
+  // Load quota in background
+  void loadQuota(token);
+}
+
+async function loadQuota(token: string): Promise<void> {
+  try {
+    const res = await fetch(`${API_BASE}/api/transform/quota`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+
+    const body = (await res.json()) as QuotaResponse;
+    const used = body.data?.daily?.used ?? 0;
+    const limit = body.data?.daily?.limit ?? 0;
+
+    const quotaEl = document.getElementById('auth-quota');
+    const fillEl = document.getElementById('auth-quota-fill');
+    const textEl = document.getElementById('auth-quota-text');
+
+    if (!quotaEl || !fillEl || !textEl) return;
+
+    const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+    fillEl.style.width = `${pct}%`;
+    textEl.textContent = `${used} / ${limit}`;
+    quotaEl.hidden = false;
+  } catch {
+    // Quota is non-critical — silently ignore
+  }
+}
+
+function showAuthState(state: 'loading' | 'logged-out' | 'logged-in'): void {
+  const loading = document.getElementById('auth-loading');
+  const loggedOut = document.getElementById('auth-logged-out');
+  const loggedIn = document.getElementById('auth-logged-in');
+
+  if (loading) loading.hidden = state !== 'loading';
+  if (loggedOut) loggedOut.hidden = state !== 'logged-out';
+  if (loggedIn) loggedIn.hidden = state !== 'logged-in';
 }

@@ -58,20 +58,20 @@ export function createModalHTML(_initialText: string): string {
           </div>
         </div>
 
-        <div class="edi-action-group">
-          <span class="edi-group-label" id="grp-ai">Inteligencia Artificial</span>
+        <div class="edi-action-group-actions">
           <div role="group" aria-labelledby="grp-ai">
+            <span class="edi-group-label" id="grp-ai">Inteligencia Artificial</span>
             <button id="btn-ortografia" type="button" aria-busy="false">
               Corregir ortografía
             </button>
           </div>
+          <footer id="edi-footer">
+            <button id="edi-apply" type="button">Aplicar al texto original</button>
+          </footer>
         </div>
       </div>
     </div>
 
-    <footer id="edi-footer">
-      <button id="edi-apply" type="button">Aplicar al texto original</button>
-    </footer>
   </div>
 </div>
 `;

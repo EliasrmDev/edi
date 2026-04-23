@@ -125,12 +125,25 @@ label[for="edi-text"] {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #6b7280;
+  width: 100%
 }
 
 .edi-action-group > div {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.edi-action-group-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.edi-action-group-actions div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 50%;
 }
 
 button[id^="btn-"] {
@@ -167,20 +180,19 @@ button[id^="btn-"]:disabled {
 }
 
 #edi-footer {
-  padding: 14px 20px;
-  border-top: 1px solid #e5e7eb;
   display: flex;
   justify-content: flex-end;
+  align-items: flex-end;
+  width: 100%;
 }
 
 #edi-apply {
-  padding: 10px 24px;
+  border: 1.5px solid #3b82f6;
+  padding: 7px 14px;
   background: #1d4ed8;
   color: #ffffff;
-  border: none;
   border-radius: 8px;
   font-size: 0.9375rem;
-  font-weight: 600;
   cursor: pointer;
   transition: background 150ms;
 }

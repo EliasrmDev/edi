@@ -157,10 +157,25 @@ export class ModalController {
             requestAIValidation: true,
           },
         },
-      }) as { error?: string; data?: { data?: { result?: string } } };
+      }) as {
+        error?: string;
+        status?: number;
+        data?: {
+          data?: { result?: string };
+          error?: { code?: string; message?: string };
+        };
+      };
 
+      // Proxy-level error (network, not authenticated to proxy, etc.)
       if (response.error) {
         this.showError(this.friendlyError(response.error));
+        return;
+      }
+
+      // API-level error returned in the response body
+      const apiErrorCode = response.data?.error?.code;
+      if (apiErrorCode) {
+        this.showError(this.friendlyError(apiErrorCode));
         return;
       }
 
@@ -168,6 +183,8 @@ export class ModalController {
       if (typeof corrected === 'string') {
         this.currentText = corrected;
         this.updateTextarea(corrected);
+      } else {
+        this.showError('No se recibió resultado del servicio. Intentá de nuevo.');
       }
     } catch {
       this.showError(
@@ -230,11 +247,16 @@ export class ModalController {
   private friendlyError(code: string): string {
     const messages: Record<string, string> = {
       NOT_AUTHENTICATED: 'Debés iniciar sesión en EDI para usar la corrección con IA.',
+      UNAUTHORIZED: 'Debés iniciar sesión en EDI para usar la corrección con IA.',
       QUOTA_EXCEEDED: 'Alcanzaste tu límite diario de correcciones con IA.',
       NETWORK_ERROR: 'Sin conexión. Las transformaciones locales siguen disponibles.',
       ENDPOINT_NOT_ALLOWED: 'Error de configuración.',
+      NO_ACTIVE_CREDENTIAL:
+        'No tenés una clave de IA configurada. Agregá tu API key en Credenciales en la web de EDI.',
+      PROVIDER_ERROR: 'El proveedor de IA devolvió un error. Verificá tu API key.',
+      QUOTA_LIMIT_EXCEEDED: 'Alcanzaste tu límite diario de correcciones con IA.',
     };
-    return messages[code] ?? 'Error desconocido. Intentá de nuevo.';
+    return messages[code] ?? `Error: ${code}. Intentá de nuevo.`;
   }
 
   // ── Focus trap ──────────────────────────────────────────────────────────────

@@ -36,6 +36,11 @@ async function storeSessionToken(res: Response): Promise<void> {
   });
 }
 
+function safeRedirectTo(value: FormDataEntryValue | null, fallback = '/dashboard'): string {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return fallback;
+  return value;
+}
+
 export async function loginAction(
   _prevState: LoginState,
   formData: FormData,
@@ -67,7 +72,7 @@ export async function loginAction(
   }
 
   await storeSessionToken(res);
-  redirect('/dashboard');
+  redirect(safeRedirectTo(formData.get('redirectTo'), '/dashboard'));
 }
 
 export async function registerAction(
@@ -183,10 +188,10 @@ export async function resetPasswordAction(
   return { success: true };
 }
 
-export async function signInWithGoogleAction(): Promise<void> {
-  await signIn('google', { redirectTo: '/dashboard' });
+export async function signInWithGoogleAction(formData: FormData): Promise<void> {
+  await signIn('google', { redirectTo: safeRedirectTo(formData.get('redirectTo'), '/dashboard') });
 }
 
-export async function signInWithMicrosoftAction(): Promise<void> {
-  await signIn('microsoft-entra-id', { redirectTo: '/dashboard' });
+export async function signInWithMicrosoftAction(formData: FormData): Promise<void> {
+  await signIn('microsoft-entra-id', { redirectTo: safeRedirectTo(formData.get('redirectTo'), '/dashboard') });
 }

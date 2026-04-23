@@ -25,6 +25,7 @@ export default function LoginPage() {
   const alertRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const passwordChanged = searchParams.get('success') === 'password-changed';
+  const redirect = searchParams.get('redirect') ?? '';
 
   useEffect(() => {
     if (state?.error) {
@@ -57,6 +58,7 @@ export default function LoginPage() {
       )}
 
       <form action={formAction} className="mt-6 space-y-4" noValidate>
+        <input type="hidden" name="redirectTo" value={redirect} />
         <Input
           label="Correo electrónico"
           name="email"
@@ -98,6 +100,7 @@ export default function LoginPage() {
       {/* OAuth buttons */}
       <div className="space-y-2">
         <form action={signInWithGoogleAction}>
+          <input type="hidden" name="redirectTo" value={redirect} />
           <button
             type="submit"
             className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -112,6 +115,7 @@ export default function LoginPage() {
           </button>
         </form>
         <form action={signInWithMicrosoftAction}>
+          <input type="hidden" name="redirectTo" value={redirect} />
           <button
             type="submit"
             className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

@@ -247,6 +247,8 @@
     <!-- ─── Texto mode ─────────────────────────────────────────────────── -->
     <div id="mode-text" class="settings-panel" hidden
          role="tabpanel" aria-labelledby="mode-tab-text">
+
+      <!-- Floating button toggle -->
       <div class="settings-group settings-toggle-group">
         <div class="settings-toggle-row">
           <div>
@@ -260,6 +262,68 @@
           </button>
         </div>
       </div>
+
+      <!-- ─── Auth section ─────────────────────────────────────────── -->
+      <div id="auth-section" class="auth-section">
+
+        <!-- State: loading -->
+        <div id="auth-loading" class="auth-loading" aria-live="polite" hidden>
+          <span class="auth-spinner" aria-hidden="true"></span>
+          <span>Verificando sesión…</span>
+        </div>
+
+        <!-- State: logged out -->
+        <div id="auth-logged-out">
+          <p class="auth-heading">Iniciá sesión</p>
+          <p class="settings-hint" style="margin-bottom:10px">
+            Necesitás una cuenta EDI para usar la corrección con IA.
+          </p>
+          <div id="auth-error" class="auth-error" hidden role="alert"></div>
+          <form id="auth-form" novalidate>
+            <div class="auth-field">
+              <label for="auth-email" class="settings-label">Correo electrónico</label>
+              <input id="auth-email" class="auth-input" type="email"
+                     autocomplete="email" placeholder="vos@ejemplo.com" required />
+            </div>
+            <div class="auth-field">
+              <label for="auth-password" class="settings-label">Contraseña</label>
+              <input id="auth-password" class="auth-input" type="password"
+                     autocomplete="current-password" placeholder="••••••••••••" required />
+            </div>
+            <button id="auth-submit" class="save-btn auth-submit-btn" type="submit">
+              Iniciar sesión
+            </button>
+          </form>
+          <p class="auth-or">
+            <span>o</span>
+          </p>
+          <a id="auth-open-web" class="auth-web-link" href="#" role="button">
+            Iniciar sesión desde la web
+          </a>
+        </div>
+
+        <!-- State: logged in -->
+        <div id="auth-logged-in" hidden>
+          <div class="auth-user-card">
+            <div class="auth-avatar" aria-hidden="true" id="auth-avatar">?</div>
+            <div class="auth-user-info">
+              <span class="auth-user-name" id="auth-user-name">—</span>
+              <span class="auth-user-email" id="auth-user-email">—</span>
+            </div>
+          </div>
+          <div id="auth-quota" class="auth-quota" hidden>
+            <span class="settings-label">Correcciones IA hoy</span>
+            <div class="auth-quota-bar">
+              <div id="auth-quota-fill" class="auth-quota-fill" style="width:0%"></div>
+            </div>
+            <span class="auth-quota-text" id="auth-quota-text">0 / 0</span>
+          </div>
+          <button id="auth-logout" class="auth-logout-btn" type="button">
+            Cerrar sesión
+          </button>
+        </div>
+
+      </div><!-- /auth-section -->
     </div>
     <!-- ─── Footer ───────────────────────────────────────────────────── -->
     <footer class="footer">

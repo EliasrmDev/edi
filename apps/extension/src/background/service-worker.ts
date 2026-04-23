@@ -120,6 +120,26 @@ chrome.runtime.onMessage.addListener(
   },
 );
 
+// ── External messages (from the web app via externally_connectable) ──────────
+
+const ALLOWED_WEB_ORIGINS = [
+  'http://localhost:3000',
+  'https://edi.eliasrm.dev',
+];
+
+chrome.runtime.onMessageExternal.addListener(
+  (message: unknown, sender, sendResponse) => {
+    // SECURITY: only accept from our known web origins
+    if (!sender.origin || !ALLOWED_WEB_ORIGINS.includes(sender.origin)) return;
+
+    const msg = message as { type?: string; payload?: StoreAuthTokenMessage['payload'] };
+    if (msg.type === 'STORE_AUTH_TOKEN' && msg.payload) {
+      handleStoreAuthToken(msg.payload, sendResponse);
+      return true; // async
+    }
+  },
+);
+
 // ── Auth Handlers ─────────────────────────────────────────────────────────────
 
 async function handleGetAuthToken(sendResponse: (r: unknown) => void) {
@@ -148,6 +168,7 @@ async function handleAPIProxy(
   sendResponse: (r: unknown) => void,
 ) {
   // SECURITY: strict allowlist — only internal EDI endpoints
+  console.log('Proxying API call to', payload.endpoint);
   const ALLOWED_ENDPOINTS = ['/api/transform', '/api/transform/quota', '/api/auth/me'];
   if (!ALLOWED_ENDPOINTS.some((e) => payload.endpoint.startsWith(e))) {
     sendResponse({ error: 'ENDPOINT_NOT_ALLOWED' });
@@ -185,10 +206,13 @@ async function handleStoreAuthToken(
   payload: StoreAuthTokenMessage['payload'],
   sendResponse: (r: unknown) => void,
 ) {
-  await chrome.storage.local.set({
+  const data: Record<string, unknown> = {
     authToken: payload.token,
     tokenExpiresAt: payload.expiresAt,
-  });
+  };
+  if (payload.email) data['authUserEmail'] = payload.email;
+  if ('displayName' in payload) data['authUserName'] = payload.displayName ?? null;
+  await chrome.storage.local.set(data);
   sendResponse({ ok: true });
 }
 

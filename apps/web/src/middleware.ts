@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth';
 
 const SESSION_COOKIE = 'session';
 
-const PROTECTED_PREFIXES = ['/dashboard', '/profile', '/credentials', '/account'];
+const PROTECTED_PREFIXES = ['/dashboard', '/profile', '/credentials', '/account', '/extension-auth'];
 const AUTH_PREFIXES = ['/login', '/register'];
 
 export default auth(function middleware(
@@ -19,7 +19,8 @@ export default auth(function middleware(
   if (PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
     if (!isAuthenticated) {
       const url = new URL('/login', req.url);
-      url.searchParams.set('redirect', pathname);
+      // Preserve full path + query string so params like ?extId survive the bounce
+      url.searchParams.set('redirect', pathname + req.nextUrl.search);
       return NextResponse.redirect(url);
     }
   }
