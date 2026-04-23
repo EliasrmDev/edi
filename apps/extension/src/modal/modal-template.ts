@@ -51,6 +51,9 @@ export function createModalHTML(_initialText: string): string {
             <button id="btn-fmt-wide" type="button" title="Ancho completo (Fullwidth)" aria-label="Ancho completo Fullwidth Unicode">Ａｎｃｈｏ</button>
           </div>
         </div>
+
+        <div class="edi-action-group">
+          <span class="edi-group-label" id="grp-tone">Tono</span>
           <div role="group" aria-labelledby="grp-tone">
             <button id="btn-voseo" type="button">Voseo (CR)</button>
             <button id="btn-tuteo" type="button">Tuteo</button>
@@ -61,9 +64,7 @@ export function createModalHTML(_initialText: string): string {
         <div class="edi-action-group-actions">
           <div role="group" aria-labelledby="grp-ai">
             <span class="edi-group-label" id="grp-ai">Inteligencia Artificial</span>
-            <button id="btn-ortografia" type="button" aria-busy="false">
-              Corregir ortografía
-            </button>
+            <button id="btn-ortografia" type="button" aria-busy="false">Corregir ortografía</button>
           </div>
           <footer id="edi-footer">
             <button id="edi-apply" type="button">Aplicar al texto original</button>

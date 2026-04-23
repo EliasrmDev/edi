@@ -51,7 +51,7 @@ export function CredentialCard({
 
   return (
     <article
-      className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+      className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm grid grid-rows-[auto_1fr_auto] focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2"
       aria-label={`Credencial ${providerLabel(credential.provider)}: ${credential.label}`}
     >
       <div className="flex items-start justify-between gap-4">

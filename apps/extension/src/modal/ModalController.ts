@@ -161,7 +161,11 @@ export class ModalController {
         error?: string;
         status?: number;
         data?: {
-          data?: { result?: string };
+          data?: {
+            result?: string;
+            source?: string;
+            warnings?: Array<{ code: string; message: string }>;
+          };
           error?: { code?: string; message?: string };
         };
       };
@@ -179,10 +183,17 @@ export class ModalController {
         return;
       }
 
-      const corrected = response.data?.data?.result;
+      const transformResult = response.data?.data;
+      const corrected = transformResult?.result;
       if (typeof corrected === 'string') {
         this.currentText = corrected;
         this.updateTextarea(corrected);
+
+        // If AI fell back (provider error), surface the warning so the user knows
+        if (transformResult?.source === 'ai-fallback') {
+          const warning = transformResult.warnings?.[0]?.message ?? 'El proveedor de IA no está disponible.';
+          this.showError(`El servicio de IA devolvió un error: ${warning}`);
+        }
       } else {
         this.showError('No se recibió resultado del servicio. Intentá de nuevo.');
       }

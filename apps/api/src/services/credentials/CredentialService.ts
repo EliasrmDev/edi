@@ -90,23 +90,14 @@ export class CredentialService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<ProviderCredential> {
-    // 1. Validate key format
-    if (!this.encryption.validateKeyFormat(submission.rawKey, submission.provider)) {
-      throw new AppError(
-        'INVALID_KEY_FORMAT',
-        `Invalid API key format for provider "${submission.provider}"`,
-        422,
-      );
-    }
-
-    // 2. Verify key works with provider
+    // 1. Verify key works with provider (live API call — accepts any key format)
     const adapter = getAdapter(submission.provider);
     const { valid, error } = await adapter.verifyKey(submission.rawKey);
     if (!valid) {
       throw new AppError('INVALID_API_KEY', error ?? 'API key verification failed', 422);
     }
 
-    // 3. Encrypt key and mask for display
+    // 2. Encrypt key and mask for display
     const encryptedKey = await this.encryption.encrypt(submission.rawKey);
     const maskedKey = this.encryption.maskKey(submission.rawKey);
     // submission.rawKey is no longer referenced after this point
@@ -424,16 +415,7 @@ export class CredentialService {
 
     const provider = row.provider as ProviderId;
 
-    // Validate new key format
-    if (!this.encryption.validateKeyFormat(newRawKey, provider)) {
-      throw new AppError(
-        'INVALID_KEY_FORMAT',
-        `Invalid API key format for provider "${provider}"`,
-        422,
-      );
-    }
-
-    // Verify new key works
+    // Verify new key works (live API call — accepts any key format)
     const adapter = getAdapter(provider);
     const { valid, error } = await adapter.verifyKey(newRawKey);
     if (!valid) {

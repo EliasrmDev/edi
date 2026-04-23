@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useRef, useEffect, useState } from 'react';
+import { useActionState, useTransition, useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { ProviderCredential } from '@edi/shared';
 import {
@@ -28,6 +28,8 @@ export function CredentialsClient({ credentials, successMessage }: CredentialsCl
     verifyCredentialAction,
     null,
   );
+  const [isVerifyPending, startVerifyTransition] = useTransition();
+  const [, startDeleteTransition] = useTransition();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const alertRef = useRef<HTMLDivElement>(null);
@@ -36,13 +38,16 @@ export function CredentialsClient({ credentials, successMessage }: CredentialsCl
     if (deleteState?.error || verifyState?.error || verifyState?.success) {
       alertRef.current?.focus();
     }
+    if (verifyState?.error || verifyState?.success) {
+      setVerifyingId(null);
+    }
   }, [deleteState, verifyState]);
 
   function handleVerify(id: string) {
     setVerifyingId(id);
     const fd = new FormData();
     fd.set('credentialId', id);
-    verifyAction(fd);
+    startVerifyTransition(() => verifyAction(fd));
   }
 
   if (credentials.length === 0) {
@@ -67,7 +72,7 @@ export function CredentialsClient({ credentials, successMessage }: CredentialsCl
           {successMessage && <Alert variant="success">{successMessage === 'created' ? 'Clave agregada correctamente.' : 'Clave eliminada.'}</Alert>}
           {deleteState?.error && <Alert variant="error">Error al eliminar la clave.</Alert>}
           {verifyState?.error && <Alert variant="error">{verifyState.error}</Alert>}
-          {verifyState?.success && <Alert variant="success">¡Clave verificada correctamente!</Alert>}
+          {verifyState?.success && !isVerifyPending && <Alert variant="success">¡Clave verificada correctamente!</Alert>}
         </div>
       )}
 
@@ -78,7 +83,7 @@ export function CredentialsClient({ credentials, successMessage }: CredentialsCl
             credential={credential}
             onVerify={handleVerify}
             onDelete={(id) => setDeleteTarget(id)}
-            verifying={verifyingId === credential.id}
+            verifying={isVerifyPending && verifyingId === credential.id}
           />
         ))}
       </div>
@@ -95,7 +100,7 @@ export function CredentialsClient({ credentials, successMessage }: CredentialsCl
           if (!deleteTarget) return;
           const fd = new FormData();
           fd.set('credentialId', deleteTarget);
-          deleteAction(fd);
+          startDeleteTransition(() => deleteAction(fd));
           setDeleteTarget(null);
         }}
       />

@@ -41,6 +41,7 @@ vi.mock('../db/index.js', () => ({
 // ---------------------------------------------------------------------------
 // Imports (after mocks are declared so hoisting takes effect)
 // ---------------------------------------------------------------------------
+import type { AppEnv } from '../types.js';
 import authRoutes from '../routes/auth.js';
 import { clearRateLimitStore } from '../middleware/rateLimit.js';
 import { errorHandler } from '../middleware/errorHandler.js';
@@ -74,6 +75,8 @@ const MOCK_USER = {
   createdAt: new Date(),
   updatedAt: new Date(),
   deletedAt: null,
+  deletionRequestedAt: null,
+  deletionScheduledAt: null,
 };
 
 const MOCK_PROFILE = {
@@ -96,7 +99,7 @@ const MOCK_SESSION = {
 // Test app builder — creates a fresh Hono instance per suite
 // ---------------------------------------------------------------------------
 function buildApp() {
-  const app = new Hono();
+  const app = new Hono<AppEnv>();
   app.route('/api/auth', authRoutes);
   app.onError(errorHandler);
   return app;
@@ -117,7 +120,7 @@ describe('POST /api/auth/register', () => {
     vi.mocked(hashPassword).mockResolvedValue('argon2-hashed');
     vi.mocked(createUser).mockResolvedValue({ user: MOCK_USER, profile: MOCK_PROFILE });
     vi.mocked(createSession).mockResolvedValue(MOCK_SESSION);
-    vi.mocked(createVerification).mockResolvedValue({ token: 'email-verify-token' });
+    vi.mocked(createVerification).mockResolvedValue({ token: 'email-verify-token', expiresAt: FUTURE_DATE });
     vi.mocked(toSafeUser).mockReturnValue(MOCK_USER);
   });
 

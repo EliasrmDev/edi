@@ -1,5 +1,4 @@
 import { randomBytes, createCipheriv, createDecipheriv } from 'node:crypto';
-import type { ProviderId } from '@edi/shared';
 
 const ALGORITHM = 'aes-256-gcm' as const;
 /** Current schema version — increment if the EncryptedPayload structure changes. */
@@ -149,26 +148,5 @@ export class EncryptionService {
     return '••••••' + last6;
   }
 
-  /**
-   * Validate that a raw key matches the expected format for a provider.
-   */
-  validateKeyFormat(rawKey: string, provider: ProviderId): boolean {
-    switch (provider) {
-      case 'openai':
-        // Project keys: sk-proj-... (51+), legacy: sk-... (51+)
-        return rawKey.startsWith('sk-') && rawKey.length >= 51;
-
-      case 'anthropic':
-        return rawKey.startsWith('sk-ant-') && rawKey.length >= 100;
-
-      case 'google-ai':
-        return rawKey.startsWith('AIza') && rawKey.length >= 39;
-
-      default: {
-        const _exhaustive: never = provider;
-        void _exhaustive;
-        return false;
-      }
-    }
-  }
 }
+

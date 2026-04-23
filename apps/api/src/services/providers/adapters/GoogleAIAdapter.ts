@@ -3,7 +3,7 @@ import { ProviderError, type ProviderAdapter, type ValidateTextParams } from '..
 
 // Hardcoded base URL — no user-supplied URLs (SSRF protection)
 const GOOGLE_AI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const MODEL = 'gemini-1.5-flash';
+const MODEL = 'Gemini 2.5 Flash';
 const VERIFY_TIMEOUT_MS = 5_000;
 const GENERATE_TIMEOUT_MS = 30_000;
 
