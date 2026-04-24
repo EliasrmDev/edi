@@ -94,9 +94,9 @@ body {
 .brand-icon { flex-shrink: 0; }
 
 .brand-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: -.35px;
+  letter-spacing: -.3px;
   background: linear-gradient(135deg, var(--c-primary), #8b5cf6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1059,7 +1059,6 @@ body {
 .text-tabs {
   display: flex;
   border-bottom: 1px solid var(--c-border);
-  padding: 0 12px;
   background: var(--c-surface);
   gap: 2px;
 }
@@ -1067,6 +1066,7 @@ body {
 .text-tab {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   padding: 8px 12px;
   font-size: 12px;
@@ -1079,6 +1079,7 @@ body {
   cursor: pointer;
   transition: color var(--t), border-color var(--t);
   white-space: nowrap;
+  width: 50%;
 }
 
 .text-tab:hover { color: var(--c-text-1); }
@@ -1094,6 +1095,16 @@ body {
 .text-panel[hidden] { display: none; }
 
 /* ─── Mini editor textarea ───────────────────────────────────────── */
+
+.mini-section-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--c-text-3);
+  margin-bottom: 5px;
+}
 
 .mini-editor-textarea {
   width: 100%;
@@ -1134,6 +1145,33 @@ body {
   margin-bottom: 8px;
 }
 
+.mini-group-wrapper {
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  padding: 20px 6px 6px;
+  margin: 20px 0 10px;
+  position: relative;
+}
+
+.mini-group-wrapper .mini-tone-header {
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  background: var(--c-surface);
+  border-radius: 20px;
+  padding: 0 0 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--c-text-3);
+}
+
+.mini-group-wrapper .mini-icon-label {
+  margin: 0;
+  color: var(--c-text-2);
+}
+
 .mini-group--row {
   display: flex;
   align-items: center;
@@ -1149,6 +1187,46 @@ body {
   letter-spacing: .05em;
   color: var(--c-text-3);
   margin-bottom: 5px;
+}
+
+/* ─── Pill-style format buttons ─────────────────────────────────── */
+
+.mini-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.mini-pill-btn {
+  padding: 4px 11px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .03em;
+  color: var(--c-text-1);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: background var(--t), border-color var(--t), color var(--t), box-shadow var(--t);
+}
+
+.mini-pill-btn:hover {
+  background: var(--c-primary-faint);
+  border-color: var(--c-primary);
+  color: var(--c-primary-dark);
+}
+
+.mini-pill-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.mini-pill-btn:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
 }
 
 .mini-btns-row {
@@ -1249,6 +1327,119 @@ body {
   background: var(--c-surf-2);
 }
 
+/* ─── Tone card buttons ─────────────────────────────────────────── */
+
+.mini-tone-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.mini-tone-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 9px 6px;
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--t), border-color var(--t), box-shadow var(--t);
+}
+
+.mini-tone-card:hover {
+  background: var(--c-primary-faint);
+  border-color: var(--c-primary);
+}
+
+.mini-tone-card:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.mini-tone-card:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+
+.mini-tone-card-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--c-text-1);
+  line-height: 1.2;
+}
+
+.mini-tone-card-sub {
+  font-size: 9.5px;
+  color: var(--c-text-3);
+  line-height: 1.2;
+}
+
+/* When AI mode is active, tone cards get AI styling */
+#popup-tone-btns[data-mode="ai"] .mini-tone-card {
+  background: var(--c-primary-faint);
+  border-color: color-mix(in srgb, var(--c-primary) 30%, transparent);
+}
+
+#popup-tone-btns[data-mode="ai"] .mini-tone-card .mini-tone-card-name {
+  color: var(--c-primary-dark);
+}
+
+#popup-tone-btns[data-mode="ai"] .mini-tone-card:hover {
+  background: color-mix(in srgb, var(--c-primary-faint) 80%, var(--c-primary) 20%);
+  border-color: var(--c-primary);
+}
+
+/* ─── Bottom actions bar ─────────────────────────────────────────── */
+
+.mini-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--c-border);
+  margin-top: 2px;
+}
+
+.mini-ai-group {
+  display: flex;
+  gap: 5px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.mini-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--c-text-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition: background var(--t), border-color var(--t), color var(--t);
+}
+
+.mini-copy-btn:hover {
+  color: var(--c-text-1);
+  background: var(--c-surf-2);
+  border-color: var(--c-text-3);
+}
+
+.mini-copy-btn:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+
 /* ─── Tone mode toggle (inside mini editor) ──────────────────────── */
 
 .mini-tone-header {
@@ -1303,6 +1494,9 @@ body {
   background: var(--c-surf-2);
   margin-bottom: 5px;
   width: fit-content;
+  position: absolute;
+  top: -10px;
+  right: 12px;
 }
 
 #btn-popup-mode-imp[aria-pressed="true"] {
@@ -1315,18 +1509,6 @@ body {
   background: var(--c-surface);
   color: var(--c-text-1);
   box-shadow: 0 1px 2px rgba(0,0,0,.08);
-}
-
-/* When AI mode is active, tone buttons get the AI style */
-#popup-tone-btns[data-mode="ai"] .mini-btn {
-  color: var(--c-primary);
-  background: var(--c-primary-faint);
-  border-color: color-mix(in srgb, var(--c-primary) 30%, transparent);
-}
-
-#popup-tone-btns[data-mode="ai"] .mini-btn:hover {
-  background: color-mix(in srgb, var(--c-primary-faint) 80%, var(--c-primary) 20%);
-  border-color: var(--c-primary);
 }
 
 /* ─── AI info card ───────────────────────────────────────────────── */
@@ -1449,12 +1631,6 @@ body {
     padding: 10px 11px;
   }
 
-  .tabs,
-  .text-tabs {
-    padding-left: 8px;
-    padding-right: 8px;
-  }
-
   .panel,
   .settings-panel {
     padding: 10px;
@@ -1473,8 +1649,6 @@ body {
   }
 
   .mini-btns-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }
 

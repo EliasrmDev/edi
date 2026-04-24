@@ -1,11 +1,25 @@
-import type { TransformationType, ToneType, VerbalMode } from '@edi/shared';
+import type { TransformationType, ToneType, VerbalMode, CopyConfig } from '@edi/shared';
+
+const DEFAULT_COPY_CONFIG: CopyConfig = {
+  tratamiento: 'voseo',
+  modoVerbal: 'imperativo',
+  contexto: 'anuncio',
+  canal: 'web',
+  formalidad: 'medio',
+  objetivo: 'convertir',
+  intensidadCambio: 'moderada',
+};
 
 export class AIPromptService {
   /**
    * Build a complete system prompt for the AI model.
    * Combines base instructions + tone-specific instructions + task instructions.
    */
-  buildSystemPrompt(transformation: TransformationType, tone: ToneType, verbalMode?: VerbalMode): string {
+  buildSystemPrompt(transformation: TransformationType, tone: ToneType, verbalMode?: VerbalMode, copyConfig?: CopyConfig): string {
+    // Copy motor has its own self-contained prompt — skip base + tone instructions
+    if (transformation === 'copy-writing-cr') {
+      return this.buildCopySystemPrompt(copyConfig ?? DEFAULT_COPY_CONFIG);
+    }
     const baseInstructions = `
 Eres un corrector de texto experto en español latinoamericano,
 con énfasis especial en el español costarricense (Costa Rica).
@@ -197,5 +211,81 @@ ESTILO PUBLICITARIO:
       default:
         return '';
     }
+  }
+
+  private buildCopySystemPrompt(cfg: CopyConfig): string {
+    const TRATAMIENTO_LABEL: Record<string, string> = {
+      voseo: 'voseo costarricense ("vos", vos tenés, vos querés, imperativo: \u00a1Prová!, \u00a1Comprá!)',
+      tuteo: 'tuteo latinoamericano ("tú", tú tienes, tú quieres, imperativo: \u00a1Prueba!, \u00a1Compra!)',
+      ustedeo: 'ustedeo formal/íntimo costarricense ("usted", imperativo subjuntivo: \u00a1Pruebe!, \u00a1Compre!)',
+    };
+    const CONTEXTO_LABEL: Record<string, string> = {
+      boton: 'texto de botón o CTA (máx. 4 palabras, acción directa)',
+      formulario: 'etiqueta o placeholder de formulario (claro, conciso, sin jerga)',
+      error: 'mensaje de error amigable (empatía + solución)',
+      landing: 'texto de landing page (encabezado, subencabezado o cuerpo persuasivo)',
+      anuncio: 'copy publicitario (anuncio, banner o post en redes sociales)',
+      notificacion: 'notificación push/in-app (breve, relevante, accionable)',
+    };
+    const OBJETIVO_LABEL: Record<string, string> = {
+      informar: 'informar (claro, preciso, sin adornos)',
+      convertir: 'convertir (urgencia, beneficio claro, CTA fuerte)',
+      guiar: 'guiar al usuario (instrucciones simples, orientadas a la acción)',
+      persuadir: 'persuadir (beneficio emocional, confianza, deseo)',
+    };
+    const FORMALIDAD_LABEL: Record<string, string> = {
+      alto: 'formal y profesional',
+      medio: 'cercano pero respetuoso',
+      bajo: 'informal, fresco y coloquial',
+    };
+    const INTENSIDAD_LABEL: Record<string, string> = {
+      minima: 'mínima (ajusta solo lo imprescindible, conserva al máximo el original)',
+      moderada: 'moderada (reescribe libremente pero mantiene el mensaje clave)',
+      alta: 'alta (reescribe con completa libertad creativa para maximizar impacto)',
+    };
+
+    const tratamiento = TRATAMIENTO_LABEL[cfg.tratamiento] ?? cfg.tratamiento;
+    const contexto = CONTEXTO_LABEL[cfg.contexto] ?? cfg.contexto;
+    const objetivo = OBJETIVO_LABEL[cfg.objetivo] ?? cfg.objetivo;
+    const formalidad = FORMALIDAD_LABEL[cfg.formalidad] ?? cfg.formalidad;
+    const intensidad = INTENSIDAD_LABEL[cfg.intensidadCambio] ?? cfg.intensidadCambio;
+    const canal = cfg.canal ? `\nCanal de distribución: ${cfg.canal}` : '';
+    const modoVerbal = cfg.modoVerbal === 'imperativo'
+      ? '\nUsa formas imperativas directas para CTAs y llamadas a la acción.'
+      : '';
+    const limiteInfo = cfg.limiteLongitud
+      ? `\nLímite de longitud: máximo ${cfg.limiteLongitud} caracteres.`
+      : '';
+    const obligatorios = cfg.terminosObligatorios?.length
+      ? `\nTérminos OBLIGATORIOS que deben aparecer en el resultado: ${cfg.terminosObligatorios.join(', ')}`
+      : '';
+    const prohibidos = cfg.terminosProhibidos?.length
+      ? `\nTérminos PROHIBIDOS que no deben aparecer bajo ningún concepto: ${cfg.terminosProhibidos.join(', ')}`
+      : '';
+
+    return `
+Eres un experto en copywriting publicitario y UX Writing para el mercado costarricense.
+
+CONFIGURACIÓN ACTIVA:
+- Tratamiento gramatical: ${tratamiento}
+- Contexto del texto: ${contexto}
+- Objetivo de comunicación: ${objetivo}
+- Nivel de formalidad: ${formalidad}
+- Intensidad de cambio: ${intensidad}${canal}${modoVerbal}${limiteInfo}${obligatorios}${prohibidos}
+
+REGLA ABSOLUTA más importante:
+Devuelve ÚNICAMENTE el texto final optimizado.
+NO incluyas explicaciones, alternativas, secciones, encabezados, validaciones, bullets, ni ningún tipo de metacomentario.
+Si el input tiene múltiples líneas o elementos, entregálos todos optimizados en el mismo orden y formato.
+
+PRINCIPIOS DE COPYWRITING CR:
+1. Claridad ante todo: el mensaje debe entenderse en un vistazo
+2. Beneficio explícito: qué gana el usuario, no qué hace el producto
+3. Urgencia natural: sin manipulación, con razón real de actuar ahora
+4. Voz activa siempre: el sujeto actúa, no recibe la acción
+5. Concordancia gramatical: género, número y tratamiento 100% consistentes
+6. Ortografía perfecta: tildes, puntuación y mayúsculas según la RAE
+7. Autenticidad tica: si el contexto lo permite, usa expresiones naturales de Costa Rica
+`;
   }
 }

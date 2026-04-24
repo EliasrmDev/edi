@@ -1288,6 +1288,7 @@ function setupMiniEditor(): void {
 
   const AI_TRANSFORMS = new Set([
     'correct-orthography',
+    'copy-writing-cr',
   ]);
 
   const TONE_TRANSFORMS = new Set([
@@ -1408,6 +1409,26 @@ async function runMiniAITransform(
   allBtns.forEach((b) => { b.disabled = true; });
   setMiniStatus('Transformando con IA…', '');
 
+  // Build copyConfig from localStorage for copy-writing-cr
+  let copyConfig: Record<string, unknown> | undefined;
+  if (transformation === 'copy-writing-cr') {
+    const defaults = {
+      tratamiento: 'voseo',
+      modoVerbal: 'imperativo',
+      contexto: 'anuncio',
+      canal: 'web',
+      formalidad: 'medio',
+      objetivo: 'convertir',
+      intensidadCambio: 'moderada',
+    };
+    try {
+      const saved = localStorage.getItem('edi-copy-config-default');
+      copyConfig = saved ? { ...defaults, ...(JSON.parse(saved) as Record<string, unknown>) } : defaults;
+    } catch {
+      copyConfig = defaults;
+    }
+  }
+
   try {
     const res = await fetch(`${API_BASE}/api/transform`, {
       method: 'POST',
@@ -1421,6 +1442,7 @@ async function runMiniAITransform(
         locale: 'es-CR',
         requestAIValidation: true,
         verbalMode,
+        ...(copyConfig ? { copyConfig } : {}),
       }),
     });
 

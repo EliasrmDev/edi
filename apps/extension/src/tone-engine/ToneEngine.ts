@@ -153,6 +153,19 @@ export class ToneEngine {
         };
       }
 
+      case 'copy-writing-cr': {
+        return {
+          result: text,
+          source: 'ai-fallback',
+          warnings: [
+            {
+              code: 'REQUIRES_AI',
+              message: 'Motor de Copy CR requiere validación por IA.',
+            },
+          ],
+        };
+      }
+
       default: {
         const _exhaustive: never = transformation;
         throw new Error(`Unknown transformation: ${String(_exhaustive)}`);

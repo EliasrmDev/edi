@@ -273,6 +273,7 @@
       <div id="text-panel-editor" class="text-panel settings-panel" role="tabpanel"
            aria-labelledby="text-tab-editor">
 
+        <p class="mini-section-label">Texto a editar</p>
         <textarea id="mini-editor-textarea" class="mini-editor-textarea"
                   rows="5" spellcheck="true" lang="es"
                   placeholder="Escribí o pegá tu texto aquí…"
@@ -316,9 +317,15 @@
         </div>
 
         <!-- Tono -->
-        <div class="mini-group">
+        <div class="mini-group-wrapper">
           <div class="mini-tone-header">
-            <span class="mini-group-label">Tono</span>
+            <div class="mini-icon-label">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true" focusable="false">
+                <path d="M6 1.5a3.5 3.5 0 013.5 3.5c0 1.4-.8 2.6-2 3.2L8 10H4l.5-1.8A3.5 3.5 0 016 1.5z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4.5 10.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+              Tono
+            </div>
             <div class="mini-tone-mode" role="group" aria-label="Motor de transformación de tono">
               <button id="btn-popup-tone-local" class="mini-tone-mode-btn" type="button" aria-pressed="true">Local</button>
               <button id="btn-popup-tone-ai" class="mini-tone-mode-btn" type="button" aria-pressed="false">IA ✦</button>
@@ -328,19 +335,33 @@
             <button id="btn-popup-mode-ind" class="mini-tone-mode-btn" type="button" aria-pressed="true">Indicativo</button>
             <button id="btn-popup-mode-imp" class="mini-tone-mode-btn" type="button" aria-pressed="false">Imperativo</button>
           </div>
-          <div id="popup-tone-btns" class="mini-btns-row" data-mode="local">
-            <button class="mini-btn" type="button" data-transform="tone-voseo-cr">Voseo CR</button>
-            <button class="mini-btn" type="button" data-transform="tone-tuteo">Tuteo</button>
-            <button class="mini-btn" type="button" data-transform="tone-ustedeo">Ustedeo</button>
+          <div id="popup-tone-btns" class="mini-tone-cards" data-mode="local">
+            <button class="mini-tone-card" type="button" data-transform="tone-voseo-cr">
+              <span class="mini-tone-card-name">Voseo</span>
+              <span class="mini-tone-card-sub">Costa Rica</span>
+            </button>
+            <button class="mini-tone-card" type="button" data-transform="tone-tuteo">
+              <span class="mini-tone-card-name">Tuteo</span>
+              <span class="mini-tone-card-sub">Estándar</span>
+            </button>
+            <button class="mini-tone-card" type="button" data-transform="tone-ustedeo">
+              <span class="mini-tone-card-name">Formal</span>
+              <span class="mini-tone-card-sub">Usted</span>
+            </button>
           </div>
         </div>
 
         <!-- IA + Copiar -->
-        <div class="mini-group mini-group--row">
-          <button class="mini-btn mini-btn--ai" type="button" data-transform="correct-orthography">
-            ✦ Ortografía
-          </button>
-          <button id="mini-copy-btn" class="mini-btn mini-btn--copy" type="button">
+        <div class="mini-actions-bar">
+          <div class="mini-ai-group">
+            <button class="mini-btn mini-btn--ai" type="button" data-transform="correct-orthography">
+              ✦ Ortografía
+            </button>
+            <button class="mini-btn mini-btn--ai" type="button" data-transform="copy-writing-cr">
+              ✦ Copy CR
+            </button>
+          </div>
+          <button id="mini-copy-btn" class="mini-copy-btn" type="button" aria-label="Copiar texto">
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
               <rect x="4" y="4" width="7" height="7" rx="1.5"
                     stroke="currentColor" stroke-width="1.4"/>

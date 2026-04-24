@@ -16,9 +16,26 @@ export type TransformationType =
   | 'format-unicode-bold-italic'
   | 'format-unicode-bold-script'
   | 'format-unicode-monospace'
-  | 'format-unicode-fullwidth';
+  | 'format-unicode-fullwidth'
+  | 'copy-writing-cr';
 
 export type TransformationSource = 'local' | 'ai-validated' | 'ai-fallback';
+
+export interface CopyConfig {
+  tratamiento: 'voseo' | 'tuteo' | 'ustedeo';
+  modoVerbal: 'indicativo' | 'imperativo';
+  contexto: 'boton' | 'formulario' | 'error' | 'landing' | 'anuncio' | 'notificacion';
+  canal?: 'web' | 'app' | 'email' | 'meta-ads' | 'display' | 'whatsapp' | 'sms';
+  formalidad: 'alto' | 'medio' | 'bajo';
+  objetivo: 'informar' | 'convertir' | 'guiar' | 'persuadir';
+  intensidadCambio: 'minima' | 'moderada' | 'alta';
+  limiteLongitud?: number;
+  terminosObligatorios?: string[];
+  terminosProhibidos?: string[];
+  configuracionGuardada?: string;
+  guardarConfiguracion?: boolean;
+  nombreConfiguracion?: string;
+}
 
 export interface TransformationRequest {
   text: string;
@@ -27,6 +44,7 @@ export interface TransformationRequest {
   verbalMode?: VerbalMode;
   locale: 'es-CR' | 'es-419' | 'es';
   requestAIValidation: boolean;
+  copyConfig?: CopyConfig;
 }
 
 export interface TransformationResult {

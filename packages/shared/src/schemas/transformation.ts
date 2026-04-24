@@ -14,9 +14,27 @@ export const TransformationRequestSchema = z.object({
     'tone-voseo-cr',
     'tone-tuteo',
     'tone-ustedeo',
+    'copy-writing-cr',
   ]),
   locale: z.enum(['es-CR', 'es-419', 'es']).default('es-CR'),
   requestAIValidation: z.boolean().default(false),
+  copyConfig: z
+    .object({
+      tratamiento: z.enum(['voseo', 'tuteo', 'ustedeo']),
+      modoVerbal: z.enum(['indicativo', 'imperativo']),
+      contexto: z.enum(['boton', 'formulario', 'error', 'landing', 'anuncio', 'notificacion']),
+      canal: z.enum(['web', 'app', 'email', 'meta-ads', 'display', 'whatsapp', 'sms']).optional(),
+      formalidad: z.enum(['alto', 'medio', 'bajo']),
+      objetivo: z.enum(['informar', 'convertir', 'guiar', 'persuadir']),
+      intensidadCambio: z.enum(['minima', 'moderada', 'alta']),
+      limiteLongitud: z.number().int().positive().optional(),
+      terminosObligatorios: z.array(z.string()).optional(),
+      terminosProhibidos: z.array(z.string()).optional(),
+      configuracionGuardada: z.string().optional(),
+      guardarConfiguracion: z.boolean().optional(),
+      nombreConfiguracion: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const CredentialSubmissionSchema = z.object({

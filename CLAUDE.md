@@ -60,14 +60,16 @@ Content script (`mouseup` → selection) → injects transform button → click 
 
 ### Tone engine
 
-`apps/extension/src/tone-engine/` handles transformations locally when possible:
-- **Local**: `uppercase`, `lowercase`, `sentence-case`, `remove-formatting`, `tone-voseo-cr` (basic present indicative only). Transformers: `VoseoTransformer`, `TuteoTransformer`, `UstedeoTransformer`.
-- **Requires AI**: `tone-tuteo`, `tone-ustedeo`, `correct-orthography` (returns `ai-fallback` source with warning when no API credential available).
-- `verbalMode` param passed to `AIPromptService.buildSystemPrompt` to control verb conjugation mode.
+`apps/extension/src/tone-engine/ToneEngine.ts` handles all transformations. `ModalController` runs ToneEngine directly in the content-script context (no network call for local transforms).
+
+- **Local** (source: `'local'`): `uppercase`, `lowercase`, `sentence-case`, `remove-formatting`, `tone-voseo-cr`, `tone-tuteo`, `tone-ustedeo`, `format-unicode-{bold,italic,bold-italic,bold-script,monospace,fullwidth}`, `correct-orthography` (common abbreviations/punctuation only — returns `ORTHOGRAPHY_COVERAGE_LIMITED` warning).
+- **Always AI** (source: `'ai-fallback'` from ToneEngine): `copy-writing-cr` — ToneEngine returns the original text with `REQUIRES_AI` warning; the modal must call the API.
+- `verbalMode` (`indicativo` | `imperativo`) controls which verb conjugation each transformer applies. Passed to both ToneEngine and `AIPromptService.buildSystemPrompt`.
+- Transformers: `VoseoTransformer`, `TuteoTransformer`, `UstedeoTransformer` — each accepts a `verbalMode` via factory (`createXxxTransformer(verbalMode)`).
 
 Default locale/tone is `es-CR` / `voseo-cr`.
 
-Extension also includes an **image converter** (`apps/extension/src/image-converter/`) with a dedicated Web Worker.
+Extension modal renders inside a **ShadowDOM** (`ModalController` attaches a shadow root to an injected host element) — styles must be scoped to the shadow root, not the page. Extension also includes an **image converter** (`apps/extension/src/image-converter/`) with a dedicated Web Worker.
 
 ### API + Database
 
@@ -88,6 +90,8 @@ Schema defined in `apps/api/src/db/schema.ts` (Drizzle). Key tables: `users`, `u
 **Supported providers**: `openai`, `anthropic`, `google-ai`, `openrouter`. All provider adapters use hardcoded URLs — user-supplied URLs are never accepted (SSRF protection). New providers require updating the exhaustive switch in `ProviderAdapter.ts` and `ModelFetcherService.ts`.
 
 **AI pipeline** (`AIOrchestrationService`): quota check → `CredentialService.getForAIUse` (decrypt in memory) → `AIPromptService.buildSystemPrompt` → `ProviderAdapter.validateText` → record usage (tokens only, never raw text) → increment quota. Provider failures fall back gracefully (`source: 'ai-fallback'`); `AppError` is re-thrown.
+
+`POST /transform` requires `requestAIValidation: true` explicitly — the server rejects requests that omit it. `credentialId`/`rawKey` are never accepted from the client body; the server selects the credential server-side (OWASP A01).
 
 ### Web app
 

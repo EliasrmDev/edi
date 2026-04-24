@@ -1,6 +1,6 @@
 /// <reference types="chrome" />
 
-import type { TransformationType, TransformationWarning, ToneType, VerbalMode } from '@edi/shared';
+import type { TransformationType, TransformationWarning, ToneType, VerbalMode, CopyConfig } from '@edi/shared';
 import { ToneEngine } from '../tone-engine/ToneEngine';
 import { createModalHTML, setModalTextSafe } from './modal-template';
 import { createModalStyles } from './modal-styles';
@@ -59,6 +59,12 @@ export class ModalController {
   private keydownHandler: EventListener | null = null;
   private toneMode: 'local' | 'ai' = 'local';
   private verbalMode: VerbalMode = 'indicativo';
+  private activeToneTarget: 'voseo' | 'tuteo' | 'ustedeo' = 'voseo';
+  private readonly COPY_LS_KEY = 'edi-copy-config-default';
+  private copyConfigDefaults: Pick<CopyConfig, 'contexto' | 'objetivo'> = {
+    contexto: 'anuncio',
+    objetivo: 'convertir',
+  };
   /** ID of the running typewriter timeout, or null when idle. */
   private diffAnimationId: ReturnType<typeof setTimeout> | null = null;
   /** Full HTML strings preserved so collapsing mid-animation can finish instantly. */
@@ -184,13 +190,14 @@ export class ModalController {
     });
 
     // Tone transform buttons — route to local ToneEngine or AI depending on toneMode
-    const toneButtons: Array<[string, TransformationType]> = [
-      ['#btn-voseo', 'tone-voseo-cr'],
-      ['#btn-tuteo', 'tone-tuteo'],
-      ['#btn-ustedeo', 'tone-ustedeo'],
+    const toneButtons: Array<[string, TransformationType, 'voseo' | 'tuteo' | 'ustedeo']> = [
+      ['#btn-voseo', 'tone-voseo-cr', 'voseo'],
+      ['#btn-tuteo', 'tone-tuteo', 'tuteo'],
+      ['#btn-ustedeo', 'tone-ustedeo', 'ustedeo'],
     ];
-    for (const [selector, transformation] of toneButtons) {
+    for (const [selector, transformation, toneTarget] of toneButtons) {
       modal.querySelector(selector)?.addEventListener('click', () => {
+        this.activeToneTarget = toneTarget;
         if (this.toneMode === 'ai') {
           void this.requestAIToneTransformation(transformation);
         } else {
@@ -202,6 +209,11 @@ export class ModalController {
     // AI orthography button
     modal.querySelector('#btn-ortografia')?.addEventListener('click', () => {
       void this.requestAICorrection();
+    });
+
+    // Copy CR button
+    modal.querySelector('#btn-copy-cr')?.addEventListener('click', () => {
+      void this.requestCopyCR();
     });
 
     // Keep currentText in sync with manual edits
@@ -309,6 +321,106 @@ export class ModalController {
         this.updateTextarea(corrected);
 
         // If AI fell back (provider error), surface the warning so the user knows
+        if (transformResult?.source === 'ai-fallback') {
+          const warning = transformResult.warnings?.[0]?.message ?? 'El proveedor de IA no está disponible.';
+          this.showError(`El servicio de IA devolvió un error: ${warning}`);
+        }
+      } else {
+        this.showError('No se recibió resultado del servicio. Intentá de nuevo.');
+      }
+    } catch {
+      this.showError(
+        'No se pudo conectar con el servicio de IA. Las transformaciones locales siguen disponibles.',
+      );
+    } finally {
+      this.setLoadingState(false);
+    }
+  }
+
+  private async requestCopyCR(): Promise<void> {
+    const originalText = this.currentText;
+    this.setLoadingState(true, 'Generando copy con IA…');
+
+    // Read contexto/objetivo from the modal selects; fall back to stored defaults
+    const contextoEl = this.shadowRoot.querySelector<HTMLSelectElement>('#edi-copy-contexto');
+    const objetivoEl = this.shadowRoot.querySelector<HTMLSelectElement>('#edi-copy-objetivo');
+    const contexto = (contextoEl?.value ?? this.copyConfigDefaults.contexto) as CopyConfig['contexto'];
+    const objetivo = (objetivoEl?.value ?? this.copyConfigDefaults.objetivo) as CopyConfig['objetivo'];
+
+    // Read formalidad + intensidad from localStorage (persisted by web editor or default)
+    let formalidad: CopyConfig['formalidad'] = 'medio';
+    let intensidadCambio: CopyConfig['intensidadCambio'] = 'moderada';
+    let canal: CopyConfig['canal'] = 'web';
+    try {
+      const saved = localStorage.getItem(this.COPY_LS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Partial<CopyConfig>;
+        if (parsed.formalidad) formalidad = parsed.formalidad;
+        if (parsed.intensidadCambio) intensidadCambio = parsed.intensidadCambio;
+        if (parsed.canal) canal = parsed.canal;
+      }
+    } catch { /* ignore */ }
+
+    const copyConfig: CopyConfig = {
+      tratamiento: this.activeToneTarget,
+      modoVerbal: this.verbalMode,
+      contexto,
+      objetivo,
+      canal,
+      formalidad,
+      intensidadCambio,
+    };
+
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'PROXY_API_CALL',
+        payload: {
+          endpoint: '/api/transform',
+          method: 'POST',
+          body: {
+            text: this.currentText,
+            transformation: 'copy-writing-cr',
+            locale: 'es-CR',
+            requestAIValidation: true,
+            copyConfig,
+          },
+        },
+      }) as {
+        error?: string;
+        status?: number;
+        data?: {
+          data?: {
+            result?: string;
+            source?: string;
+            warnings?: Array<{ code: string; message: string }>;
+          };
+          error?: { code?: string; message?: string };
+        };
+      };
+
+      if (!response) {
+        this.showError('El service worker no respondió. Recargá la página e intentá de nuevo.');
+        return;
+      }
+
+      if (response.error) {
+        this.showError(this.friendlyError(response.error));
+        return;
+      }
+
+      const apiErrorCode = response.data?.error?.code;
+      if (apiErrorCode) {
+        this.showError(this.friendlyError(apiErrorCode));
+        return;
+      }
+
+      const transformResult = response.data?.data;
+      const generated = transformResult?.result;
+      if (typeof generated === 'string') {
+        this.showDiff(originalText, generated);
+        this.currentText = generated;
+        this.updateTextarea(generated);
+
         if (transformResult?.source === 'ai-fallback') {
           const warning = transformResult.warnings?.[0]?.message ?? 'El proveedor de IA no está disponible.';
           this.showError(`El servicio de IA devolvió un error: ${warning}`);

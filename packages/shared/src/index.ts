@@ -7,6 +7,7 @@ export type {
   TransformationRequest,
   TransformationResult,
   TransformationWarning,
+  CopyConfig,
   UserId,
   UserRole,
   User,

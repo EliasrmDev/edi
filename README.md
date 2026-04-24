@@ -6,13 +6,14 @@ Edición inteligente de texto en español con localización para Costa Rica. Tra
 
 EDI es una extensión de Chrome que detecta texto seleccionado en cualquier página y permite aplicar transformaciones:
 
-| Transformación | Motor |
-|---|---|
-| Mayúsculas / minúsculas / oración | Local |
-| Eliminar formato | Local |
-| Voseo costarricense (`tone-voseo-cr`) | Local (indicativo presente) + IA opcional |
-| Tuteo / ustedeo | IA requerida |
-| Corrección ortográfica | IA requerida |
+| Transformación | Motor | Notas |
+|---|---|---|
+| Mayúsculas / minúsculas / oración | Local | |
+| Eliminar formato | Local | |
+| Unicode bold / italic / monospace / … | Local | |
+| Voseo CR / Tuteo / Ustedeo | Local | Indicativo y imperativo presente. Cobertura parcial |
+| Corrección ortográfica | Local básica | Abreviaturas y puntuación comunes; IA para mayor precisión |
+| Copy Writing CR | IA requerida | Sin implementación local |
 
 Las transformaciones locales son instantáneas y no consumen cuota. Las transformaciones con IA usan credenciales propias del usuario (modelo BYOK — Bring Your Own Key).
 
@@ -124,8 +125,9 @@ Selección de texto
        └─ botón flotante "EDI ✏️"
             └─ chrome.runtime.sendMessage(OPEN_MODAL)
                  └─ background service worker
-                      ├─ tone-engine (transformaciones locales)
-                      └─ POST /api/transform  (transformaciones IA)
+                      └─ inyecta ModalController (contexto content script)
+                           ├─ ToneEngine (local, sin red)
+                           └─ sendMessage → background → POST /api/transform
 ```
 
 ## Modelo de seguridad

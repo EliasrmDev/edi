@@ -33,12 +33,30 @@ const TransformationRequestSchema = z.object({
     'tone-voseo-cr',
     'tone-tuteo',
     'tone-ustedeo',
+    'copy-writing-cr',
   ]),
   tone: z.enum(['voseo-cr', 'tuteo', 'ustedeo']).optional(),
   verbalMode: z.enum(['indicativo', 'imperativo']).optional(),
   locale: z.enum(['es-CR', 'es-419', 'es']),
   // Client must explicitly opt into AI — never default
   requestAIValidation: z.boolean(),
+  copyConfig: z
+    .object({
+      tratamiento: z.enum(['voseo', 'tuteo', 'ustedeo']),
+      modoVerbal: z.enum(['indicativo', 'imperativo']),
+      contexto: z.enum(['boton', 'formulario', 'error', 'landing', 'anuncio', 'notificacion']),
+      canal: z.enum(['web', 'app', 'email', 'meta-ads', 'display', 'whatsapp', 'sms']).optional(),
+      formalidad: z.enum(['alto', 'medio', 'bajo']),
+      objetivo: z.enum(['informar', 'convertir', 'guiar', 'persuadir']),
+      intensidadCambio: z.enum(['minima', 'moderada', 'alta']),
+      limiteLongitud: z.number().int().positive().optional(),
+      terminosObligatorios: z.array(z.string()).optional(),
+      terminosProhibidos: z.array(z.string()).optional(),
+      configuracionGuardada: z.string().optional(),
+      guardarConfiguracion: z.boolean().optional(),
+      nombreConfiguracion: z.string().optional(),
+    })
+    .optional(),
 });
 
 // ---------------------------------------------------------------------------

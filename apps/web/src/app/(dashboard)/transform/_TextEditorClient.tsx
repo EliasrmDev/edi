@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { ProviderCredential } from '@edi/shared';
+import type { ProviderCredential, CopyConfig } from '@edi/shared';
 import { transformTextAction, type ApiTransformation } from '@/lib/actions/transform';
 import { activateCredentialAction } from '@/lib/actions/credentials';
 import { Button } from '@/components/ui/Button';
@@ -482,6 +482,18 @@ const UNICODE_STYLES: ReadonlyArray<{ key: LocalTransformation; icon: string; na
 
 // ── AI provider/model constants ───────────────────────────────────────────────
 
+const DEFAULT_COPY_CONFIG: CopyConfig = {
+  tratamiento: 'voseo',
+  modoVerbal: 'imperativo',
+  contexto: 'anuncio',
+  canal: 'web',
+  formalidad: 'medio',
+  objetivo: 'convertir',
+  intensidadCambio: 'moderada',
+};
+
+const COPY_LS_KEY = 'edi-copy-config-default';
+
 const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
@@ -510,10 +522,20 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
   const [localActiveId, setLocalActiveId] = useState(activeCredential?.id ?? null);
   const [toneMode, setToneMode] = useState<'local' | 'ai'>('local');
   const [verbalMode, setVerbalMode] = useState<'indicativo' | 'imperativo'>('indicativo');
+  const [copyConfig, setCopyConfig] = useState<CopyConfig>(() => {
+    if (typeof window === 'undefined') return DEFAULT_COPY_CONFIG;
+    try {
+      const saved = localStorage.getItem(COPY_LS_KEY);
+      return saved ? (JSON.parse(saved) as CopyConfig) : DEFAULT_COPY_CONFIG;
+    } catch {
+      return DEFAULT_COPY_CONFIG;
+    }
+  });
 
   // Diff panel state
   const [diffData, setDiffData] = useState<{ origHtml: string; transHtml: string } | null>(null);
   const [diffOpen, setDiffOpen] = useState(false);
+  const [credPickerOpen, setCredPickerOpen] = useState(false);
   const origRef = useRef<HTMLDivElement>(null);
   const transRef = useRef<HTMLDivElement>(null);
   const animIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -523,6 +545,14 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
   textRef.current = text;
 
   const localActive = allCredentials.find((c) => c.id === localActiveId) ?? activeCredential;
+
+  function updateCopyConfig(patch: Partial<CopyConfig>) {
+    setCopyConfig((prev) => {
+      const next = { ...prev, ...patch };
+      try { localStorage.setItem(COPY_LS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
 
   function handleActivate(id: string) {
     if (id === localActiveId || isActivating) return;
@@ -560,7 +590,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
     }
   }
 
-  function handleApi(transformation: ApiTransformation) {
+  function handleApi(transformation: ApiTransformation, cfgOverride?: CopyConfig) {
     if (!text.trim()) {
       setStatus({ type: 'warning', message: 'Escribí o pegá texto primero.' });
       return;
@@ -568,7 +598,8 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
     const capturedText = text;
     setStatus(null);
     startTransition(async () => {
-      const res = await transformTextAction(capturedText, transformation, verbalMode);
+      const cfg = cfgOverride ?? (transformation === 'copy-writing-cr' ? copyConfig : undefined);
+      const res = await transformTextAction(capturedText, transformation, verbalMode, cfg);
       if (res.error) {
         setStatus({
           type: 'error',
@@ -693,8 +724,81 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 lg:p-7 dark:border-slate-700 dark:bg-slate-900">
 
+      {/* AI credential switcher */}
+      {allCredentials.length > 0 ? (
+        <div className="mb-5 overflow-hidden rounded-xl border border-indigo-100 dark:border-indigo-900/50">
+          <button
+            type="button"
+            onClick={() => setCredPickerOpen((v) => !v)}
+            aria-expanded={credPickerOpen}
+            aria-controls="web-cred-picker"
+            className="flex w-full items-center justify-between gap-2 bg-gradient-to-r from-indigo-50/80 to-white px-3 py-2.5 text-left sm:px-4 dark:from-indigo-950/40 dark:to-slate-900"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300 shrink-0">Proveedor IA</span>
+              {localActive && (
+                <span className="truncate text-[11px] text-gray-500 dark:text-slate-400">
+                  {localActive.selectedModel ?? AI_MODELS[localActive.provider] ?? '—'}
+                </span>
+              )}
+            </div>
+            <svg
+              width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"
+              className={'shrink-0 transition-transform duration-200 text-indigo-400 ' + (credPickerOpen ? 'rotate-180' : '')}
+            >
+              <path d="M3.5 5.5l3.5 3.5 3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {credPickerOpen && (
+            <div id="web-cred-picker" className="border-t border-indigo-100 px-3 pb-3 pt-2 sm:px-4 sm:pb-4 dark:border-indigo-900/50">
+              <div className="flex flex-wrap items-center gap-2">
+                {allCredentials.map((cred) => {
+                  const isActive = cred.id === localActiveId;
+                  return (
+                    <button
+                      key={cred.id}
+                      type="button"
+                      disabled={isActivating || cred.isExpired}
+                      onClick={() => handleActivate(cred.id)}
+                      title={cred.isExpired ? 'Clave expirada' : `Usar ${PROVIDER_LABELS[cred.provider] ?? cred.provider} — ${cred.label}`}
+                      className={
+                        'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ' +
+                        (isActive
+                          ? 'border-indigo-400 bg-indigo-100 text-indigo-800 ring-1 ring-indigo-400 dark:border-indigo-500 dark:bg-indigo-900/50 dark:text-indigo-200 dark:ring-indigo-500'
+                          : cred.isExpired
+                            ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-600'
+                            : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-300')
+                      }
+                    >
+                      {isActive && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400" aria-hidden="true" />
+                      )}
+                      <span>{PROVIDER_LABELS[cred.provider] ?? cred.provider}</span>
+                      <span className="text-gray-400 dark:text-slate-600">·</span>
+                      <span>{cred.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {isActivating && (
+                <span className="mt-2 block w-full text-xs text-gray-500 dark:text-slate-400">Cambiando…</span>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="mb-5 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
+          <span className="text-xs text-gray-500 dark:text-slate-400">
+            Sin clave de IA configurada.{' '}
+            <Link href="/credentials/new" className="text-indigo-600 hover:underline">
+              Agregar clave
+            </Link>
+          </span>
+        </div>
+      )}
+
       {/* Textarea */}
-      <div className="mb-5">
+      <div>
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <label htmlFor="edi-web-textarea" className="block text-sm font-medium text-gray-700 dark:text-slate-200">
             Texto a editar
@@ -718,7 +822,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
         role="status"
         aria-live="polite"
         aria-atomic="true"
-        className={`mb-4 min-h-[1.25rem] text-sm ${statusMessage ? statusColorClass : ''}`}
+        className={`mb-2 min-h-[1.25rem] text-sm ${statusMessage ? statusColorClass : ''}`}
       >
         {statusMessage}
       </div>
@@ -913,6 +1017,104 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
           </div>
         </div>
 
+        {/* Motor de Copy CR */}
+        <div className="rounded-xl border border-violet-100 bg-violet-50/40 p-3 sm:p-4 dark:border-violet-900/40 dark:bg-violet-950/20">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">
+            ✦ Motor de Copy CR
+          </p>
+          <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500 dark:text-slate-400">Contexto</label>
+              <select
+                value={copyConfig.contexto}
+                onChange={(e) => updateCopyConfig({ contexto: e.target.value as CopyConfig['contexto'] })}
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <option value="anuncio">Anuncio</option>
+                <option value="landing">Landing</option>
+                <option value="boton">Botón / CTA</option>
+                <option value="formulario">Formulario</option>
+                <option value="notificacion">Notificación</option>
+                <option value="error">Error</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500 dark:text-slate-400">Objetivo</label>
+              <select
+                value={copyConfig.objetivo}
+                onChange={(e) => updateCopyConfig({ objetivo: e.target.value as CopyConfig['objetivo'] })}
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <option value="convertir">Convertir</option>
+                <option value="persuadir">Persuadir</option>
+                <option value="informar">Informar</option>
+                <option value="guiar">Guiar</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500 dark:text-slate-400">Formalidad</label>
+              <select
+                value={copyConfig.formalidad}
+                onChange={(e) => updateCopyConfig({ formalidad: e.target.value as CopyConfig['formalidad'] })}
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <option value="medio">Medio</option>
+                <option value="bajo">Informal</option>
+                <option value="alto">Formal</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500 dark:text-slate-400">Tratamiento</label>
+              <select
+                value={copyConfig.tratamiento}
+                onChange={(e) => updateCopyConfig({ tratamiento: e.target.value as CopyConfig['tratamiento'] })}
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <option value="voseo">Voseo (CR)</option>
+                <option value="tuteo">Tuteo</option>
+                <option value="ustedeo">Ustedeo</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500 dark:text-slate-400">Canal</label>
+              <select
+                value={copyConfig.canal ?? 'web'}
+                onChange={(e) => updateCopyConfig({ canal: e.target.value as CopyConfig['canal'] })}
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <option value="web">Web</option>
+                <option value="meta-ads">Meta Ads</option>
+                <option value="email">Email</option>
+                <option value="app">App</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="display">Display</option>
+                <option value="sms">SMS</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-500 dark:text-slate-400">Intensidad</label>
+              <select
+                value={copyConfig.intensidadCambio}
+                onChange={(e) => updateCopyConfig({ intensidadCambio: e.target.value as CopyConfig['intensidadCambio'] })}
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <option value="moderada">Moderada</option>
+                <option value="minima">Mínima</option>
+                <option value="alta">Alta</option>
+              </select>
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            loading={isPending}
+            onClick={() => handleApi('copy-writing-cr')}
+            className="border-violet-200 bg-violet-50 text-violet-700 hover:border-violet-300 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-300 dark:hover:border-violet-700 dark:hover:bg-violet-950"
+          >
+            Generar Copy CR
+          </Button>
+        </div>
+
         {/* IA + Copiar */}
         <div className="flex flex-col gap-3 border-t border-gray-100 dark:border-slate-700/60 pt-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -955,61 +1157,6 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
           </Button>
         </div>
       </div>
-
-      {/* AI credential switcher */}
-      {allCredentials.length > 0 ? (
-        <div className="mt-5 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/80 to-white p-3 sm:p-4 dark:border-indigo-900/50 dark:from-indigo-950/40 dark:to-slate-900">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">Proveedor IA</span>
-            {localActive && (
-              <span className="text-[11px] text-gray-500 dark:text-slate-400">
-                Modelo: {localActive.selectedModel ?? AI_MODELS[localActive.provider] ?? '—'}
-              </span>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-          {allCredentials.map((cred) => {
-            const isActive = cred.id === localActiveId;
-            return (
-              <button
-                key={cred.id}
-                type="button"
-                disabled={isActivating || cred.isExpired}
-                onClick={() => handleActivate(cred.id)}
-                title={cred.isExpired ? 'Clave expirada' : `Usar ${PROVIDER_LABELS[cred.provider] ?? cred.provider} — ${cred.label}`}
-                className={
-                  'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ' +
-                  (isActive
-                    ? 'border-indigo-400 bg-indigo-100 text-indigo-800 ring-1 ring-indigo-400 dark:border-indigo-500 dark:bg-indigo-900/50 dark:text-indigo-200 dark:ring-indigo-500'
-                    : cred.isExpired
-                      ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-600'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-300')
-                }
-              >
-                {isActive && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400" aria-hidden="true" />
-                )}
-                <span>{PROVIDER_LABELS[cred.provider] ?? cred.provider}</span>
-                <span className="text-gray-400 dark:text-slate-600">·</span>
-                <span>{cred.label}</span>
-              </button>
-            );
-          })}
-          </div>
-          {isActivating && (
-            <span className="mt-2 block w-full text-xs text-gray-500 dark:text-slate-400">Cambiando…</span>
-          )}
-        </div>
-      ) : (
-        <div className="mt-5 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
-          <span className="text-xs text-gray-500 dark:text-slate-400">
-            Sin clave de IA configurada.{' '}
-            <Link href="/credentials/new" className="text-indigo-600 hover:underline">
-              Agregar clave
-            </Link>
-          </span>
-        </div>
-      )}
     </div>
   );
 }

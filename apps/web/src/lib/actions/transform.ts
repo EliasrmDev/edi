@@ -1,6 +1,7 @@
 'use server';
 
 import { getAuthHeader } from '@/lib/session';
+import type { CopyConfig } from '@edi/shared';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 
@@ -8,7 +9,8 @@ export type ApiTransformation =
   | 'tone-voseo-cr'
   | 'tone-tuteo'
   | 'tone-ustedeo'
-  | 'correct-orthography';
+  | 'correct-orthography'
+  | 'copy-writing-cr';
 
 export interface TransformResult {
   result?: string;
@@ -21,6 +23,7 @@ export async function transformTextAction(
   text: string,
   transformation: ApiTransformation,
   verbalMode?: 'indicativo' | 'imperativo',
+  copyConfig?: CopyConfig,
 ): Promise<TransformResult> {
   const authHeader = await getAuthHeader();
 
@@ -38,6 +41,7 @@ export async function transformTextAction(
         locale: 'es-CR',
         requestAIValidation: true,
         ...(verbalMode ? { verbalMode } : {}),
+        ...(copyConfig ? { copyConfig } : {}),
       }),
     });
   } catch {
