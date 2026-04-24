@@ -466,5 +466,110 @@ button[id^="btn-"]:disabled {
     justify-content: center;
   }
 }
+
+/* ── Visual Diff Panel ─────────────────────────────────────────────────────── */
+
+#edi-diff-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  color: #6b7280;
+  font-size: 0.78em;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+#edi-diff-toggle:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #9ca3af;
+}
+
+#edi-diff-panel {
+  margin-top: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.edi-diff-row {
+  padding: 8px 12px;
+}
+
+.edi-diff-row--original {
+  border-bottom: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.edi-diff-row--transformed {
+  background: #f9fefb;
+}
+
+.edi-diff-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.edi-diff-content {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.875em;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #374151;
+}
+
+.diff-del {
+  background: #ffd7d5;
+  text-decoration: line-through;
+  border-radius: 2px;
+  padding: 0 1px;
+  color: #b91c1c;
+}
+
+.diff-add {
+  background: #d1fae5;
+  border-radius: 2px;
+  padding: 0 1px;
+  color: #065f46;
+}
+
+/* ── Diff typewriter animation ─────────────────────────────────────────────── */
+
+/* Blinking cursor shown at the end of each panel while typing */
+@keyframes edi-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.edi-diff-content.edi-animating::after {
+  content: '|';
+  display: inline;
+  color: #9ca3af;
+  font-weight: 100;
+  animation: edi-cursor-blink 0.6s step-end infinite;
+}
+
+/* Subtle pop-in for each <mark> element as it is appended during animation */
+@keyframes edi-mark-appear {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+
+.edi-diff-content mark {
+  display: inline-block;
+  animation: edi-mark-appear 0.14s ease-out;
+}
 `;
 }

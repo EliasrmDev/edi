@@ -4,6 +4,18 @@ import type { TransformationType, TransformationWarning, ToneType, VerbalMode } 
 import { ToneEngine } from '../tone-engine/ToneEngine';
 import { createModalHTML, setModalTextSafe } from './modal-template';
 import { createModalStyles } from './modal-styles';
+import { renderDiff } from './DiffRenderer';
+
+// Reverse the HTML escaping applied by renderDiff's escapeHtml so that
+// characters can be appended to DOM Text/mark nodes directly (no XSS risk).
+function unescapeHtml(html: string): string {
+  return html
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
 
 export interface ModalOptions {
   initialText: string;
@@ -47,6 +59,11 @@ export class ModalController {
   private keydownHandler: EventListener | null = null;
   private toneMode: 'local' | 'ai' = 'local';
   private verbalMode: VerbalMode = 'indicativo';
+  /** ID of the running typewriter timeout, or null when idle. */
+  private diffAnimationId: ReturnType<typeof setTimeout> | null = null;
+  /** Full HTML strings preserved so collapsing mid-animation can finish instantly. */
+  private pendingOrigHtml: string = '';
+  private pendingTransHtml: string = '';
 
   constructor() {
     this.toneEngine = new ToneEngine();
@@ -86,6 +103,9 @@ export class ModalController {
     this.runLocalPreprocess();
 
     this.shadowRoot.querySelector<HTMLTextAreaElement>('#edi-text')?.focus();
+
+    // Reset diff panel from any previous session
+    this.clearDiff();
 
     // Load credentials for the AI bar (non-blocking)
     void this.loadCredentials();
@@ -191,6 +211,25 @@ export class ModalController {
         this.currentText = (e.target as HTMLTextAreaElement).value;
       });
 
+    // Diff panel toggle
+    const diffToggle = this.shadowRoot.querySelector<HTMLButtonElement>('#edi-diff-toggle');
+    const diffPanel = this.shadowRoot.querySelector<HTMLElement>('#edi-diff-panel');
+    diffToggle?.addEventListener('click', () => {
+      if (!diffPanel || !diffToggle) return;
+      const isExpanded = diffToggle.getAttribute('aria-expanded') === 'true';
+      if (isExpanded) {
+        // Collapsing: if animation is mid-flight, finish it instantly first
+        this.finishDiffAnimation();
+        diffPanel.hidden = true;
+        diffToggle.setAttribute('aria-expanded', 'false');
+        diffToggle.textContent = 'Ver cambios ▾';
+      } else {
+        diffPanel.hidden = false;
+        diffToggle.setAttribute('aria-expanded', 'true');
+        diffToggle.textContent = 'Ver cambios ▴';
+      }
+    });
+
     // Sync toggle UI (toneMode/verbalMode persist across opens within the page session)
     this.updateToneModeUI();
     this.updateVerbalModeUI();
@@ -199,9 +238,11 @@ export class ModalController {
   // ── Transformations ─────────────────────────────────────────────────────────
 
   private applyLocalTransformation(transformation: TransformationType): void {
+    const originalText = this.currentText;
     const { result, warnings } = this.toneEngine.transform(this.currentText, transformation, this.verbalMode);
     this.currentText = result;
     this.updateTextarea(result);
+    this.showDiff(originalText, result);
 
     if (warnings.length > 0) {
       this.showWarnings(warnings);
@@ -213,6 +254,7 @@ export class ModalController {
   }
 
   private async requestAICorrection(): Promise<void> {
+    const originalText = this.currentText;
     this.setLoadingState(true, 'Corrigiendo con IA…');
 
     try {
@@ -262,6 +304,7 @@ export class ModalController {
       const transformResult = response.data?.data;
       const corrected = transformResult?.result;
       if (typeof corrected === 'string') {
+        this.showDiff(originalText, corrected);
         this.currentText = corrected;
         this.updateTextarea(corrected);
 
@@ -313,6 +356,7 @@ export class ModalController {
   }
 
   private async requestAIToneTransformation(transformation: TransformationType): Promise<void> {
+    const originalText = this.currentText;
     const TONE_MAP: Partial<Record<TransformationType, ToneType>> = {
       'tone-voseo-cr': 'voseo-cr',
       'tone-tuteo': 'tuteo',
@@ -376,6 +420,7 @@ export class ModalController {
       const transformResult = response.data?.data;
       const adapted = transformResult?.result;
       if (typeof adapted === 'string') {
+        this.showDiff(originalText, adapted);
         this.currentText = adapted;
         this.updateTextarea(adapted);
 
@@ -414,6 +459,213 @@ export class ModalController {
   private updateTextarea(text: string): void {
     const textarea = this.shadowRoot.querySelector<HTMLTextAreaElement>('#edi-text');
     if (textarea) textarea.value = text;
+  }
+
+  private showDiff(original: string, transformed: string): void {
+    if (original === transformed) {
+      this.clearDiff();
+      return;
+    }
+
+    const { originalHtml, transformedHtml } = renderDiff(original, transformed);
+
+    const origEl = this.shadowRoot.querySelector<HTMLElement>('#edi-diff-original');
+    const transEl = this.shadowRoot.querySelector<HTMLElement>('#edi-diff-transformed');
+    const toggleBtn = this.shadowRoot.querySelector<HTMLButtonElement>('#edi-diff-toggle');
+    const panel = this.shadowRoot.querySelector<HTMLElement>('#edi-diff-panel');
+
+    if (!origEl || !transEl) return;
+
+    // Store full HTML so collapsing mid-animation can finish instantly
+    this.pendingOrigHtml = originalHtml;
+    this.pendingTransHtml = transformedHtml;
+
+    // Cancel any previous animation
+    this.cancelDiffAnimation();
+
+    // Clear current content and mark both panels as animating
+    origEl.innerHTML = '';
+    transEl.innerHTML = '';
+    origEl.classList.add('edi-animating');
+    transEl.classList.add('edi-animating');
+
+    // Auto-expand panel and show toggle button in expanded state
+    if (toggleBtn) {
+      toggleBtn.hidden = false;
+      toggleBtn.setAttribute('aria-expanded', 'true');
+      toggleBtn.textContent = 'Ver cambios ▴';
+    }
+    if (panel) panel.hidden = false;
+
+    // Start typewriter animation
+    this.animateDiffContent(
+      origEl,
+      transEl,
+      this.parseHtmlToCharTokens(originalHtml),
+      this.parseHtmlToCharTokens(transformedHtml),
+    );
+  }
+
+  private clearDiff(): void {
+    this.finishDiffAnimation();
+
+    const origEl = this.shadowRoot.querySelector<HTMLElement>('#edi-diff-original');
+    const transEl = this.shadowRoot.querySelector<HTMLElement>('#edi-diff-transformed');
+    const toggleBtn = this.shadowRoot.querySelector<HTMLButtonElement>('#edi-diff-toggle');
+    const panel = this.shadowRoot.querySelector<HTMLElement>('#edi-diff-panel');
+
+    if (origEl) { origEl.innerHTML = ''; origEl.classList.remove('edi-animating'); }
+    if (transEl) { transEl.innerHTML = ''; transEl.classList.remove('edi-animating'); }
+    if (toggleBtn) {
+      toggleBtn.hidden = true;
+      toggleBtn.setAttribute('aria-expanded', 'false');
+      toggleBtn.textContent = 'Ver cambios ▾';
+    }
+    if (panel) panel.hidden = true;
+
+    this.pendingOrigHtml = '';
+    this.pendingTransHtml = '';
+  }
+
+  // ── Diff animation helpers ──────────────────────────────────────────────────
+
+  /**
+   * Parses the HTML output of `renderDiff` into a flat array of char tokens.
+   * Only `<mark class="diff-del|diff-add">` elements and HTML-escaped plain
+   * text are expected — no other tags will ever appear in renderDiff output.
+   */
+  private parseHtmlToCharTokens(html: string): Array<{ char: string; markClass?: string }> {
+    const tokens: Array<{ char: string; markClass?: string }> = [];
+    const markRe = /<mark class="(diff-del|diff-add)">([\s\S]*?)<\/mark>/g;
+    let lastIdx = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = markRe.exec(html)) !== null) {
+      // Plain text before this mark
+      for (const char of unescapeHtml(html.slice(lastIdx, match.index))) {
+        tokens.push({ char });
+      }
+      // Characters inside the mark
+      const cls = match[1]!;
+      for (const char of unescapeHtml(match[2]!)) {
+        tokens.push({ char, markClass: cls });
+      }
+      lastIdx = match.index + match[0].length;
+    }
+    // Remaining plain text after last mark
+    for (const char of unescapeHtml(html.slice(lastIdx))) {
+      tokens.push({ char });
+    }
+    return tokens;
+  }
+
+  /**
+   * Typewriter-animates two diff panels in parallel, one char per tick.
+   * Speed adapts so the whole animation takes roughly 700–900 ms regardless
+   * of text length (min 6 ms/char, max 30 ms/char).
+   */
+  private animateDiffContent(
+    origEl: HTMLElement,
+    transEl: HTMLElement,
+    origTokens: ReadonlyArray<{ char: string; markClass?: string }>,
+    transTokens: ReadonlyArray<{ char: string; markClass?: string }>,
+  ): void {
+    const maxLen = Math.max(origTokens.length, transTokens.length);
+    if (maxLen === 0) {
+      origEl.classList.remove('edi-animating');
+      transEl.classList.remove('edi-animating');
+      return;
+    }
+
+    const CHAR_DELAY = Math.max(6, Math.min(30, Math.round(800 / maxLen)));
+    let idx = 0;
+    // Track the last open <mark> element in each panel to batch consecutive
+    // same-class chars into one element (avoids per-char mark proliferation).
+    let origMark: HTMLElement | null = null;
+    let transMark: HTMLElement | null = null;
+
+    const step = () => {
+      if (idx < origTokens.length) {
+        origMark = this.appendCharToken(origEl, origTokens[idx]!, origMark);
+      }
+      if (idx < transTokens.length) {
+        transMark = this.appendCharToken(transEl, transTokens[idx]!, transMark);
+      }
+      idx++;
+
+      if (idx < maxLen) {
+        this.diffAnimationId = setTimeout(step, CHAR_DELAY);
+      } else {
+        // Animation complete — remove cursor
+        this.diffAnimationId = null;
+        origEl.classList.remove('edi-animating');
+        transEl.classList.remove('edi-animating');
+      }
+    };
+
+    step();
+  }
+
+  /**
+   * Appends a single char token to an element, reusing the current open mark
+   * element when the class matches (avoids one `<mark>` per character).
+   * Returns the current open mark element (or null for plain text).
+   */
+  private appendCharToken(
+    el: HTMLElement,
+    token: { char: string; markClass?: string },
+    currentMark: HTMLElement | null,
+  ): HTMLElement | null {
+    if (token.markClass) {
+      if (currentMark?.className === token.markClass) {
+        // Reuse existing mark — append char to its text node
+        const last = currentMark.lastChild;
+        if (last?.nodeType === 3 /* TEXT_NODE */) {
+          last.textContent = (last.textContent ?? '') + token.char;
+        } else {
+          currentMark.appendChild(document.createTextNode(token.char));
+        }
+        return currentMark;
+      }
+      // New mark class — create a fresh <mark> element
+      const mark = document.createElement('mark');
+      mark.className = token.markClass;
+      mark.appendChild(document.createTextNode(token.char));
+      el.appendChild(mark);
+      return mark;
+    }
+
+    // Plain text — append to last direct text node or create one
+    const last = el.lastChild;
+    if (last?.nodeType === 3 /* TEXT_NODE */) {
+      last.textContent = (last.textContent ?? '') + token.char;
+    } else {
+      el.appendChild(document.createTextNode(token.char));
+    }
+    return null;
+  }
+
+  /** Cancels the running animation timeout without writing final content. */
+  private cancelDiffAnimation(): void {
+    if (this.diffAnimationId !== null) {
+      clearTimeout(this.diffAnimationId);
+      this.diffAnimationId = null;
+    }
+  }
+
+  /**
+   * Cancels any running animation and instantly renders the full diff HTML.
+   * Called when the user collapses the panel mid-animation.
+   */
+  private finishDiffAnimation(): void {
+    if (this.diffAnimationId === null) return;
+    clearTimeout(this.diffAnimationId);
+    this.diffAnimationId = null;
+
+    const origEl = this.shadowRoot.querySelector<HTMLElement>('#edi-diff-original');
+    const transEl = this.shadowRoot.querySelector<HTMLElement>('#edi-diff-transformed');
+    if (origEl) { origEl.innerHTML = this.pendingOrigHtml; origEl.classList.remove('edi-animating'); }
+    if (transEl) { transEl.innerHTML = this.pendingTransHtml; transEl.classList.remove('edi-animating'); }
   }
 
   private setLoadingState(loading: boolean, message?: string): void {

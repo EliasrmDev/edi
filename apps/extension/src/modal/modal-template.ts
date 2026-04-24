@@ -41,6 +41,21 @@ export function createModalHTML(_initialText: string): string {
 
       <div id="edi-status" role="status" aria-live="polite" aria-atomic="true"></div>
 
+      <div id="edi-diff-container">
+        <button id="edi-diff-toggle" type="button" aria-expanded="false"
+                aria-controls="edi-diff-panel" hidden>Ver cambios ▾</button>
+        <div id="edi-diff-panel" role="region" aria-label="Comparación de cambios" hidden>
+          <div class="edi-diff-row edi-diff-row--original">
+            <span class="edi-diff-label">Original</span>
+            <div id="edi-diff-original" class="edi-diff-content"></div>
+          </div>
+          <div class="edi-diff-row edi-diff-row--transformed">
+            <span class="edi-diff-label">Transformado</span>
+            <div id="edi-diff-transformed" class="edi-diff-content"></div>
+          </div>
+        </div>
+      </div>
+
       <div id="edi-actions" role="group" aria-label="Transformaciones de texto">
         <div class="edi-action-group">
           <span class="edi-group-label" id="grp-format">Formato</span>
