@@ -57,12 +57,12 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
-    <html lang="es-CR" dir="ltr">
+    <html lang="es-CR" dir="ltr" suppressHydrationWarning>
       <head>
         {/* nonce is forwarded to Next.js inline bootstrap scripts */}
         {nonce && <meta name="x-nonce" content={nonce} />}
       </head>
-      <body className="min-h-dvh bg-gray-50 font-sans antialiased">
+      <body className="min-h-dvh bg-gray-50 dark:bg-slate-950 font-sans antialiased transition-colors duration-150">
         <a href="#main-content" className="skip-link">
           Ir al contenido principal
         </a>

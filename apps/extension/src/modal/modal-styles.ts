@@ -180,6 +180,54 @@ button[id^="btn-"]:disabled {
   background: #dbeafe;
 }
 
+/* ── Unicode style icon toolbar ─────────────────────────────────────────────── */
+
+.edi-group-label--icon {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.edi-style-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.edi-style-btn {
+  width: 36px;
+  height: 36px;
+  min-height: unset;
+  padding: 0;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 1.1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, color 150ms;
+}
+
+.edi-style-btn:hover:not(:disabled) {
+  background: #ede9fe;
+  border-color: #818cf8;
+  color: #4338ca;
+}
+
+.edi-style-btn:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.edi-style-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 #edi-footer {
   display: flex;
   justify-content: flex-end;
@@ -570,6 +618,64 @@ button[id^="btn-"]:disabled {
 .edi-diff-content mark {
   display: inline-block;
   animation: edi-mark-appear 0.14s ease-out;
+}
+
+/* ── Dark mode ─────────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  #edi-backdrop { background: rgba(0, 0, 0, 0.65); }
+  #edi-panel { background: #1e293b; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  #edi-header { border-bottom-color: #334155; }
+  #edi-title { color: #f1f5f9; }
+  #edi-close { color: #94a3b8; }
+  #edi-close:hover { background: #334155; color: #f1f5f9; }
+  label[for="edi-text"] { color: #cbd5e1; }
+  #edi-text { background: #0f172a; border-color: #475569; color: #f1f5f9; }
+  #edi-text::placeholder { color: #475569; }
+  #edi-status { color: #fbbf24; }
+  .edi-char-count { color: #64748b; }
+  .edi-group-label { color: #64748b; }
+  .edi-group { border-color: #334155; background: rgba(30, 41, 59, 0.6); }
+  button[id^="btn-"] { background: #263348; border-color: #334155; color: #cbd5e1; }
+  button[id^="btn-"]:hover:not(:disabled) { background: #334155; border-color: #475569; }
+  button[id^="btn-"]:disabled { opacity: 0.4; }
+  #btn-ortografia { background: #1e2f4a; border-color: #3b82f6; color: #93c5fd; }
+  #btn-ortografia:hover:not(:disabled) { background: #1e3a5f; border-color: #60a5fa; }
+  .edi-style-btn { background: #263348; border-color: #334155; color: #cbd5e1; }
+  .edi-style-btn:hover:not(:disabled) { background: #1e2749; border-color: #818cf8; color: #a5b4fc; }
+  #edi-copy { background: #263348; border-color: #334155; color: #cbd5e1; }
+  #edi-copy:hover { background: #334155; border-color: #475569; }
+  #edi-apply { background: #4338ca; border-color: #6366f1; color: #ffffff; }
+  #edi-apply:hover { background: #3730a3; }
+  #edi-ai-bar { background: #1a1f3a; border-top-color: #2d3561; border-bottom-color: #2d3561; }
+  #edi-ai-status-text { color: #a5b4fc; }
+  #edi-ai-toggle { background: #2d3561; border-color: #4338ca; color: #a5b4fc; }
+  #edi-ai-toggle:hover { background: #374175; }
+  .edi-cred-item { background: #263348; border-color: #334155; }
+  .edi-cred-item:hover:not(:disabled) { border-color: #818cf8; background: #1e1f4a; }
+  .edi-cred-item[aria-selected="true"] { background: #1e2749; border-color: #6366f1; }
+  .edi-cred-item[aria-selected="true"] .edi-cred-dot { background: #818cf8; }
+  .edi-cred-name { color: #e2e8f0; }
+  .edi-cred-meta { color: #94a3b8; }
+  .edi-cred-model { color: #94a3b8; }
+  .edi-tone-mode,
+  .edi-verbal-mode { background: #263348; border-color: #334155; }
+  .edi-tone-mode-btn,
+  .edi-verbal-mode-btn { background: transparent; color: #94a3b8; border-right-color: #334155; }
+  .edi-tone-mode-btn:hover,
+  .edi-verbal-mode-btn:hover { color: #cbd5e1; }
+  .edi-tone-mode-btn[aria-pressed="true"] { background: #1e2749; color: #93c5fd; }
+  #btn-tone-mode-ai[aria-pressed="true"] { background: #1e1f4a; color: #a5b4fc; }
+  .edi-verbal-mode-btn[aria-pressed="true"] { background: #0d2e1e; color: #6ee7b7; }
+  #edi-diff-toggle { border-color: #334155; color: #94a3b8; background: transparent; }
+  #edi-diff-toggle:hover { background: #263348; color: #cbd5e1; border-color: #475569; }
+  #edi-diff-panel { border-color: #334155; }
+  .edi-diff-row--original { background: #2c1515; border-bottom-color: #334155; }
+  .edi-diff-row--transformed { background: #0d2e1e; }
+  .edi-diff-label { color: #64748b; }
+  .edi-diff-content { color: #cbd5e1; }
+  .diff-del { background: #3f1e1e; color: #fca5a5; }
+  .diff-add { background: #0d2e1e; color: #6ee7b7; }
+  .edi-animating::after { color: #475569; }
 }
 `;
 }

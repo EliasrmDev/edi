@@ -19,7 +19,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={id} className="text-sm font-medium text-gray-700">
+        <label htmlFor={id} className="text-sm font-medium text-gray-700 dark:text-slate-200">
           {label}
           {props.required && (
             <span className="ml-1 text-red-500" aria-hidden="true">
@@ -29,7 +29,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         </label>
 
         {description && (
-          <p id={descriptionId} className="text-xs text-gray-500">
+          <p id={descriptionId} className="text-xs text-gray-500 dark:text-slate-400">
             {description}
           </p>
         )}
@@ -44,16 +44,19 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             'placeholder:text-gray-400',
             'transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500',
             'disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500',
+            'dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500',
+            'dark:disabled:bg-slate-900 dark:disabled:text-slate-600',
+            'dark:focus:ring-blue-400 dark:focus:border-blue-400',
             error
-              ? 'border-red-400 focus:ring-red-400 focus:border-red-400'
-              : 'border-gray-300',
+              ? 'border-red-400 focus:ring-red-400 focus:border-red-400 dark:border-red-600 dark:focus:ring-red-500'
+              : 'border-gray-300 dark:border-slate-600',
             className,
           )}
           {...props}
         />
 
         {error && (
-          <p id={errorId} role="alert" className="text-xs text-red-600">
+          <p id={errorId} role="alert" className="text-xs text-red-600 dark:text-red-400">
             {error}
           </p>
         )}

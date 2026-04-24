@@ -59,23 +59,33 @@ export function createModalHTML(_initialText: string): string {
       <div id="edi-actions" role="group" aria-label="Transformaciones de texto">
         <div class="edi-action-group">
           <span class="edi-group-label" id="grp-format">Formato</span>
-          <div role="group" aria-labelledby="grp-format">
-            <button id="btn-uppercase" type="button">MAYÚSCULAS</button>
-            <button id="btn-lowercase" type="button">minúsculas</button>
-            <button id="btn-sentence" type="button">Tipo oración</button>
-            <button id="btn-clean" type="button">Quitar formato</button>
+          <div role="group" aria-labelledby="grp-format" class="edi-style-group">
+            <button id="btn-uppercase" class="edi-style-btn" type="button" title="Mayúsculas" aria-label="Convertir a mayúsculas"><span aria-hidden="true">AA</span></button>
+            <button id="btn-lowercase" class="edi-style-btn" type="button" title="Minúsculas" aria-label="Convertir a minúsculas"><span aria-hidden="true">aa</span></button>
+            <button id="btn-sentence" class="edi-style-btn" type="button" title="Tipo oración" aria-label="Convertir a tipo oración"><span aria-hidden="true">Aa</span></button>
+            <button id="btn-clean" class="edi-style-btn" type="button" title="Quitar formato" aria-label="Quitar formato de texto">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
+                <path d="M9.5 2L12 4.5 5.5 11H3V8.5L9.5 2Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="2" y1="11" x2="12" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </button>
           </div>
         </div>
 
         <div class="edi-action-group">
-          <span class="edi-group-label" id="grp-unicode">Estilo Unicode</span>
-          <div role="group" aria-labelledby="grp-unicode">
-            <button id="btn-fmt-bold" type="button" title="Negrita Unicode" aria-label="Negrita Unicode">𝐍𝐞𝐠𝐫𝐢𝐭𝐚</button>
-            <button id="btn-fmt-italic" type="button" title="Cursiva Unicode" aria-label="Cursiva Unicode">𝐶𝑢𝑟𝑠𝑖𝑣𝑎</button>
-            <button id="btn-fmt-bold-italic" type="button" title="Negrita Cursiva Unicode" aria-label="Negrita Cursiva Unicode">𝑵𝒆𝒈.𝑪𝒖𝒓.</button>
-            <button id="btn-fmt-bold-script" type="button" title="Caligrafía / Script Unicode" aria-label="Caligrafía Script Unicode">𝓢𝓬𝓻𝓲𝓹𝓽</button>
-            <button id="btn-fmt-mono" type="button" title="Monoespacio Unicode" aria-label="Monoespacio Unicode">𝙼𝚘𝚗𝚘</button>
-            <button id="btn-fmt-wide" type="button" title="Ancho completo (Fullwidth)" aria-label="Ancho completo Fullwidth Unicode">Ａｎｃｈｏ</button>
+          <span class="edi-group-label edi-group-label--icon" id="grp-unicode">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true" focusable="false">
+              <path d="M8.5 1.5a1.5 1.5 0 012.12 2.12l-7 7L1 11l.38-2.62 7.12-6.88z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Estilo
+          </span>
+          <div role="group" aria-labelledby="grp-unicode" class="edi-style-group">
+            <button id="btn-fmt-bold" class="edi-style-btn" type="button" title="Negrita (Unicode)" aria-label="Aplicar negrita Unicode"><span aria-hidden="true">𝐁</span></button>
+            <button id="btn-fmt-italic" class="edi-style-btn" type="button" title="Cursiva (Unicode)" aria-label="Aplicar cursiva Unicode"><span aria-hidden="true">𝐼</span></button>
+            <button id="btn-fmt-bold-italic" class="edi-style-btn" type="button" title="Negrita Cursiva (Unicode)" aria-label="Aplicar negrita cursiva Unicode"><span aria-hidden="true">𝑩</span></button>
+            <button id="btn-fmt-bold-script" class="edi-style-btn" type="button" title="Caligrafía Script (Unicode)" aria-label="Aplicar caligrafía script Unicode"><span aria-hidden="true">𝓢</span></button>
+            <button id="btn-fmt-mono" class="edi-style-btn" type="button" title="Monoespacio (Unicode)" aria-label="Aplicar monoespacio Unicode"><span aria-hidden="true">𝙼</span></button>
+            <button id="btn-fmt-wide" class="edi-style-btn" type="button" title="Ancho Completo (Unicode)" aria-label="Aplicar ancho completo Unicode"><span aria-hidden="true">Ａ</span></button>
           </div>
         </div>
 

@@ -4,7 +4,7 @@ import { Logo } from '@/components/landing/icons';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-dvh bg-gray-50 flex flex-col">
+    <div className="min-h-dvh bg-gray-50 dark:bg-slate-950 flex flex-col">
       <header className="px-6 py-5">
         <Link
           href="/"
@@ -19,7 +19,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="w-full max-w-md">{children}</div>
       </main>
 
-      <footer className="px-6 py-5 text-center text-xs text-gray-500">
+      <footer className="px-6 py-5 text-center text-xs text-gray-500 dark:text-slate-400">
         <nav aria-label="Pies de página">
           <Link href="/privacy" className="hover:underline focus-visible:ring-2 focus-visible:ring-violet-500 rounded">
             Privacidad

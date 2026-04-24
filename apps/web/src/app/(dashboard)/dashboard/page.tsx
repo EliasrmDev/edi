@@ -28,10 +28,10 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">
           ¡Hola, {displayName}!
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
           Bienvenido a EDI Text Intelligence.
         </p>
       </div>
@@ -72,11 +72,11 @@ export default async function DashboardPage() {
 
       {/* Alerts */}
       {expiringCredentials.length > 0 && (
-        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-medium text-amber-800">
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-950/40">
+          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
             ⚠️ Tenés {expiringCredentials.length} clave{expiringCredentials.length > 1 ? 's' : ''} por expirar en los próximos 7 días.
           </p>
-          <Link href="/credentials" className="mt-1 block text-sm text-amber-700 underline">
+          <Link href="/credentials" className="mt-1 block text-sm text-amber-700 dark:text-amber-400 underline">
             Ver claves
           </Link>
         </div>
@@ -84,7 +84,7 @@ export default async function DashboardPage() {
 
       {/* Quick Actions */}
       <section aria-labelledby="quick-actions-heading">
-        <h2 id="quick-actions-heading" className="mb-4 text-base font-semibold text-gray-900">
+        <h2 id="quick-actions-heading" className="mb-4 text-base font-semibold text-gray-900 dark:text-slate-100">
           Acciones rápidas
         </h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -107,11 +107,11 @@ export default async function DashboardPage() {
       </section>
 
       {/* Extension Install Hint */}
-      <section className="mt-8 rounded-xl border border-blue-100 bg-blue-50 p-5" aria-labelledby="extension-hint">
-        <h2 id="extension-hint" className="text-sm font-semibold text-blue-900">
+      <section className="mt-8 rounded-xl border border-blue-100 bg-blue-50 p-5 dark:border-blue-800/50 dark:bg-blue-950/40" aria-labelledby="extension-hint">
+        <h2 id="extension-hint" className="text-sm font-semibold text-blue-900 dark:text-blue-300">
           Extensión para Chrome
         </h2>
-        <p className="mt-1 text-sm text-blue-700">
+        <p className="mt-1 text-sm text-blue-700 dark:text-blue-400">
           Instalá la extensión de EDI en Chrome para transformar texto directamente en cualquier campo de texto.
         </p>
       </section>
@@ -142,14 +142,14 @@ function StatCard({
   return (
     <Link
       href={href}
-      className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:border-blue-200 hover:shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:border-blue-200 hover:shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-600 dark:hover:shadow-slate-900/40"
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50 dark:bg-slate-700">
         {icon}
       </div>
       <div>
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-lg font-semibold text-gray-900 capitalize">{value}</p>
+        <p className="text-xs text-gray-500 dark:text-slate-400">{label}</p>
+        <p className="text-lg font-semibold text-gray-900 dark:text-slate-100 capitalize">{value}</p>
       </div>
     </Link>
   );
@@ -167,16 +167,16 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 hover:border-blue-200 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 hover:border-blue-200 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-600"
     >
-      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-        <svg className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/60">
+        <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
       </div>
       <div>
-        <p className="text-sm font-medium text-gray-900">{label}</p>
-        <p className="text-xs text-gray-500">{description}</p>
+        <p className="text-sm font-medium text-gray-900 dark:text-slate-100">{label}</p>
+        <p className="text-xs text-gray-500 dark:text-slate-400">{description}</p>
       </div>
     </Link>
   );

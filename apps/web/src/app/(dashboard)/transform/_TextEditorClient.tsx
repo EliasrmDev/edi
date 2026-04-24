@@ -1,12 +1,41 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { ProviderCredential } from '@edi/shared';
 import { transformTextAction, type ApiTransformation } from '@/lib/actions/transform';
 import { activateCredentialAction } from '@/lib/actions/credentials';
 import { Button } from '@/components/ui/Button';
+import { renderDiff, parseHtmlToCharTokens, type CharToken } from '@/lib/diff';
+
+// ── Diff animation DOM helper ────────────────────────────────────────────────
+
+function appendCharToken(
+  el: HTMLElement,
+  token: CharToken,
+  currentMark: HTMLElement | null,
+): HTMLElement | null {
+  if (token.cls) {
+    if (currentMark && currentMark.className === token.cls) {
+      currentMark.textContent += token.char;
+      return currentMark;
+    }
+    const mark = document.createElement('mark');
+    mark.className = token.cls;
+    mark.textContent = token.char;
+    el.appendChild(mark);
+    return mark;
+  }
+  // Plain text
+  const last = el.lastChild;
+  if (last && last.nodeType === Node.TEXT_NODE) {
+    last.textContent += token.char;
+  } else {
+    el.appendChild(document.createTextNode(token.char));
+  }
+  return null;
+}
 
 // ── Local transform utilities ─────────────────────────────────────────────────
 // Ported from apps/extension/src/tone-engine/formatters/CleanFormatter.ts
@@ -427,8 +456,29 @@ const transformBtnClass =
   'inline-flex items-center justify-center ' +
   'transition-colors hover:border-gray-300 hover:bg-gray-100 ' +
   'disabled:cursor-not-allowed disabled:opacity-40 ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 ' +
+  'dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700 ' +
   'whitespace-nowrap';
+
+// ── Format style definitions ─────────────────────────────────────────────────
+
+const FORMAT_STYLES: ReadonlyArray<{ key: LocalTransformation; icon: string; name: string; ariaName: string }> = [
+  { key: 'uppercase',         icon: 'AA', name: 'Mayúsculas',    ariaName: 'Convertir a mayúsculas'   },
+  { key: 'lowercase',         icon: 'aa', name: 'Minúsculas',    ariaName: 'Convertir a minúsculas'   },
+  { key: 'sentence-case',     icon: 'Aa', name: 'Tipo Oración', ariaName: 'Convertir a tipo oración' },
+  { key: 'remove-formatting', icon: '✕T', name: 'Quitar Fmt',   ariaName: 'Quitar formato de texto'   },
+];
+
+// ── Unicode style definitions ─────────────────────────────────────────────────
+
+const UNICODE_STYLES: ReadonlyArray<{ key: LocalTransformation; icon: string; name: string }> = [
+  { key: 'format-unicode-bold',        icon: '𝐁', name: 'Negrita'           },
+  { key: 'format-unicode-italic',      icon: '𝐼', name: 'Cursiva'           },
+  { key: 'format-unicode-bold-italic', icon: '𝑩', name: 'Negrita Cursiva'   },
+  { key: 'format-unicode-bold-script', icon: '𝓢', name: 'Caligrafía Script' },
+  { key: 'format-unicode-monospace',   icon: '𝙼', name: 'Monoespacio'       },
+  { key: 'format-unicode-fullwidth',   icon: 'Ａ', name: 'Ancho Completo'   },
+];
 
 // ── AI provider/model constants ───────────────────────────────────────────────
 
@@ -461,6 +511,17 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
   const [toneMode, setToneMode] = useState<'local' | 'ai'>('local');
   const [verbalMode, setVerbalMode] = useState<'indicativo' | 'imperativo'>('indicativo');
 
+  // Diff panel state
+  const [diffData, setDiffData] = useState<{ origHtml: string; transHtml: string } | null>(null);
+  const [diffOpen, setDiffOpen] = useState(false);
+  const origRef = useRef<HTMLDivElement>(null);
+  const transRef = useRef<HTMLDivElement>(null);
+  const animIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep a ref to latest text to avoid stale closures in sync handlers
+  const textRef = useRef(text);
+  textRef.current = text;
+
   const localActive = allCredentials.find((c) => c.id === localActiveId) ?? activeCredential;
 
   function handleActivate(id: string) {
@@ -473,7 +534,11 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
   }
 
   function handleLocal(t: LocalTransformation) {
-    setText((prev) => applyLocalTransform(prev, t));
+    const prev = textRef.current;
+    const next = applyLocalTransform(prev, t);
+    setText(next);
+    const diff = renderDiff(prev, next);
+    setDiffData(prev !== next ? { origHtml: diff.originalHtml, transHtml: diff.transformedHtml } : null);
     setStatus(null);
   }
 
@@ -484,7 +549,11 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
         'tone-tuteo': 'tuteo',
         'tone-ustedeo': 'ustedeo',
       };
-      setText((prev) => applyLocalTone(prev, targetMap[t], verbalMode));
+      const prev = textRef.current;
+      const next = applyLocalTone(prev, targetMap[t], verbalMode);
+      setText(next);
+      const diff = renderDiff(prev, next);
+      setDiffData(prev !== next ? { origHtml: diff.originalHtml, transHtml: diff.transformedHtml } : null);
       setStatus(null);
     } else {
       handleApi(t);
@@ -496,9 +565,10 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
       setStatus({ type: 'warning', message: 'Escribí o pegá texto primero.' });
       return;
     }
+    const capturedText = text;
     setStatus(null);
     startTransition(async () => {
-      const res = await transformTextAction(text, transformation, verbalMode);
+      const res = await transformTextAction(capturedText, transformation, verbalMode);
       if (res.error) {
         setStatus({
           type: 'error',
@@ -508,11 +578,97 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
       }
       if (typeof res.result === 'string') {
         setText(res.result);
+        const diff = renderDiff(capturedText, res.result);
+        setDiffData(
+          capturedText !== res.result
+            ? { origHtml: diff.originalHtml, transHtml: diff.transformedHtml }
+            : null,
+        );
         if (res.source === 'ai-fallback' && res.warnings?.[0]) {
           setStatus({ type: 'warning', message: res.warnings[0].message });
         }
       }
     });
+  }
+
+  // ── Diff animation effect ──────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!diffData) return;
+
+    const origEl = origRef.current;
+    const transEl = transRef.current;
+    if (!origEl || !transEl) return;
+
+    if (animIdRef.current !== null) {
+      clearTimeout(animIdRef.current);
+      animIdRef.current = null;
+    }
+
+    origEl.innerHTML = '';
+    transEl.innerHTML = '';
+    origEl.classList.add('edi-diff-animating');
+    transEl.classList.add('edi-diff-animating');
+
+    setDiffOpen(true);
+
+    const origTokens = parseHtmlToCharTokens(diffData.origHtml);
+    const transTokens = parseHtmlToCharTokens(diffData.transHtml);
+    const maxLen = Math.max(origTokens.length, transTokens.length);
+
+    if (maxLen === 0) {
+      origEl.classList.remove('edi-diff-animating');
+      transEl.classList.remove('edi-diff-animating');
+      return;
+    }
+
+    const CHAR_DELAY = Math.max(6, Math.min(30, Math.round(800 / maxLen)));
+    let idx = 0;
+    let origMark: HTMLElement | null = null;
+    let transMark: HTMLElement | null = null;
+
+    function step() {
+      if (idx < origTokens.length) {
+        origMark = appendCharToken(origEl!, origTokens[idx]!, origMark);
+      }
+      if (idx < transTokens.length) {
+        transMark = appendCharToken(transEl!, transTokens[idx]!, transMark);
+      }
+      idx++;
+      if (idx < maxLen) {
+        animIdRef.current = setTimeout(step, CHAR_DELAY);
+      } else {
+        animIdRef.current = null;
+        origEl!.classList.remove('edi-diff-animating');
+        transEl!.classList.remove('edi-diff-animating');
+      }
+    }
+
+    step();
+
+    return () => {
+      if (animIdRef.current !== null) {
+        clearTimeout(animIdRef.current);
+        animIdRef.current = null;
+      }
+    };
+  }, [diffData]);
+
+  function handleDiffToggle() {
+    if (diffOpen && animIdRef.current !== null) {
+      // Finish animation instantly when collapsing
+      clearTimeout(animIdRef.current);
+      animIdRef.current = null;
+      if (origRef.current && diffData) {
+        origRef.current.innerHTML = diffData.origHtml;
+        origRef.current.classList.remove('edi-diff-animating');
+      }
+      if (transRef.current && diffData) {
+        transRef.current.innerHTML = diffData.transHtml;
+        transRef.current.classList.remove('edi-diff-animating');
+      }
+    }
+    setDiffOpen((v) => !v);
   }
 
   function handleCopy() {
@@ -525,89 +681,35 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
 
   const statusColorClass =
     status?.type === 'error'
-      ? 'text-red-600'
+      ? 'text-red-600 dark:text-red-400'
       : status?.type === 'warning'
-        ? 'text-amber-600'
+        ? 'text-amber-600 dark:text-amber-400'
         : status?.type === 'success'
-          ? 'text-green-600'
-          : 'text-gray-500';
+          ? 'text-green-600 dark:text-green-400'
+          : 'text-gray-500 dark:text-slate-400';
 
   const statusMessage = status?.message ?? (isPending ? 'Transformando con IA…' : '');
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 lg:p-7">
-      {/* AI credential switcher */}
-      {allCredentials.length > 0 ? (
-        <div className="mb-5 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/80 to-white p-3 sm:p-4">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Proveedor IA</span>
-            {localActive && (
-              <span className="text-[11px] text-gray-500">
-                Modelo: {localActive.selectedModel ?? AI_MODELS[localActive.provider] ?? '—'}
-              </span>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-          {allCredentials.map((cred) => {
-            const isActive = cred.id === localActiveId;
-            return (
-              <button
-                key={cred.id}
-                type="button"
-                disabled={isActivating || cred.isExpired}
-                onClick={() => handleActivate(cred.id)}
-                title={cred.isExpired ? 'Clave expirada' : `Usar ${PROVIDER_LABELS[cred.provider] ?? cred.provider} — ${cred.label}`}
-                className={
-                  'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ' +
-                  (isActive
-                    ? 'border-indigo-400 bg-indigo-100 text-indigo-800 ring-1 ring-indigo-400'
-                    : cred.isExpired
-                      ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer')
-                }
-              >
-                {isActive && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" aria-hidden="true" />
-                )}
-                <span>{PROVIDER_LABELS[cred.provider] ?? cred.provider}</span>
-                <span className="text-gray-400">·</span>
-                <span>{cred.label}</span>
-              </button>
-            );
-          })}
-          </div>
-          {isActivating && (
-            <span className="mt-2 block w-full text-xs text-gray-500">Cambiando…</span>
-          )}
-        </div>
-      ) : (
-        <div className="mb-5 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-3">
-          <span className="text-xs text-gray-500">
-            Sin clave de IA configurada.{' '}
-            <Link href="/credentials/new" className="text-indigo-600 hover:underline">
-              Agregar clave
-            </Link>
-          </span>
-        </div>
-      )}
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 lg:p-7 dark:border-slate-700 dark:bg-slate-900">
 
       {/* Textarea */}
       <div className="mb-5">
         <div className="mb-1.5 flex items-center justify-between gap-2">
-          <label htmlFor="edi-web-textarea" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="edi-web-textarea" className="block text-sm font-medium text-gray-700 dark:text-slate-200">
             Texto a editar
           </label>
-          <span className="text-xs text-gray-400">{text.length} caracteres</span>
+          <span className="text-xs text-gray-400 dark:text-slate-500">{text.length} caracteres</span>
         </div>
         <textarea
           id="edi-web-textarea"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => { setText(e.target.value); setDiffData(null); }}
           rows={7}
           spellCheck
           lang="es"
           placeholder="Escribí o pegá tu texto aquí…"
-          className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2.5 text-sm leading-relaxed text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2.5 text-sm leading-relaxed text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
         />
       </div>
 
@@ -621,66 +723,106 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
         {statusMessage}
       </div>
 
+      {/* Diff panel */}
+      {diffData && (
+        <div className="mb-4">
+          <button
+            type="button"
+            aria-expanded={diffOpen}
+            aria-controls="edi-web-diff-panel"
+            onClick={handleDiffToggle}
+            className="mb-2 inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-700"
+          >
+            Ver cambios{' '}
+            <span aria-hidden="true">{diffOpen ? '▴' : '▾'}</span>
+          </button>
+          <div
+            id="edi-web-diff-panel"
+            role="region"
+            aria-label="Comparación de cambios"
+            className={diffOpen ? '' : 'hidden'}
+          >
+            <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-slate-700">
+              <div className="border-b border-gray-200 bg-red-50/40 px-3 py-2 dark:border-slate-700 dark:bg-red-950/30">
+                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-red-400">
+                  Original
+                </span>
+                <div
+                  ref={origRef}
+                  className="edi-diff-content whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-gray-700 dark:text-slate-300"
+                />
+              </div>
+              <div className="bg-green-50/40 px-3 py-2 dark:bg-green-950/30">
+                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-green-600 dark:text-green-400">
+                  Transformado
+                </span>
+                <div
+                  ref={transRef}
+                  className="edi-diff-content whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-gray-700 dark:text-slate-300"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Action groups */}
       <div className="space-y-4">
         {/* Formato */}
-        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 dark:border-slate-700/60 dark:bg-slate-800/40">
+          <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">
             Formato
           </p>
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-            <button type="button" className={transformBtnClass} onClick={() => handleLocal('uppercase')}>
-              MAYÚSCULAS
-            </button>
-            <button type="button" className={transformBtnClass} onClick={() => handleLocal('lowercase')}>
-              minúsculas
-            </button>
-            <button type="button" className={transformBtnClass} onClick={() => handleLocal('sentence-case')}>
-              Tipo oración
-            </button>
-            <button type="button" className={transformBtnClass} onClick={() => handleLocal('remove-formatting')}>
-              Quitar formato
-            </button>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Transformaciones de formato">
+            {FORMAT_STYLES.map(({ key, icon, name, ariaName }) => (
+              <button
+                key={key}
+                type="button"
+                title={name}
+                aria-label={ariaName}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-xs font-semibold leading-none tracking-tight transition-colors hover:border-indigo-300 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40 dark:focus-visible:ring-offset-slate-900"
+                onClick={() => handleLocal(key)}
+              >
+                <span aria-hidden="true">{icon}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Estilo Unicode */}
-        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-            Estilo Unicode
+        {/* Estilo */}
+        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 dark:border-slate-700/60 dark:bg-slate-800/40">
+          <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" focusable="false">
+              <path d="M8.5 1.5a1.5 1.5 0 012.12 2.12l-7 7L1 11l.38-2.62 7.12-6.88z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Estilo
           </p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <button type="button" className={transformBtnClass} onClick={() => handleLocal('format-unicode-bold')}>
-              𝐍𝐞𝐠𝐫𝐢𝐭𝐚
-            </button>
-            <button type="button" className={transformBtnClass} onClick={() => handleLocal('format-unicode-italic')}>
-              𝐶𝑢𝑟𝑠𝑖𝑣𝑎
-            </button>
-            <button type="button" className={transformBtnClass} onClick={() => handleLocal('format-unicode-bold-italic')}>
-              𝑵𝒆𝒈.𝑪𝒖𝒓.
-            </button>
-            <button type="button" className={transformBtnClass} onClick={() => handleLocal('format-unicode-bold-script')}>
-              𝓢𝓬𝓻𝓲𝓹𝓽
-            </button>
-            <button type="button" className={transformBtnClass} onClick={() => handleLocal('format-unicode-monospace')}>
-              𝙼𝚘𝚗𝚘
-            </button>
-            <button type="button" className={transformBtnClass} onClick={() => handleLocal('format-unicode-fullwidth')}>
-              Ａｎｃｈｏ
-            </button>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Estilos de texto Unicode">
+            {UNICODE_STYLES.map(({ key, icon, name }) => (
+              <button
+                key={key}
+                type="button"
+                title={`${name} (Unicode)`}
+                aria-label={`Aplicar ${name} Unicode`}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-[1.1rem] leading-none transition-colors hover:border-indigo-300 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40 dark:focus-visible:ring-offset-slate-900"
+                onClick={() => handleLocal(key)}
+              >
+                <span aria-hidden="true">{icon}</span>
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Tono */}
-        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4">
+        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 dark:border-slate-700/60 dark:bg-slate-800/40">
           <div className="mb-2 flex flex-wrap items-center gap-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">
               Tono
             </p>
             <div
               role="group"
               aria-label="Motor de transformación de tono"
-              className="flex overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs"
+              className="flex overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs dark:border-slate-700/60 dark:bg-slate-800/40"
             >
               <button
                 type="button"
@@ -714,7 +856,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
           <div
             role="group"
             aria-label="Modo verbal"
-            className="mb-2 flex w-fit overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs"
+            className="mb-2 flex w-fit overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs dark:border-slate-700/60 dark:bg-slate-800/40"
           >
             <button
               type="button"
@@ -736,8 +878,8 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
               className={
                 'px-2.5 py-0.5 font-medium transition-colors ' +
                 (verbalMode === 'imperativo'
-                  ? 'bg-white text-green-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700')
+                  ? 'bg-white text-green-700 shadow-sm dark:bg-slate-700 dark:text-green-400'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200')
               }
             >
               Imperativo
@@ -772,9 +914,9 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
         </div>
 
         {/* IA + Copiar */}
-        <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-gray-100 dark:border-slate-700/60 pt-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">
               Inteligencia Artificial
             </p>
             <Button
@@ -782,7 +924,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
               size="sm"
               loading={isPending}
               onClick={() => handleApi('correct-orthography')}
-              className="border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100"
+              className="border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300 dark:hover:border-blue-700 dark:hover:bg-blue-950"
             >
               Corregir ortografía
             </Button>
@@ -813,6 +955,61 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
           </Button>
         </div>
       </div>
+
+      {/* AI credential switcher */}
+      {allCredentials.length > 0 ? (
+        <div className="mt-5 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/80 to-white p-3 sm:p-4 dark:border-indigo-900/50 dark:from-indigo-950/40 dark:to-slate-900">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">Proveedor IA</span>
+            {localActive && (
+              <span className="text-[11px] text-gray-500 dark:text-slate-400">
+                Modelo: {localActive.selectedModel ?? AI_MODELS[localActive.provider] ?? '—'}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+          {allCredentials.map((cred) => {
+            const isActive = cred.id === localActiveId;
+            return (
+              <button
+                key={cred.id}
+                type="button"
+                disabled={isActivating || cred.isExpired}
+                onClick={() => handleActivate(cred.id)}
+                title={cred.isExpired ? 'Clave expirada' : `Usar ${PROVIDER_LABELS[cred.provider] ?? cred.provider} — ${cred.label}`}
+                className={
+                  'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ' +
+                  (isActive
+                    ? 'border-indigo-400 bg-indigo-100 text-indigo-800 ring-1 ring-indigo-400 dark:border-indigo-500 dark:bg-indigo-900/50 dark:text-indigo-200 dark:ring-indigo-500'
+                    : cred.isExpired
+                      ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-600'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-300')
+                }
+              >
+                {isActive && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400" aria-hidden="true" />
+                )}
+                <span>{PROVIDER_LABELS[cred.provider] ?? cred.provider}</span>
+                <span className="text-gray-400 dark:text-slate-600">·</span>
+                <span>{cred.label}</span>
+              </button>
+            );
+          })}
+          </div>
+          {isActivating && (
+            <span className="mt-2 block w-full text-xs text-gray-500 dark:text-slate-400">Cambiando…</span>
+          )}
+        </div>
+      ) : (
+        <div className="mt-5 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
+          <span className="text-xs text-gray-500 dark:text-slate-400">
+            Sin clave de IA configurada.{' '}
+            <Link href="/credentials/new" className="text-indigo-600 hover:underline">
+              Agregar clave
+            </Link>
+          </span>
+        </div>
+      )}
     </div>
   );
 }

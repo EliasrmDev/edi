@@ -90,7 +90,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const currentPath = getPathnameFromHeaders(headersList);
 
   return (
-    <div className="min-h-dvh bg-gray-50">
+    <div className="min-h-dvh bg-gray-50 dark:bg-slate-950">
       {/* Desktop Sidebar */}
       <aside className="fixed left-0 top-0 hidden h-full w-60 flex-col bg-gray-900 lg:flex">
         <div className="flex h-16 items-center border-b border-gray-800 px-5">
@@ -155,8 +155,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       </aside>
 
       {/* Mobile Header */}
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 lg:hidden">
-        <Link href="/dashboard" className="flex items-center gap-2 text-blue-600 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-900 lg:hidden">
+        <Link href="/dashboard" className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
           <svg className="h-6 w-6" viewBox="0 0 28 28" fill="currentColor" aria-hidden="true">
             <rect x="0" y="0" width="28" height="28" rx="7" />
             <text x="6" y="21" fontSize="16" fontWeight="700" fill="white" fontFamily="system-ui">E</text>
@@ -182,7 +182,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
       {/* Mobile Bottom Nav */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900 lg:hidden"
         aria-label="Navegación móvil"
       >
         <div className="grid grid-cols-6">
@@ -194,7 +194,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                 href={item.href}
                 aria-current={isActive ? 'page' : undefined}
                 className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors
-                  ${isActive ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'}
+                  ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100'}
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500`}
               >
                 {item.icon}
