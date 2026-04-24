@@ -66,9 +66,18 @@ body {
   line-height: 1.55;
   color: var(--c-text-1);
   background: var(--c-bg);
-  width: 380px;
+  width: min(420px, 100vw);
+  min-width: 320px;
   min-height: 180px;
+  max-height: 92vh;
   overflow-x: hidden;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  max-height: 92vh;
 }
 
 /* ─── Header ────────────────────────────────────────────────────── */
@@ -195,7 +204,13 @@ body {
 }
 
 /* ─── Panels ────────────────────────────────────────────────────── */
-.panel { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.panel {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
 .panel[hidden] { display: none !important; }
 
 /* ─── Drop zone ─────────────────────────────────────────────────── */
@@ -835,19 +850,6 @@ body {
   transform: translateX(18px);
 }
 
-/* ─── Footer ────────────────────────────────────────────────────── */
-.footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 14px;
-  font-size: 11px;
-  color: var(--c-text-3);
-  border-top: 1px solid var(--c-border);
-  background: var(--c-surface);
-}
-
 /* ─── Auth section ──────────────────────────────────────────────── */
 .auth-section {
   margin-top: 12px;
@@ -1363,7 +1365,7 @@ body {
 .ai-cred-name {
   font-size: 12px;
   font-weight: 600;
-  color: var(--c-text);
+  color: var(--c-text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1371,7 +1373,7 @@ body {
 
 .ai-cred-meta {
   font-size: 10.5px;
-  color: var(--c-muted);
+  color: var(--c-text-3);
 }
 
 .ai-cred-activate-btn {
@@ -1392,4 +1394,57 @@ body {
   border-color: var(--c-primary-faint);
   color: var(--c-primary);
   cursor: default;
+}
+
+@media (max-width: 420px) {
+  body {
+    width: 100vw;
+    max-height: 100vh;
+    font-size: 12.5px;
+  }
+
+  .header {
+    padding: 10px 11px;
+  }
+
+  .tabs,
+  .text-tabs {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .panel,
+  .settings-panel {
+    padding: 10px;
+  }
+
+  .convert-row,
+  .batch-actions {
+    flex-direction: column;
+  }
+
+  .cancel-btn,
+  .convert-btn,
+  .batch-convert-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mini-btns-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .mini-btn {
+    justify-content: center;
+  }
+
+  .mini-btn--copy {
+    margin-left: 0;
+  }
+
+  .mini-group--row {
+    width: 100%;
+  }
 }

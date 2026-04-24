@@ -25,7 +25,7 @@ export function createModalStyles(): string {
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  width: min(560px, 95vw);
+  width: min(640px, 96vw);
   max-height: 90vh;
   overflow-y: auto;
   display: flex;
@@ -125,7 +125,7 @@ label[for="edi-text"] {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #6b7280;
-  width: 100%
+  width: 100%;
 }
 
 .edi-action-group > div {
@@ -147,6 +147,7 @@ label[for="edi-text"] {
 }
 
 button[id^="btn-"] {
+  min-height: 36px;
   padding: 7px 14px;
   border: 1.5px solid #d1d5db;
   border-radius: 6px;
@@ -183,10 +184,29 @@ button[id^="btn-"]:disabled {
   display: flex;
   justify-content: flex-end;
   align-items: flex-end;
+  gap: 8px;
   width: 100%;
 }
 
+#edi-copy {
+  min-height: 36px;
+  border: 1.5px solid #d1d5db;
+  padding: 7px 14px;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms;
+}
+
+#edi-copy:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
 #edi-apply {
+  min-height: 36px;
   border: 1.5px solid #3b82f6;
   padding: 7px 14px;
   background: #1d4ed8;
@@ -320,9 +340,11 @@ button[id^="btn-"]:disabled {
   border: 1.5px solid #d1d5db;
   border-radius: 6px;
   overflow: hidden;
+  background: #f9fafb;
 }
 
 .edi-tone-mode-btn {
+  min-height: 30px;
   padding: 3px 10px;
   font-size: 0.7rem;
   font-weight: 600;
@@ -365,10 +387,12 @@ button[id^="btn-"]:disabled {
   border: 1.5px solid #d1d5db;
   border-radius: 6px;
   overflow: hidden;
+  background: #f9fafb;
   align-self: flex-start;
 }
 
 .edi-verbal-mode-btn {
+  min-height: 30px;
   padding: 3px 10px;
   font-size: 0.7rem;
   font-weight: 600;
@@ -401,6 +425,46 @@ button[id^="btn-"]:disabled {
 /* High contrast mode */
 @media (forced-colors: active) {
   * { border-color: ButtonText; }
+}
+
+@media (max-width: 640px) {
+  #edi-panel {
+    width: calc(100vw - 16px);
+    max-height: 94vh;
+    border-radius: 10px;
+  }
+
+  #edi-header,
+  #edi-body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .edi-tone-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .edi-action-group-actions {
+    flex-direction: column;
+  }
+
+  .edi-action-group-actions div {
+    width: 100%;
+  }
+
+  #edi-footer {
+    width: 100%;
+    justify-content: stretch;
+    flex-wrap: wrap;
+  }
+
+  #edi-copy,
+  #edi-apply {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
 }
 `;
 }

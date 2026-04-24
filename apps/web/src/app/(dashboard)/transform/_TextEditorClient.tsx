@@ -423,7 +423,8 @@ const FRIENDLY_ERRORS: Record<string, string> = {
 // ── Shared button class ───────────────────────────────────────────────────────
 
 const transformBtnClass =
-  'rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 ' +
+  'min-h-10 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-700 ' +
+  'inline-flex items-center justify-center ' +
   'transition-colors hover:border-gray-300 hover:bg-gray-100 ' +
   'disabled:cursor-not-allowed disabled:opacity-40 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ' +
@@ -534,11 +535,19 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
   const statusMessage = status?.message ?? (isPending ? 'Transformando con IA…' : '');
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 lg:p-7">
       {/* AI credential switcher */}
       {allCredentials.length > 0 ? (
-        <div className="mb-5 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-gray-400">IA:</span>
+        <div className="mb-5 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/80 to-white p-3 sm:p-4">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Proveedor IA</span>
+            {localActive && (
+              <span className="text-[11px] text-gray-500">
+                Modelo: {localActive.selectedModel ?? AI_MODELS[localActive.provider] ?? '—'}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
           {allCredentials.map((cred) => {
             const isActive = cred.id === localActiveId;
             return (
@@ -549,7 +558,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
                 onClick={() => handleActivate(cred.id)}
                 title={cred.isExpired ? 'Clave expirada' : `Usar ${PROVIDER_LABELS[cred.provider] ?? cred.provider} — ${cred.label}`}
                 className={
-                  'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors ' +
+                  'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ' +
                   (isActive
                     ? 'border-indigo-400 bg-indigo-100 text-indigo-800 ring-1 ring-indigo-400'
                     : cred.isExpired
@@ -566,18 +575,14 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
               </button>
             );
           })}
+          </div>
           {isActivating && (
-            <span className="w-full text-xs text-gray-400">Cambiando…</span>
-          )}
-          {localActive && (
-            <span className="text-xs text-gray-400">
-              Modelo: {localActive.selectedModel ?? AI_MODELS[localActive.provider] ?? '—'}
-            </span>
+            <span className="mt-2 block w-full text-xs text-gray-500">Cambiando…</span>
           )}
         </div>
       ) : (
-        <div className="mb-5">
-          <span className="text-xs text-gray-400">
+        <div className="mb-5 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-3">
+          <span className="text-xs text-gray-500">
             Sin clave de IA configurada.{' '}
             <Link href="/credentials/new" className="text-indigo-600 hover:underline">
               Agregar clave
@@ -588,9 +593,12 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
 
       {/* Textarea */}
       <div className="mb-5">
-        <label htmlFor="edi-web-textarea" className="mb-1.5 block text-sm font-medium text-gray-700">
-          Texto a editar
-        </label>
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <label htmlFor="edi-web-textarea" className="block text-sm font-medium text-gray-700">
+            Texto a editar
+          </label>
+          <span className="text-xs text-gray-400">{text.length} caracteres</span>
+        </div>
         <textarea
           id="edi-web-textarea"
           value={text}
@@ -616,11 +624,11 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
       {/* Action groups */}
       <div className="space-y-4">
         {/* Formato */}
-        <div>
+        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
             Formato
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <button type="button" className={transformBtnClass} onClick={() => handleLocal('uppercase')}>
               MAYÚSCULAS
             </button>
@@ -637,11 +645,11 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
         </div>
 
         {/* Estilo Unicode */}
-        <div>
+        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
             Estilo Unicode
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             <button type="button" className={transformBtnClass} onClick={() => handleLocal('format-unicode-bold')}>
               𝐍𝐞𝐠𝐫𝐢𝐭𝐚
             </button>
@@ -664,8 +672,8 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
         </div>
 
         {/* Tono */}
-        <div>
-          <div className="mb-2 flex items-center gap-3">
+        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4">
+          <div className="mb-2 flex flex-wrap items-center gap-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
               Tono
             </p>
@@ -764,7 +772,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
         </div>
 
         {/* IA + Copiar */}
-        <div className="flex flex-wrap items-end justify-between gap-3 border-t border-gray-100 pt-4">
+        <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
               Inteligencia Artificial
@@ -785,6 +793,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
             size="sm"
             disabled={!text || isPending}
             onClick={handleCopy}
+            className="w-full justify-center sm:w-auto"
           >
             <svg
               className="h-3.5 w-3.5"

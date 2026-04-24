@@ -1467,6 +1467,7 @@ interface CredentialInfo {
   provider: string;
   label: string;
   isActive: boolean;
+  isEnabled: boolean;
   isExpired: boolean;
   selectedModel: string | null;
 }
@@ -1555,15 +1556,17 @@ async function loadAICredential(token: string): Promise<void> {
       return;
     }
     const body = (await res.json()) as {
-      data?: { id?: string; provider?: string; label?: string; isActive?: boolean; isExpired?: boolean; selectedModel?: string | null }[];
+      data?: { id?: string; provider?: string; label?: string; isActive?: boolean; isEnabled?: boolean; isExpired?: boolean; selectedModel?: string | null }[];
     };
     const creds: CredentialInfo[] = (body.data ?? [])
       .filter((c): c is Required<typeof c> => !!c.id && !!c.provider && !!c.label)
+      .filter((c) => c.isEnabled !== false)
       .map((c) => ({
         id: c.id,
         provider: c.provider,
         label: c.label,
         isActive: c.isActive ?? false,
+        isEnabled: c.isEnabled ?? true,
         isExpired: c.isExpired ?? false,
         selectedModel: c.selectedModel ?? null,
       }));

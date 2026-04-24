@@ -93,6 +93,7 @@ export function createModalHTML(_initialText: string): string {
             <button id="btn-ortografia" type="button" aria-busy="false">Corregir ortografía</button>
           </div>
           <footer id="edi-footer">
+            <button id="edi-copy" type="button" aria-label="Copiar texto editado">Copiar texto</button>
             <button id="edi-apply" type="button">Aplicar al texto original</button>
           </footer>
         </div>

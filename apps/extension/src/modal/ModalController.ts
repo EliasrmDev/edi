@@ -16,8 +16,15 @@ interface CredentialItem {
   provider: string;
   label: string;
   isActive: boolean;
+  isEnabled: boolean;
   isExpired: boolean;
   selectedModel: string | null;
+}
+
+interface ProxyResponse<T = unknown> {
+  error?: string;
+  status?: number;
+  data?: T;
 }
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -113,6 +120,11 @@ export class ModalController {
     modal.querySelector('#edi-apply')?.addEventListener('click', () => {
       const textarea = modal.querySelector<HTMLTextAreaElement>('#edi-text');
       if (textarea) options.onApply(textarea.value);
+    });
+
+    // Copy button
+    modal.querySelector('#edi-copy')?.addEventListener('click', () => {
+      void this.copyCurrentText();
     });
 
     // Local transformation buttons (formatting + case — never use AI)
@@ -435,6 +447,50 @@ export class ModalController {
     }
   }
 
+  private showStatus(message: string): void {
+    const status = this.shadowRoot.querySelector('#edi-status');
+    if (status) {
+      status.textContent = message;
+      status.setAttribute('role', 'status');
+    }
+  }
+
+  private async copyCurrentText(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.currentText);
+      this.showStatus('Texto copiado al portapapeles.');
+      return;
+    } catch {
+      // Fallback for pages where navigator.clipboard is blocked.
+    }
+
+    const textarea = this.shadowRoot.querySelector<HTMLTextAreaElement>('#edi-text');
+    if (!textarea) {
+      this.showError('No se pudo copiar el texto. Intentá de nuevo.');
+      return;
+    }
+
+    const previousStart = textarea.selectionStart;
+    const previousEnd = textarea.selectionEnd;
+
+    try {
+      textarea.focus();
+      textarea.select();
+      const copied = document.execCommand('copy');
+      if (copied) {
+        this.showStatus('Texto copiado al portapapeles.');
+      } else {
+        this.showError('No se pudo copiar el texto. Intentá de nuevo.');
+      }
+    } catch {
+      this.showError('No se pudo copiar el texto. Intentá de nuevo.');
+    } finally {
+      if (previousStart !== null && previousEnd !== null) {
+        textarea.setSelectionRange(previousStart, previousEnd);
+      }
+    }
+  }
+
   private setAIToneLoadingState(loading: boolean, message?: string): void {
     const toneSelectors = ['#btn-voseo', '#btn-tuteo', '#btn-ustedeo', '#btn-tone-mode-local', '#btn-tone-mode-ai', '#btn-mode-ind', '#btn-mode-imp'];
     for (const sel of toneSelectors) {
@@ -522,22 +578,82 @@ export class ModalController {
   // ── AI credential picker ────────────────────────────────────────────────────
 
   async loadCredentials(): Promise<void> {
+    const statusText = this.shadowRoot.querySelector<HTMLElement>('#edi-ai-status-text');
+    if (statusText) statusText.textContent = 'Cargando claves de IA…';
+
     try {
-      const stored = await chrome.storage.local.get(['authToken']) as { authToken?: string };
-      if (!stored.authToken) return;
+      const stored = await chrome.storage.local.get(['authToken', 'tokenExpiresAt']) as {
+        authToken?: string;
+        tokenExpiresAt?: number;
+      };
 
-      const response = await chrome.runtime.sendMessage({
-        type: 'PROXY_API_CALL',
-        payload: { endpoint: '/api/credentials', method: 'GET' },
-      }) as { error?: string; status?: number; data?: { data?: CredentialItem[] } };
+      if (!stored.authToken) {
+        this.showCredentialAccessMessage('Iniciá sesión para usar claves de IA.');
+        return;
+      }
 
-      if (response?.error || !response?.data?.data) return;
+      if (!stored.tokenExpiresAt || Date.now() > stored.tokenExpiresAt) {
+        await chrome.storage.local.remove(['authToken', 'tokenExpiresAt']);
+        this.showCredentialAccessMessage('Tu sesión expiró. Volvé a iniciar sesión.');
+        return;
+      }
 
-      const creds = response.data.data;
+      const authCheck = await this.proxyGet<{ data?: { user?: { id?: string } } }>('/api/auth/me');
+      const unauthorized = authCheck?.error === 'NOT_AUTHENTICATED' || authCheck?.status === 401 || authCheck?.status === 403;
+      if (!authCheck || unauthorized) {
+        this.showCredentialAccessMessage('No hay acceso a tus claves de IA. Iniciá sesión de nuevo.');
+        return;
+      }
+
+      let response: ProxyResponse<{ data?: CredentialItem[] }> | null = null;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        response = await this.proxyGet<{ data?: CredentialItem[] }>('/api/credentials');
+        const shouldRetry = !response || response.error === 'NETWORK_ERROR';
+        if (!shouldRetry) break;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+
+      if (!response || response.error) {
+        this.showCredentialAccessMessage('No se pudieron cargar tus claves de IA. Intentá de nuevo.');
+        return;
+      }
+
+      if (!response.data?.data) {
+        this.renderCredentialBar([]);
+        return;
+      }
+
+      const creds = response.data.data.filter((cred) => cred.isEnabled !== false);
       this.renderCredentialBar(creds);
     } catch {
-      // Non-blocking — credential bar simply won't render if the service worker
-      // is unavailable (e.g. extension just reloaded).
+      this.showCredentialAccessMessage('No se pudieron verificar las claves de IA en este momento.');
+    }
+  }
+
+  private async proxyGet<T>(endpoint: string): Promise<ProxyResponse<T> | null> {
+    try {
+      return await chrome.runtime.sendMessage({
+        type: 'PROXY_API_CALL',
+        payload: { endpoint, method: 'GET' },
+      }) as ProxyResponse<T>;
+    } catch {
+      return null;
+    }
+  }
+
+  private showCredentialAccessMessage(message: string): void {
+    const statusText = this.shadowRoot.querySelector<HTMLElement>('#edi-ai-status-text');
+    const picker = this.shadowRoot.querySelector<HTMLElement>('#edi-cred-picker');
+    const toggleBtn = this.shadowRoot.querySelector<HTMLButtonElement>('#edi-ai-toggle');
+
+    if (statusText) statusText.textContent = message;
+    if (picker) {
+      picker.hidden = true;
+      picker.innerHTML = '';
+    }
+    if (toggleBtn) {
+      toggleBtn.hidden = true;
+      toggleBtn.setAttribute('aria-expanded', 'false');
     }
   }
 
