@@ -16,7 +16,23 @@ export function createModalHTML(_initialText: string): string {
       <button id="edi-close" aria-label="Cerrar editor" type="button">&#215;</button>
     </header>
 
+
     <div id="edi-body">
+      <!-- AI provider bar -->
+      <div id="edi-ai-bar">
+        <div id="edi-ai-info-row">
+          <span id="edi-ai-status-text">Sin clave de IA</span>
+          <button id="edi-ai-toggle" type="button" aria-expanded="false"
+                  aria-controls="edi-cred-picker" aria-label="Mostrar proveedores de IA">
+            <svg id="edi-ai-chevron" width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+              <path d="M3 4.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <div id="edi-cred-picker" hidden role="listbox" aria-label="Seleccionar proveedor de IA">
+          <!-- populated by ModalController -->
+        </div>
+      </div> <!-- /AI provider bar -->
       <label for="edi-text" id="edi-text-label">Texto a editar</label>
       <textarea
         id="edi-text"
@@ -134,22 +150,6 @@ export function createModalHTML(_initialText: string): string {
             <button id="edi-copy" type="button" aria-label="Copiar texto editado">Copiar texto</button>
             <button id="edi-apply" type="button">Aplicar al texto original</button>
           </footer>
-        </div>
-      </div>
-
-      <!-- AI provider bar -->
-      <div id="edi-ai-bar">
-        <div id="edi-ai-info-row">
-          <span id="edi-ai-status-text">Sin clave de IA</span>
-          <button id="edi-ai-toggle" type="button" aria-expanded="false"
-                  aria-controls="edi-cred-picker" aria-label="Mostrar proveedores de IA">
-            <svg id="edi-ai-chevron" width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
-              <path d="M3 4.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
-        <div id="edi-cred-picker" hidden role="listbox" aria-label="Seleccionar proveedor de IA">
-          <!-- populated by ModalController -->
         </div>
       </div>
     </div>

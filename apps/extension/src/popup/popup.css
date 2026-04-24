@@ -36,11 +36,11 @@
   :root {
     --c-bg:           #0f172a;
     --c-surface:      #1e293b;
-    --c-surf-2:       #334155;
-    --c-border:       #334155;
+    --c-surf-2:       #2e3744;
+    --c-border:       #2e3744;
     --c-text-1:       #f1f5f9;
-    --c-text-2:       #94a3b8;
-    --c-text-3:       #475569;
+    --c-text-2:       #c4c4c4;
+    --c-text-3:       #b3b3b3;
     --c-primary-faint:#1e1b4b;
     --c-success-bg:   #064e3b;
     --c-success-text: #6ee7b7;
@@ -768,7 +768,7 @@ body {
 .settings-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--c-text-2);
+  color: var(--c-text-1);
 }
 
 .settings-select {
@@ -1020,6 +1020,87 @@ body {
 }
 .auth-quota[hidden] { display: none !important; }
 
+/* Loading / error inline states */
+.usage-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--c-text-2);
+  padding: 2px 0;
+}
+.usage-state[hidden] { display: none !important; }
+#usage-error { color: var(--c-error); }
+
+/* Section header row */
+.usage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.usage-period {
+  font-size: 10px;
+  color: var(--c-text-3);
+}
+
+/* One daily/monthly row */
+.usage-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+.usage-row:last-of-type { margin-bottom: 0; }
+
+.usage-row-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.usage-row-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-text-2);
+}
+.usage-row-count {
+  font-size: 11px;
+  color: var(--c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+.usage-reset-hint {
+  font-size: 10px;
+  color: var(--c-text-3);
+  line-height: 1;
+}
+
+/* Monthly bar color override */
+.auth-quota-fill--monthly { background: var(--c-success); }
+
+/* Gasto acumulado — not yet available */
+.usage-unavailable {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 5px;
+  border-top: 1px solid var(--c-border);
+  margin-top: 4px;
+}
+.usage-unavailable-label {
+  font-size: 11px;
+  color: var(--c-text-2);
+}
+.usage-na-badge {
+  font-size: 10px;
+  color: var(--c-text-3);
+  background: var(--c-border);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+/* data state hidden helper */
+#usage-data[hidden] { display: none !important; }
+
 .auth-quota-bar {
   height: 5px;
   background: var(--c-border);
@@ -1032,11 +1113,6 @@ body {
   background: var(--c-primary);
   border-radius: 3px;
   transition: width 0.4s ease;
-}
-
-.auth-quota-text {
-  font-size: 11px;
-  color: var(--c-text-2);
 }
 
 .auth-logout-btn {

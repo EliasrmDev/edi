@@ -1610,7 +1610,18 @@ interface LoginResponse {
 }
 
 interface QuotaResponse {
-  data?: { daily?: { used?: number; limit?: number } };
+  data?: {
+    // Normal quota record
+    dailyUsed?: number;
+    dailyLimit?: number;
+    monthlyUsed?: number;
+    monthlyLimit?: number;
+    resetDailyAt?: string;
+    resetMonthlyAt?: string;
+    // Returned when no quota record exists
+    unlimited?: boolean;
+    message?: string;
+  };
 }
 
 function setupAuth(): void {
@@ -1782,29 +1793,111 @@ function renderLoggedIn(displayName: string | null, email: string, token: string
 }
 
 async function loadQuota(token: string): Promise<void> {
+  const quotaEl = document.getElementById('auth-quota');
+  const loadingEl = document.getElementById('usage-loading');
+  const errorEl = document.getElementById('usage-error');
+  const dataEl = document.getElementById('usage-data');
+
+  if (!quotaEl || !loadingEl || !errorEl || !dataEl) return;
+
+  // Show the section in loading state
+  quotaEl.hidden = false;
+  loadingEl.hidden = false;
+  errorEl.hidden = true;
+  dataEl.hidden = true;
+
   try {
     const res = await fetch(`${API_BASE}/api/transform/quota`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return;
+
+    if (!res.ok) {
+      loadingEl.hidden = true;
+      errorEl.hidden = false;
+      return;
+    }
 
     const body = (await res.json()) as QuotaResponse;
-    const used = body.data?.daily?.used ?? 0;
-    const limit = body.data?.daily?.limit ?? 0;
+    const d = body.data;
 
-    const quotaEl = document.getElementById('auth-quota');
-    const fillEl = document.getElementById('auth-quota-fill');
-    const textEl = document.getElementById('auth-quota-text');
+    loadingEl.hidden = true;
 
-    if (!quotaEl || !fillEl || !textEl) return;
+    // Unlimited / no quota record
+    if (!d || d.unlimited) {
+      const periodEl = document.getElementById('usage-period');
+      const dailyText = document.getElementById('usage-daily-text');
+      const monthlyText = document.getElementById('usage-monthly-text');
+      if (periodEl) periodEl.textContent = 'Sin límite';
+      if (dailyText) dailyText.textContent = 'Ilimitado';
+      if (monthlyText) monthlyText.textContent = 'Ilimitado';
+      const dailyFill = document.getElementById('usage-daily-fill') as HTMLElement | null;
+      const monthlyFill = document.getElementById('usage-monthly-fill') as HTMLElement | null;
+      if (dailyFill) dailyFill.style.width = '0%';
+      if (monthlyFill) monthlyFill.style.width = '0%';
+      const dailyReset = document.getElementById('usage-daily-reset');
+      const monthlyReset = document.getElementById('usage-monthly-reset');
+      if (dailyReset) dailyReset.textContent = '';
+      if (monthlyReset) monthlyReset.textContent = '';
+      dataEl.hidden = false;
+      return;
+    }
 
-    const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
-    fillEl.style.width = `${pct}%`;
-    textEl.textContent = `${used} / ${limit}`;
-    quotaEl.hidden = false;
+    // Normal quota data
+    const dailyUsed = d.dailyUsed ?? 0;
+    const dailyLimit = d.dailyLimit ?? 0;
+    const monthlyUsed = d.monthlyUsed ?? 0;
+    const monthlyLimit = d.monthlyLimit ?? 0;
+
+    const dailyPct = dailyLimit > 0 ? Math.min(100, Math.round((dailyUsed / dailyLimit) * 100)) : 0;
+    const monthlyPct = monthlyLimit > 0 ? Math.min(100, Math.round((monthlyUsed / monthlyLimit) * 100)) : 0;
+
+    const dailyText = document.getElementById('usage-daily-text');
+    const monthlyText = document.getElementById('usage-monthly-text');
+    const dailyFill = document.getElementById('usage-daily-fill') as HTMLElement | null;
+    const monthlyFill = document.getElementById('usage-monthly-fill') as HTMLElement | null;
+    const dailyReset = document.getElementById('usage-daily-reset');
+    const monthlyReset = document.getElementById('usage-monthly-reset');
+    const periodEl = document.getElementById('usage-period');
+
+    if (dailyText) dailyText.textContent = `${dailyUsed} / ${dailyLimit}`;
+    if (monthlyText) monthlyText.textContent = `${monthlyUsed} / ${monthlyLimit}`;
+    if (dailyFill) {
+      dailyFill.style.width = `${dailyPct}%`;
+      dailyFill.style.background = dailyPct >= 90 ? 'var(--c-error)' : '';
+    }
+    if (monthlyFill) {
+      monthlyFill.style.width = `${monthlyPct}%`;
+    }
+
+    if (d.resetDailyAt) {
+      const resetDate = new Date(d.resetDailyAt);
+      if (dailyReset) dailyReset.textContent = `Reinicia ${fmtResetDate(resetDate)}`;
+      if (periodEl) periodEl.textContent = fmtShortDate(resetDate);
+    }
+    if (d.resetMonthlyAt && monthlyReset) {
+      monthlyReset.textContent = `Reinicia ${fmtResetDate(new Date(d.resetMonthlyAt))}`;
+    }
+
+    dataEl.hidden = false;
   } catch {
-    // Quota is non-critical — silently ignore
+    loadingEl.hidden = true;
+    errorEl.hidden = false;
   }
+}
+
+/** Format a reset date as "hoy HH:MM" or "DD MMM" */
+function fmtResetDate(date: Date): string {
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) {
+    return `hoy ${date.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}`;
+  }
+  return date.toLocaleDateString('es-CR', { day: 'numeric', month: 'short' });
+}
+
+/** Format a date as "DD MMM" for the period label */
+function fmtShortDate(date: Date): string {
+  return date.toLocaleDateString('es-CR', { day: 'numeric', month: 'short' });
 }
 
 function showAuthState(state: 'loading' | 'logged-out' | 'logged-in'): void {

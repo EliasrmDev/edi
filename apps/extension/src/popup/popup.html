@@ -452,12 +452,63 @@
                 <span class="auth-user-email" id="auth-user-email">—</span>
               </div>
             </div>
-            <div id="auth-quota" class="auth-quota" hidden>
-              <span class="settings-label">Correcciones IA hoy</span>
-              <div class="auth-quota-bar">
-                <div id="auth-quota-fill" class="auth-quota-fill" style="width:0%"></div>
+            <!-- Usage section — shown after auth, populated via API -->
+            <div id="auth-quota" class="auth-quota" hidden aria-live="polite" aria-label="Consumo de API">
+
+              <!-- Loading -->
+              <div id="usage-loading" class="usage-state">
+                <span class="auth-spinner" aria-hidden="true"></span>
+                <span>Cargando consumo…</span>
               </div>
-              <span class="auth-quota-text" id="auth-quota-text">0 / 0</span>
+
+              <!-- Error -->
+              <div id="usage-error" class="usage-state" hidden>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M6 1L11 10H1L6 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+                  <path d="M6 5v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                  <circle cx="6" cy="9" r="0.6" fill="currentColor"/>
+                </svg>
+                <span>No se pudo cargar el consumo</span>
+              </div>
+
+              <!-- Data -->
+              <div id="usage-data" hidden>
+                <div class="usage-header">
+                  <span class="settings-label">Consumo IA</span>
+                  <span class="usage-period" id="usage-period">—</span>
+                </div>
+
+                <!-- Daily -->
+                <div class="usage-row">
+                  <div class="usage-row-labels">
+                    <span class="usage-row-label">Diario</span>
+                    <span class="usage-row-count" id="usage-daily-text">— / —</span>
+                  </div>
+                  <div class="auth-quota-bar">
+                    <div id="usage-daily-fill" class="auth-quota-fill" style="width:0%"></div>
+                  </div>
+                  <span class="usage-reset-hint" id="usage-daily-reset"></span>
+                </div>
+
+                <!-- Monthly -->
+                <div class="usage-row">
+                  <div class="usage-row-labels">
+                    <span class="usage-row-label">Mensual</span>
+                    <span class="usage-row-count" id="usage-monthly-text">— / —</span>
+                  </div>
+                  <div class="auth-quota-bar">
+                    <div id="usage-monthly-fill" class="auth-quota-fill auth-quota-fill--monthly" style="width:0%"></div>
+                  </div>
+                  <span class="usage-reset-hint" id="usage-monthly-reset"></span>
+                </div>
+
+                <!-- Gasto acumulado — not yet available in API -->
+                <div class="usage-unavailable">
+                  <span class="usage-unavailable-label">Gasto acumulado</span>
+                  <span class="usage-na-badge">No disponible</span>
+                </div>
+              </div>
+
             </div>
             <button id="auth-logout" class="auth-logout-btn" type="button">
               Cerrar sesión

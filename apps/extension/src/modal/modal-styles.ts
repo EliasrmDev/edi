@@ -415,15 +415,19 @@ button[id^="btn-"]:disabled {
 }
 
 #edi-cred-picker:not([hidden]) {
+  display: flex;
   border-top: 1.5px solid #e0e7ff;
   background: #ffffff;
   padding: 8px 12px;
 }
 
 #edi-cred-picker {
-  display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+#edi-cred-picker:[hidden] {
+  display: none;
 }
 
 .edi-cred-item {
@@ -491,7 +495,6 @@ button[id^="btn-"]:disabled {
   padding: 30px 10px 10px;
   margin: 18px 0 10px;
   min-width: 362px;
-  width: 100%;
 }
 
 .edi-group-wrapper .edi-tone-header {
