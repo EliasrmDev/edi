@@ -358,6 +358,41 @@ button[id^="btn-"]:disabled {
   border-color: #6366f1;
 }
 
+/* ── Verbal mode toggle ───────────────────────────────────────────────────── */
+
+.edi-verbal-mode {
+  display: flex;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  overflow: hidden;
+  align-self: flex-start;
+}
+
+.edi-verbal-mode-btn {
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: none;
+  border-right: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+  line-height: 1.4;
+}
+
+.edi-verbal-mode-btn:last-child { border-right: none; }
+
+.edi-verbal-mode-btn[aria-pressed="true"] {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.edi-verbal-mode-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }

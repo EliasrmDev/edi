@@ -3,13 +3,38 @@ import { preserveCase, normalizeForLookup } from '../utils/accentUtils';
 import { PRONOUN_REPLACEMENTS } from '../data/pronounMappings';
 import type { PronounReplacement } from '../data/pronounMappings';
 import type { VerbEntry } from '../data/verbMappings';
+import { deriveFallbackImperative } from '../utils/RegularVerbFallback';
+import type { VerbalMode } from '@edi/shared';
 
 export type TargetTone = 'voseo' | 'tuteo' | 'ustedeo';
 
 /**
- * Returns the target form from a VerbEntry for the given target tone.
+ * Returns the target form from a VerbEntry for the given target tone and mode.
+ * Falls back to deriveFallbackImperative when no explicit imperative is stored,
+ * and ultimately falls back to the indicative form.
  */
-export function getTargetVerbForm(entry: VerbEntry, targetTone: TargetTone): string {
+export function getTargetVerbForm(
+  entry: VerbEntry,
+  targetTone: TargetTone,
+  mode: VerbalMode,
+): string {
+  if (mode === 'imperativo') {
+    const imp =
+      targetTone === 'voseo'   ? entry.voseoImperative
+      : targetTone === 'tuteo'   ? entry.tuteoImperative
+      :                            entry.ustedeoImperative;
+    if (imp) return imp;
+
+    // Derive from the indicative form when no explicit imperative is stored
+    const indicative =
+      targetTone === 'voseo'   ? entry.voseo
+      : targetTone === 'tuteo'   ? entry.tuteo
+      :                            entry.ustedeo;
+    const derived = deriveFallbackImperative(indicative, targetTone);
+    if (derived) return derived;
+  }
+
+  // indicativo (default) or fallback when imperative cannot be derived
   switch (targetTone) {
     case 'voseo':   return entry.voseo;
     case 'tuteo':   return entry.tuteo;
@@ -25,9 +50,11 @@ export function getTargetVerbForm(entry: VerbEntry, targetTone: TargetTone): str
  */
 export abstract class BaseTransformer {
   protected readonly targetTone: TargetTone;
+  protected readonly verbalMode: VerbalMode;
 
-  constructor(targetTone: TargetTone) {
+  constructor(targetTone: TargetTone, verbalMode: VerbalMode = 'indicativo') {
     this.targetTone = targetTone;
+    this.verbalMode = verbalMode;
   }
 
   /**

@@ -1,11 +1,11 @@
-import type { TransformationType, ToneType } from '@edi/shared';
+import type { TransformationType, ToneType, VerbalMode } from '@edi/shared';
 
 export class AIPromptService {
   /**
    * Build a complete system prompt for the AI model.
    * Combines base instructions + tone-specific instructions + task instructions.
    */
-  buildSystemPrompt(transformation: TransformationType, tone: ToneType): string {
+  buildSystemPrompt(transformation: TransformationType, tone: ToneType, verbalMode?: VerbalMode): string {
     const baseInstructions = `
 Eres un corrector de texto experto en español latinoamericano,
 con énfasis especial en el español costarricense (Costa Rica).
@@ -19,9 +19,10 @@ REGLAS ABSOLUTAS:
 `;
 
     const toneInstructions = this.buildToneInstructions(tone);
+    const verbalModeInstructions = verbalMode === 'imperativo' ? this.buildVerbalModeInstructions(tone) : '';
     const transformationInstructions = this.buildTransformationInstructions(transformation);
 
-    return [baseInstructions, toneInstructions, transformationInstructions]
+    return [baseInstructions, toneInstructions, verbalModeInstructions, transformationInstructions]
       .filter(Boolean)
       .join('\n\n');
   }
@@ -69,6 +70,23 @@ TONO: Ustedeo (formal/respetuoso, uso costarricense)
         return '';
       }
     }
+  }
+
+  private buildVerbalModeInstructions(tone: ToneType): string {
+    const examplesByTone = {
+      'voseo-cr': 'hablá, comprá, mirá, elegí, empezá, probá, aprovechá',
+      'tuteo':    'habla, compra, mira, elige, empieza, prueba, aprovecha',
+      'ustedeo':  'hable, compre, mire, elija, empiece, pruebe, aproveche',
+    } as const;
+
+    return `
+MODO VERBAL: Imperativo (invitación directa a la acción)
+- Usa formas imperativas directas y claras — ideales para CTAs, botones, titulares y llamadas a la acción
+- Ejemplos para este tratamiento: ${examplesByTone[tone] ?? ''}
+- Mantén el tono y registro del tratamiento seleccionado — no lo cambies
+- Evita sonar autoritario o agresivo; el imperativo debe invitar, no exigir
+- Cuando el texto ya esté en imperativo y sea correcto, consérvalo tal cual
+`;
   }
 
   private buildTransformationInstructions(transformation: TransformationType): string {

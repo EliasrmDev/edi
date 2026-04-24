@@ -41,7 +41,7 @@ export class AIOrchestrationService {
 
     const adapter = getAdapter(provider);
     const tone: ToneType = request.tone ?? 'voseo-cr';
-    const systemPrompt = this.promptService.buildSystemPrompt(request.transformation, tone);
+    const systemPrompt = this.promptService.buildSystemPrompt(request.transformation, tone, request.verbalMode);
 
     const start = Date.now();
 

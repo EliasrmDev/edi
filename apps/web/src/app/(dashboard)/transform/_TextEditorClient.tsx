@@ -249,6 +249,91 @@ const _TONE_LOOKUP: Map<string, ToneForms> = (() => {
   return m;
 })();
 
+// ── Imperative lookup ─────────────────────────────────────────────────────────
+// Each entry: [indicative triple, imperative triple]
+const TONE_IMP_PAIRS: Array<[ToneForms, ToneForms]> = [
+  // AR regular
+  [['hablás',    'hablas',    'habla'],    ['hablá',    'habla',    'hable']],
+  [['comprás',   'compras',   'compra'],   ['comprá',   'compra',   'compre']],
+  [['trabajás',  'trabajas',  'trabaja'],  ['trabajá',  'trabaja',  'trabaje']],
+  [['tomás',     'tomas',     'toma'],     ['tomá',     'toma',     'tome']],
+  [['usás',      'usas',      'usa'],      ['usá',      'usa',      'use']],
+  [['esperás',   'esperas',   'espera'],   ['esperá',   'espera',   'espere']],
+  [['mirás',     'miras',     'mira'],     ['mirá',     'mira',     'mire']],
+  [['buscás',    'buscas',    'busca'],    ['buscá',    'busca',    'busque']],
+  [['llegás',    'llegas',    'llega'],    ['llegá',    'llega',    'llegue']],
+  [['entrás',    'entras',    'entra'],    ['entrá',    'entra',    'entre']],
+  [['pasás',     'pasas',     'pasa'],     ['pasá',     'pasa',     'pase']],
+  [['dejás',     'dejas',     'deja'],     ['dejá',     'deja',     'deje']],
+  [['ayudás',    'ayudas',    'ayuda'],    ['ayudá',    'ayuda',    'ayude']],
+  [['escuchás',  'escuchas',  'escucha'],  ['escuchá',  'escucha',  'escuche']],
+  [['ganás',     'ganas',     'gana'],     ['ganá',     'gana',     'gane']],
+  [['bajás',     'bajas',     'baja'],     ['bajá',     'baja',     'baje']],
+  [['guardás',   'guardas',   'guarda'],   ['guardá',   'guarda',   'guarde']],
+  [['preguntás', 'preguntas', 'pregunta'], ['preguntá', 'pregunta', 'pregunte']],
+  [['necesitás', 'necesitas', 'necesita'], ['necesitá', 'necesita', 'necesite']],
+  [['aprovechás','aprovechas','aprovecha'],['aprovechá','aprovecha','aproveche']],
+  [['explorás',  'exploras',  'explora'],  ['explorá',  'explora',  'explore']],
+  [['disfrutás', 'disfrutas', 'disfruta'], ['disfrutá', 'disfruta', 'disfrute']],
+  [['conectás',  'conectas',  'conecta'],  ['conectá',  'conecta',  'conecte']],
+  [['registrás', 'registras', 'registra'], ['registrá', 'registra', 'registre']],
+  [['descargás', 'descargas', 'descarga'], ['descargá', 'descarga', 'descargue']],
+  [['instalás',  'instalas',  'instala'],  ['instalá',  'instala',  'instale']],
+  [['activás',   'activas',   'activa'],   ['activá',   'activa',   'active']],
+  [['confirmás', 'confirmas', 'confirma'], ['confirmá', 'confirma', 'confirme']],
+  [['contactás', 'contactas', 'contacta'], ['contactá', 'contacta', 'contacte']],
+  [['visitás',   'visitas',   'visita'],   ['visitá',   'visita',   'visite']],
+  // ER regular
+  [['comés',     'comes',     'come'],     ['comé',     'come',     'coma']],
+  [['leés',      'lees',      'lee'],      ['leé',      'lee',      'lea']],
+  [['corrés',    'corres',    'corre'],    ['corré',    'corre',    'corra']],
+  [['vendés',    'vendes',    'vende'],    ['vendé',    'vende',    'venda']],
+  [['rompés',    'rompes',    'rompe'],    ['rompé',    'rompe',    'rompa']],
+  [['creés',     'crees',     'cree'],     ['creé',     'cree',     'crea']],
+  // IR regular
+  [['vivís',     'vives',     'vive'],     ['viví',     'vive',     'viva']],
+  [['escribís',  'escribes',  'escribe'],  ['escribí',  'escribe',  'escriba']],
+  [['abrís',     'abres',     'abre'],     ['abrí',     'abre',     'abra']],
+  [['recibís',   'recibes',   'recibe'],   ['recibí',   'recibe',   'reciba']],
+  [['subís',     'subes',     'sube'],     ['subí',     'sube',     'suba']],
+  [['descubrís', 'descubres', 'descubre'], ['descubrí', 'descubre', 'descubra']],
+  [['compartís', 'compartes', 'comparte'], ['compartí', 'comparte', 'comparta']],
+  [['aprendés',  'aprendes',  'aprende'],  ['aprendé',  'aprende',  'aprenda']],
+  // Irregular
+  [['tenés',     'tienes',    'tiene'],    ['tené',     'ten',      'tenga']],
+  [['venís',     'vienes',    'viene'],    ['vení',     'ven',      'venga']],
+  [['hacés',     'haces',     'hace'],     ['hacé',     'haz',      'haga']],
+  [['ponés',     'pones',     'pone'],     ['poné',     'pon',      'ponga']],
+  [['salís',     'sales',     'sale'],     ['salí',     'sal',      'salga']],
+  [['decís',     'dices',     'dice'],     ['decí',     'di',       'diga']],
+  [['vas',       'vas',       'va'],       ['andá',     've',       'vaya']],
+  [['traés',     'traes',     'trae'],     ['traé',     'trae',     'traiga']],
+  // Stem-changing
+  [['querés',    'quieres',   'quiere'],   ['queré',    'quiere',   'quiera']],
+  [['entendés',  'entiendes', 'entiende'], ['entendé',  'entiende', 'entienda']],
+  [['probás',    'pruebas',   'prueba'],   ['probá',    'prueba',   'pruebe']],
+  [['empezás',   'empiezas',  'empieza'],  ['empezá',   'empieza',  'empiece']],
+  [['volvés',    'vuelves',   'vuelve'],   ['volvé',    'vuelve',   'vuelva']],
+  [['elegís',    'eliges',    'elige'],    ['elegí',    'elige',    'elija']],
+  [['seguís',    'sigues',    'sigue'],    ['seguí',    'sigue',    'siga']],
+  [['pedís',     'pides',     'pide'],     ['pedí',     'pide',     'pida']],
+  [['servís',    'sirves',    'sirve'],    ['serví',    'sirve',    'sirva']],
+  [['accedés',   'accedes',   'accede'],   ['accedé',   'accede',   'acceda']],
+];
+
+const _TONE_IMP_LOOKUP: Map<string, ToneForms> = (() => {
+  const m = new Map<string, ToneForms>();
+  for (const [ind, imp] of TONE_IMP_PAIRS) {
+    for (const form of ind) {
+      const key1 = form.toLowerCase();
+      const key2 = _deaccent(key1);
+      if (!m.has(key1)) m.set(key1, imp);
+      if (!m.has(key2)) m.set(key2, imp);
+    }
+  }
+  return m;
+})();
+
 function _preserveToneCase(original: string, replacement: string): string {
   if (original === original.toUpperCase() && original.length > 1) return replacement.toUpperCase();
   if (original[0] === original[0]?.toUpperCase()) {
@@ -257,11 +342,22 @@ function _preserveToneCase(original: string, replacement: string): string {
   return replacement;
 }
 
-function applyLocalTone(text: string, target: ToneTarget): string {
+function applyLocalTone(text: string, target: ToneTarget, verbalMode: 'indicativo' | 'imperativo' = 'indicativo'): string {
   const idx = target === 'voseo' ? 0 : target === 'tuteo' ? 1 : 2;
 
   // 1. Word-level verb replacements
   const verbReplaced = text.replace(/[\wáéíóúüñÁÉÍÓÚÜÑ]+/g, (word) => {
+    if (verbalMode === 'imperativo') {
+      const impEntry =
+        _TONE_IMP_LOOKUP.get(word.toLowerCase()) ??
+        _TONE_IMP_LOOKUP.get(_deaccent(word.toLowerCase()));
+      if (impEntry) {
+        const replacement = impEntry[idx] ?? word;
+        if (replacement.toLowerCase() !== word.toLowerCase()) {
+          return _preserveToneCase(word, replacement);
+        }
+      }
+    }
     const entry =
       _TONE_LOOKUP.get(word.toLowerCase()) ??
       _TONE_LOOKUP.get(_deaccent(word.toLowerCase()));
@@ -362,6 +458,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
   const [isActivating, startActivating] = useTransition();
   const [localActiveId, setLocalActiveId] = useState(activeCredential?.id ?? null);
   const [toneMode, setToneMode] = useState<'local' | 'ai'>('local');
+  const [verbalMode, setVerbalMode] = useState<'indicativo' | 'imperativo'>('indicativo');
 
   const localActive = allCredentials.find((c) => c.id === localActiveId) ?? activeCredential;
 
@@ -386,7 +483,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
         'tone-tuteo': 'tuteo',
         'tone-ustedeo': 'ustedeo',
       };
-      setText((prev) => applyLocalTone(prev, targetMap[t]));
+      setText((prev) => applyLocalTone(prev, targetMap[t], verbalMode));
       setStatus(null);
     } else {
       handleApi(t);
@@ -400,7 +497,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
     }
     setStatus(null);
     startTransition(async () => {
-      const res = await transformTextAction(text, transformation);
+      const res = await transformTextAction(text, transformation, verbalMode);
       if (res.error) {
         setStatus({
           type: 'error',
@@ -600,6 +697,39 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
                 IA ✦
               </button>
             </div>
+          </div>
+          {/* Verbal mode toggle */}
+          <div
+            role="group"
+            aria-label="Modo verbal"
+            className="mb-2 flex w-fit overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs"
+          >
+            <button
+              type="button"
+              aria-pressed={verbalMode === 'indicativo'}
+              onClick={() => setVerbalMode('indicativo')}
+              className={
+                'px-2.5 py-0.5 font-medium transition-colors ' +
+                (verbalMode === 'indicativo'
+                  ? 'bg-white text-gray-800 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700')
+              }
+            >
+              Indicativo
+            </button>
+            <button
+              type="button"
+              aria-pressed={verbalMode === 'imperativo'}
+              onClick={() => setVerbalMode('imperativo')}
+              className={
+                'px-2.5 py-0.5 font-medium transition-colors ' +
+                (verbalMode === 'imperativo'
+                  ? 'bg-white text-green-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700')
+              }
+            >
+              Imperativo
+            </button>
           </div>
           <div className="flex flex-wrap gap-2">
             <button

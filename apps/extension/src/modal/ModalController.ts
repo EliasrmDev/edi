@@ -1,6 +1,6 @@
 /// <reference types="chrome" />
 
-import type { TransformationType, TransformationWarning, ToneType } from '@edi/shared';
+import type { TransformationType, TransformationWarning, ToneType, VerbalMode } from '@edi/shared';
 import { ToneEngine } from '../tone-engine/ToneEngine';
 import { createModalHTML, setModalTextSafe } from './modal-template';
 import { createModalStyles } from './modal-styles';
@@ -39,6 +39,7 @@ export class ModalController {
   private currentText: string = '';
   private keydownHandler: EventListener | null = null;
   private toneMode: 'local' | 'ai' = 'local';
+  private verbalMode: VerbalMode = 'indicativo';
 
   constructor() {
     this.toneEngine = new ToneEngine();
@@ -142,6 +143,14 @@ export class ModalController {
       this.setToneMode('ai');
     });
 
+    // Verbal mode toggle
+    modal.querySelector('#btn-mode-ind')?.addEventListener('click', () => {
+      this.setVerbalMode('indicativo');
+    });
+    modal.querySelector('#btn-mode-imp')?.addEventListener('click', () => {
+      this.setVerbalMode('imperativo');
+    });
+
     // Tone transform buttons — route to local ToneEngine or AI depending on toneMode
     const toneButtons: Array<[string, TransformationType]> = [
       ['#btn-voseo', 'tone-voseo-cr'],
@@ -170,14 +179,15 @@ export class ModalController {
         this.currentText = (e.target as HTMLTextAreaElement).value;
       });
 
-    // Sync toggle UI (toneMode persists across opens within the page session)
+    // Sync toggle UI (toneMode/verbalMode persist across opens within the page session)
     this.updateToneModeUI();
+    this.updateVerbalModeUI();
   }
 
   // ── Transformations ─────────────────────────────────────────────────────────
 
   private applyLocalTransformation(transformation: TransformationType): void {
-    const { result, warnings } = this.toneEngine.transform(this.currentText, transformation);
+    const { result, warnings } = this.toneEngine.transform(this.currentText, transformation, this.verbalMode);
     this.currentText = result;
     this.updateTextarea(result);
 
@@ -276,6 +286,20 @@ export class ModalController {
     if (toneGroup) toneGroup.dataset['mode'] = this.toneMode;
   }
 
+  // ── Verbal mode ──────────────────────────────────────────────────────────────
+
+  private setVerbalMode(mode: VerbalMode): void {
+    this.verbalMode = mode;
+    this.updateVerbalModeUI();
+  }
+
+  private updateVerbalModeUI(): void {
+    const indBtn = this.shadowRoot.querySelector<HTMLButtonElement>('#btn-mode-ind');
+    const impBtn = this.shadowRoot.querySelector<HTMLButtonElement>('#btn-mode-imp');
+    if (indBtn) indBtn.setAttribute('aria-pressed', String(this.verbalMode === 'indicativo'));
+    if (impBtn) impBtn.setAttribute('aria-pressed', String(this.verbalMode === 'imperativo'));
+  }
+
   private async requestAIToneTransformation(transformation: TransformationType): Promise<void> {
     const TONE_MAP: Partial<Record<TransformationType, ToneType>> = {
       'tone-voseo-cr': 'voseo-cr',
@@ -303,6 +327,7 @@ export class ModalController {
             text: this.currentText,
             transformation,
             tone,
+            verbalMode: this.verbalMode,
             locale: 'es-CR',
             requestAIValidation: true,
           },
@@ -411,7 +436,7 @@ export class ModalController {
   }
 
   private setAIToneLoadingState(loading: boolean, message?: string): void {
-    const toneSelectors = ['#btn-voseo', '#btn-tuteo', '#btn-ustedeo', '#btn-tone-mode-local', '#btn-tone-mode-ai'];
+    const toneSelectors = ['#btn-voseo', '#btn-tuteo', '#btn-ustedeo', '#btn-tone-mode-local', '#btn-tone-mode-ai', '#btn-mode-ind', '#btn-mode-imp'];
     for (const sel of toneSelectors) {
       const btn = this.shadowRoot.querySelector<HTMLButtonElement>(sel);
       if (btn) btn.disabled = loading;

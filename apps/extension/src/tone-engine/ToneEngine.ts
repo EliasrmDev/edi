@@ -1,8 +1,8 @@
-import type { TransformationType, TransformationResult } from '@edi/shared';
+import type { TransformationType, TransformationResult, VerbalMode } from '@edi/shared';
 import { toneDetector } from './detectors/ToneDetector';
-import { voseoTransformer } from './transformers/VoseoTransformer';
-import { tuteoTransformer } from './transformers/TuteoTransformer';
-import { ustedeoTransformer } from './transformers/UstedeoTransformer';
+import { createVoseoTransformer, voseoTransformer } from './transformers/VoseoTransformer';
+import { createTuteoTransformer, tuteoTransformer } from './transformers/TuteoTransformer';
+import { createUstedeoTransformer, ustedeoTransformer } from './transformers/UstedeoTransformer';
 import { toUpperCase, toLowerCase, toSentenceCase } from './formatters/CaseFormatter';
 import {
   removeFormatting,
@@ -25,10 +25,10 @@ import type { EngineTransformationResult } from './types';
  * needed.
  */
 export class ToneEngine {
-  transform(text: string, transformation: TransformationType): TransformationResult {
+  transform(text: string, transformation: TransformationType, verbalMode: VerbalMode = 'indicativo'): TransformationResult {
     const start = performance.now();
 
-    const { result, source, warnings } = this._dispatch(text, transformation);
+    const { result, source, warnings } = this._dispatch(text, transformation, verbalMode);
 
     return {
       original: text,
@@ -40,7 +40,7 @@ export class ToneEngine {
     };
   }
 
-  private _dispatch(text: string, transformation: TransformationType): EngineTransformationResult {
+  private _dispatch(text: string, transformation: TransformationType, verbalMode: VerbalMode): EngineTransformationResult {
     switch (transformation) {
       case 'uppercase':
         return { result: toUpperCase(stripUnicodeStyles(text)), source: 'local', warnings: [] };
@@ -56,12 +56,14 @@ export class ToneEngine {
 
       case 'tone-voseo-cr': {
         const detection = toneDetector.detect(text);
-        const result = voseoTransformer.transform(text);
+        const transformer = verbalMode === 'indicativo' ? voseoTransformer : createVoseoTransformer(verbalMode);
+        const result = transformer.transform(text);
+        const modeLabel = verbalMode === 'imperativo' ? 'imperativo' : 'indicativo';
         const warnings = [
           {
             code: 'TONE_COVERAGE_LIMITED',
             message:
-              'Solo se convierten formas verbales del presente indicativo y pronombres de segunda persona.',
+              `Solo se convierten formas verbales del presente ${modeLabel} y pronombres de segunda persona.`,
           },
         ];
         if (detection.confidence === 'low' || detection.detectedTone === 'unknown') {
@@ -75,12 +77,14 @@ export class ToneEngine {
 
       case 'tone-tuteo': {
         const detection = toneDetector.detect(text);
-        const result = tuteoTransformer.transform(text);
+        const transformer = verbalMode === 'indicativo' ? tuteoTransformer : createTuteoTransformer(verbalMode);
+        const result = transformer.transform(text);
+        const modeLabel = verbalMode === 'imperativo' ? 'imperativo' : 'indicativo';
         const warnings = [
           {
             code: 'TONE_COVERAGE_LIMITED',
             message:
-              'Solo se convierten formas verbales del presente indicativo y pronombres de segunda persona.',
+              `Solo se convierten formas verbales del presente ${modeLabel} y pronombres de segunda persona.`,
           },
         ];
         if (detection.confidence === 'low' || detection.detectedTone === 'unknown') {
@@ -94,12 +98,14 @@ export class ToneEngine {
 
       case 'tone-ustedeo': {
         const detection = toneDetector.detect(text);
-        const result = ustedeoTransformer.transform(text);
+        const transformer = verbalMode === 'indicativo' ? ustedeoTransformer : createUstedeoTransformer(verbalMode);
+        const result = transformer.transform(text);
+        const modeLabel = verbalMode === 'imperativo' ? 'imperativo' : 'indicativo';
         const warnings = [
           {
             code: 'TONE_COVERAGE_LIMITED',
             message:
-              'Solo se convierten formas verbales del presente indicativo y pronombres de segunda persona. Las formas de ustedeo coinciden con la 3ª persona (él/ella).',
+              `Solo se convierten formas verbales del presente ${modeLabel} y pronombres de segunda persona. Las formas de ustedeo coinciden con la 3ª persona (él/ella).`,
           },
         ];
         if (detection.confidence === 'low' || detection.detectedTone === 'unknown') {

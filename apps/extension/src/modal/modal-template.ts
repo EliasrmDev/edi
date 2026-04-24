@@ -74,6 +74,12 @@ export function createModalHTML(_initialText: string): string {
                       aria-pressed="false" title="IA especializada para publicidad en Costa Rica">IA ✶</button>
             </div>
           </div>
+          <div id="edi-verbal-mode-toggle" class="edi-verbal-mode" role="group" aria-label="Modo verbal">
+            <button id="btn-mode-ind" type="button" class="edi-verbal-mode-btn"
+                    aria-pressed="true" data-mode="indicativo">Indicativo</button>
+            <button id="btn-mode-imp" type="button" class="edi-verbal-mode-btn"
+                    aria-pressed="false" data-mode="imperativo">Imperativo</button>
+          </div>
           <div role="group" aria-labelledby="grp-tone" id="edi-tone-btns">
             <button id="btn-voseo" type="button">Voseo (CR)</button>
             <button id="btn-tuteo" type="button">Tuteo</button>

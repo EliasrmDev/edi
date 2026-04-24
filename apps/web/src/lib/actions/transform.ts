@@ -20,6 +20,7 @@ export interface TransformResult {
 export async function transformTextAction(
   text: string,
   transformation: ApiTransformation,
+  verbalMode?: 'indicativo' | 'imperativo',
 ): Promise<TransformResult> {
   const authHeader = await getAuthHeader();
 
@@ -36,6 +37,7 @@ export async function transformTextAction(
         transformation,
         locale: 'es-CR',
         requestAIValidation: true,
+        ...(verbalMode ? { verbalMode } : {}),
       }),
     });
   } catch {

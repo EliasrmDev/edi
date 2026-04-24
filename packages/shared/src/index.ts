@@ -1,6 +1,7 @@
 // Types
 export type {
   ToneType,
+  VerbalMode,
   TransformationType,
   TransformationSource,
   TransformationRequest,

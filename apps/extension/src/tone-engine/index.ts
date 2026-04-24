@@ -1,4 +1,4 @@
-import type { TransformationType, TransformationResult } from '@edi/shared';
+import type { TransformationType, TransformationResult, VerbalMode } from '@edi/shared';
 import { ToneEngine } from './ToneEngine';
 import { ToneDetector } from './detectors/ToneDetector';
 
@@ -15,8 +15,9 @@ const _engine = new ToneEngine();
 export function transformText(
   text: string,
   transformation: TransformationType,
+  verbalMode: VerbalMode = 'indicativo',
 ): TransformationResult {
-  return _engine.transform(text, transformation);
+  return _engine.transform(text, transformation, verbalMode);
 }
 
 export { ToneEngine, ToneDetector };

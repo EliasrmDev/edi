@@ -112,7 +112,7 @@ export const VERB_MAPPINGS: VerbEntry[] = [
   // ── Irregular -IR ────────────────────────────────────────────────────────────
   { infinitive: 'salir',      voseo: 'salís',     tuteo: 'sales',     ustedeo: 'sale',     voseoImperative: 'salí',     tuteoImperative: 'sal',       ustedeoImperative: 'salga',    isIrregular: true,  isDiphthongating: false, conjugationGroup: '-ir' },
   { infinitive: 'venir',      voseo: 'venís',     tuteo: 'vienes',    ustedeo: 'viene',    voseoImperative: 'vení',     tuteoImperative: 'ven',       ustedeoImperative: 'venga',    isIrregular: true,  isDiphthongating: true, conjugationGroup: '-ir' },
-  // ── Highly Irregular ─────────────────────────────────────────────────────────
+  // ── Highly Irregular ─────────────────────────────────────────────────────
   { infinitive: 'ser',        voseo: 'sos',       tuteo: 'eres',      ustedeo: 'es',       isIrregular: true,  isDiphthongating: false, conjugationGroup: '-er' },
   // estar: identical in tuteo and ustedeo
   { infinitive: 'estar',      voseo: 'estás',     tuteo: 'estás',     ustedeo: 'está',     voseoImperative: 'está',     tuteoImperative: 'está',      ustedeoImperative: 'esté',     isIrregular: true,  isDiphthongating: false, conjugationGroup: '-ar' },
@@ -122,6 +122,72 @@ export const VERB_MAPPINGS: VerbEntry[] = [
   { infinitive: 'ir',         voseo: 'vas',       tuteo: 'vas',       ustedeo: 'va',       voseoImperative: 'andá',     tuteoImperative: 've',        ustedeoImperative: 'vaya',     isIrregular: true,  isDiphthongating: false, conjugationGroup: '-ir' },
   // dar: identical in voseo and tuteo
   { infinitive: 'dar',        voseo: 'das',       tuteo: 'das',       ustedeo: 'da',       voseoImperative: 'dá',       tuteoImperative: 'da',        ustedeoImperative: 'dé',       isIrregular: true,  isDiphthongating: false, conjugationGroup: '-ar' },
+
+  // ── Marketing digital ────────────────────────────────────────────────────
+  { infinitive: 'ahorrar',      voseo: 'ahorrás',      tuteo: 'ahorras',      ustedeo: 'ahorra',      voseoImperative: 'ahorrá',      tuteoImperative: 'ahorra',       ustedeoImperative: 'ahorre',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'aprovechar',   voseo: 'aprovechás',   tuteo: 'aprovechas',   ustedeo: 'aprovecha',   voseoImperative: 'aprovechá',   tuteoImperative: 'aprovecha',    ustedeoImperative: 'aproveche',    isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'descubrir',    voseo: 'descubrís',    tuteo: 'descubres',    ustedeo: 'descubre',    voseoImperative: 'descubrí',    tuteoImperative: 'descubre',     ustedeoImperative: 'descubra',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ir' },
+  { infinitive: 'explorar',     voseo: 'explorás',     tuteo: 'exploras',     ustedeo: 'explora',     voseoImperative: 'explorá',     tuteoImperative: 'explora',      ustedeoImperative: 'explore',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'disfrutar',    voseo: 'disfrutás',    tuteo: 'disfrutas',    ustedeo: 'disfruta',    voseoImperative: 'disfrutá',    tuteoImperative: 'disfruta',     ustedeoImperative: 'disfrute',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'conectar',     voseo: 'conectás',     tuteo: 'conectas',     ustedeo: 'conecta',     voseoImperative: 'conectá',     tuteoImperative: 'conecta',      ustedeoImperative: 'conecte',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'compartir',    voseo: 'compartís',    tuteo: 'compartes',    ustedeo: 'comparte',    voseoImperative: 'compartí',    tuteoImperative: 'comparte',     ustedeoImperative: 'comparta',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ir' },
+  { infinitive: 'crear',        voseo: 'creás',        tuteo: 'creas',        ustedeo: 'crea',        voseoImperative: 'creá',        tuteoImperative: 'crea',         ustedeoImperative: 'cree',         isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'diseñar',      voseo: 'diseñás',      tuteo: 'diseñas',      ustedeo: 'diseña',      voseoImperative: 'diseñá',      tuteoImperative: 'diseña',       ustedeoImperative: 'diseñe',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'desarrollar',  voseo: 'desarrollás',  tuteo: 'desarrollas',  ustedeo: 'desarrolla',  voseoImperative: 'desarrollá',  tuteoImperative: 'desarrolla',   ustedeoImperative: 'desarrolle',   isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'mejorar',      voseo: 'mejorás',      tuteo: 'mejoras',      ustedeo: 'mejora',      voseoImperative: 'mejorá',      tuteoImperative: 'mejora',       ustedeoImperative: 'mejore',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'optimizar',    voseo: 'optimizás',    tuteo: 'optimizas',    ustedeo: 'optimiza',    voseoImperative: 'optimizá',    tuteoImperative: 'optimiza',     ustedeoImperative: 'optimice',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'transformar',  voseo: 'transformás',  tuteo: 'transformas',  ustedeo: 'transforma',  voseoImperative: 'transformá',  tuteoImperative: 'transforma',   ustedeoImperative: 'transforme',   isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'innovar',      voseo: 'innovás',      tuteo: 'innovas',      ustedeo: 'innova',      voseoImperative: 'innová',      tuteoImperative: 'innova',       ustedeoImperative: 'innove',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'liderar',      voseo: 'liderás',      tuteo: 'lideras',      ustedeo: 'lidera',      voseoImperative: 'liderá',      tuteoImperative: 'lidera',       ustedeoImperative: 'lidere',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'crecer',       voseo: 'crecés',       tuteo: 'creces',       ustedeo: 'crece',       voseoImperative: 'crecé',       tuteoImperative: 'crece',        ustedeoImperative: 'crezca',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-er' },
+
+  // ── E-commerce / conversión ───────────────────────────────────────────────
+  { infinitive: 'pagar',        voseo: 'pagás',        tuteo: 'pagas',        ustedeo: 'paga',        voseoImperative: 'pagá',        tuteoImperative: 'paga',         ustedeoImperative: 'pague',        isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'registrar',    voseo: 'registrás',    tuteo: 'registras',    ustedeo: 'registra',    voseoImperative: 'registrá',    tuteoImperative: 'registra',     ustedeoImperative: 'registre',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'suscribir',    voseo: 'suscribís',    tuteo: 'suscribes',    ustedeo: 'suscribe',    voseoImperative: 'suscribí',    tuteoImperative: 'suscribe',     ustedeoImperative: 'suscriba',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ir' },
+  { infinitive: 'descargar',    voseo: 'descargás',    tuteo: 'descargas',    ustedeo: 'descarga',    voseoImperative: 'descargá',    tuteoImperative: 'descarga',     ustedeoImperative: 'descargue',    isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'instalar',     voseo: 'instalás',     tuteo: 'instalas',     ustedeo: 'instala',     voseoImperative: 'instalá',     tuteoImperative: 'instala',      ustedeoImperative: 'instale',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'activar',      voseo: 'activás',      tuteo: 'activas',      ustedeo: 'activa',      voseoImperative: 'activá',      tuteoImperative: 'activa',       ustedeoImperative: 'active',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'acceder',      voseo: 'accedés',      tuteo: 'accedes',      ustedeo: 'accede',      voseoImperative: 'accedé',      tuteoImperative: 'accede',       ustedeoImperative: 'acceda',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-er' },
+  { infinitive: 'iniciar',      voseo: 'iniciás',      tuteo: 'inicias',      ustedeo: 'inicia',      voseoImperative: 'iniciá',      tuteoImperative: 'inicia',       ustedeoImperative: 'inicie',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'confirmar',    voseo: 'confirmás',    tuteo: 'confirmas',    ustedeo: 'confirma',    voseoImperative: 'confirmá',    tuteoImperative: 'confirma',     ustedeoImperative: 'confirme',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'verificar',    voseo: 'verificás',    tuteo: 'verificas',    ustedeo: 'verifica',    voseoImperative: 'verificá',    tuteoImperative: 'verifica',     ustedeoImperative: 'verifique',    isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'actualizar',   voseo: 'actualizás',   tuteo: 'actualizas',   ustedeo: 'actualiza',   voseoImperative: 'actualizá',   tuteoImperative: 'actualiza',    ustedeoImperative: 'actualice',    isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'cancelar',     voseo: 'cancelás',     tuteo: 'cancelas',     ustedeo: 'cancela',     voseoImperative: 'cancelá',     tuteoImperative: 'cancela',      ustedeoImperative: 'cancele',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'renovar',      voseo: 'renovás',      tuteo: 'renuevas',     ustedeo: 'renueva',     voseoImperative: 'renová',      tuteoImperative: 'renueva',      ustedeoImperative: 'renueve',      isIrregular: false, isDiphthongating: true,  conjugationGroup: '-ar' },
+  { infinitive: 'reservar',     voseo: 'reservás',     tuteo: 'reservas',     ustedeo: 'reserva',     voseoImperative: 'reservá',     tuteoImperative: 'reserva',      ustedeoImperative: 'reserve',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'contratar',    voseo: 'contratás',    tuteo: 'contratas',    ustedeo: 'contrata',    voseoImperative: 'contratá',    tuteoImperative: 'contrata',     ustedeoImperative: 'contrate',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'solicitar',    voseo: 'solicitás',    tuteo: 'solicitas',    ustedeo: 'solicita',    voseoImperative: 'solicitá',    tuteoImperative: 'solicita',     ustedeoImperative: 'solicite',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'agregar',      voseo: 'agregás',      tuteo: 'agregas',      ustedeo: 'agrega',      voseoImperative: 'agregá',      tuteoImperative: 'agrega',       ustedeoImperative: 'agregue',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'eliminar',     voseo: 'eliminás',     tuteo: 'eliminas',     ustedeo: 'elimina',     voseoImperative: 'eliminá',     tuteoImperative: 'elimina',      ustedeoImperative: 'elimine',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+
+  // ── Acción / CTA ─────────────────────────────────────────────────────────
+  { infinitive: 'intentar',     voseo: 'intentás',     tuteo: 'intentas',     ustedeo: 'intenta',     voseoImperative: 'intentá',     tuteoImperative: 'intenta',      ustedeoImperative: 'intente',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'lograr',       voseo: 'lográs',       tuteo: 'logras',       ustedeo: 'logra',       voseoImperative: 'lográ',       tuteoImperative: 'logra',        ustedeoImperative: 'logre',        isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'conseguir',    voseo: 'conseguís',    tuteo: 'consigues',    ustedeo: 'consigue',    voseoImperative: 'conseguí',    tuteoImperative: 'consigue',     ustedeoImperative: 'consiga',      isIrregular: false, isDiphthongating: true,  conjugationGroup: '-ir' },
+  { infinitive: 'obtener',      voseo: 'obtenés',      tuteo: 'obtienes',     ustedeo: 'obtiene',     voseoImperative: 'obtené',      tuteoImperative: 'obtén',        ustedeoImperative: 'obtenga',      isIrregular: true,  isDiphthongating: true,  conjugationGroup: '-er' },
+  { infinitive: 'aceptar',      voseo: 'aceptás',      tuteo: 'aceptas',      ustedeo: 'acepta',      voseoImperative: 'aceptá',      tuteoImperative: 'acepta',       ustedeoImperative: 'acepte',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'seleccionar',  voseo: 'seleccionás',  tuteo: 'seleccionas',  ustedeo: 'selecciona',  voseoImperative: 'seleccioná',  tuteoImperative: 'selecciona',   ustedeoImperative: 'seleccione',   isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'comparar',     voseo: 'comparás',     tuteo: 'comparas',     ustedeo: 'compara',     voseoImperative: 'compará',     tuteoImperative: 'compara',      ustedeoImperative: 'compare',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'calcular',     voseo: 'calculás',     tuteo: 'calculas',     ustedeo: 'calcula',     voseoImperative: 'calculá',     tuteoImperative: 'calcula',      ustedeoImperative: 'calcule',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'enviar',       voseo: 'enviás',       tuteo: 'envías',       ustedeo: 'envía',       voseoImperative: 'enviá',       tuteoImperative: 'envía',        ustedeoImperative: 'envíe',        isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'entregar',     voseo: 'entregás',     tuteo: 'entregas',     ustedeo: 'entrega',     voseoImperative: 'entregá',     tuteoImperative: 'entrega',      ustedeoImperative: 'entregue',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'consultar',    voseo: 'consultás',    tuteo: 'consultas',    ustedeo: 'consulta',    voseoImperative: 'consultá',    tuteoImperative: 'consulta',     ustedeoImperative: 'consulte',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'contactar',    voseo: 'contactás',    tuteo: 'contactas',    ustedeo: 'contacta',    voseoImperative: 'contactá',    tuteoImperative: 'contacta',     ustedeoImperative: 'contacte',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'visitar',      voseo: 'visitás',      tuteo: 'visitas',      ustedeo: 'visita',      voseoImperative: 'visitá',      tuteoImperative: 'visita',       ustedeoImperative: 'visite',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'aprender',     voseo: 'aprendés',     tuteo: 'aprendes',     ustedeo: 'aprende',     voseoImperative: 'aprendé',     tuteoImperative: 'aprende',      ustedeoImperative: 'aprenda',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-er' },
+  { infinitive: 'evaluar',      voseo: 'evaluás',      tuteo: 'evalúas',      ustedeo: 'evalúa',      voseoImperative: 'evaluá',      tuteoImperative: 'evalúa',       ustedeoImperative: 'evalúe',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+
+  // ── Verbos comunes adicionales ────────────────────────────────────────────
+  { infinitive: 'amar',         voseo: 'amás',         tuteo: 'amas',         ustedeo: 'ama',         voseoImperative: 'amá',         tuteoImperative: 'ama',          ustedeoImperative: 'ame',          isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'soñar',        voseo: 'soñás',        tuteo: 'sueñas',       ustedeo: 'sueña',       voseoImperative: 'soñá',        tuteoImperative: 'sueña',        ustedeoImperative: 'sueñe',        isIrregular: false, isDiphthongating: true,  conjugationGroup: '-ar' },
+  { infinitive: 'imaginar',     voseo: 'imaginás',     tuteo: 'imaginas',     ustedeo: 'imagina',     voseoImperative: 'imaginá',     tuteoImperative: 'imagina',      ustedeoImperative: 'imagine',      isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'construir',    voseo: 'construís',    tuteo: 'construyes',   ustedeo: 'construye',   voseoImperative: 'construí',    tuteoImperative: 'construye',    ustedeoImperative: 'construya',    isIrregular: true,  isDiphthongating: false, conjugationGroup: '-ir' },
+  { infinitive: 'manejar',      voseo: 'manejás',      tuteo: 'manejas',      ustedeo: 'maneja',      voseoImperative: 'manejá',      tuteoImperative: 'maneja',       ustedeoImperative: 'maneje',       isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'conducir',     voseo: 'conducís',     tuteo: 'conduces',     ustedeo: 'conduce',     voseoImperative: 'conducí',     tuteoImperative: 'conduce',      ustedeoImperative: 'conduzca',     isIrregular: true,  isDiphthongating: false, conjugationGroup: '-ir' },
+  { infinitive: 'viajar',       voseo: 'viajás',       tuteo: 'viajas',       ustedeo: 'viaja',       voseoImperative: 'viajá',       tuteoImperative: 'viaja',        ustedeoImperative: 'viaje',        isIrregular: false, isDiphthongating: false, conjugationGroup: '-ar' },
+  { infinitive: 'inscribir',    voseo: 'inscribís',    tuteo: 'inscribes',    ustedeo: 'inscribe',    voseoImperative: 'inscribí',    tuteoImperative: 'inscribe',     ustedeoImperative: 'inscriba',     isIrregular: false, isDiphthongating: false, conjugationGroup: '-ir' },
+  { infinitive: 'unir',         voseo: 'unís',         tuteo: 'unes',         ustedeo: 'une',         voseoImperative: 'uní',         tuteoImperative: 'une',          ustedeoImperative: 'una',          isIrregular: false, isDiphthongating: false, conjugationGroup: '-ir' },
 ];
 
 /**
@@ -143,3 +209,22 @@ export const VERB_BY_VOSEO: Map<string, VerbEntry> = buildMap((e) => e.voseo);
 export const VERB_BY_TUTEO: Map<string, VerbEntry> = buildMap((e) => e.tuteo);
 export const VERB_BY_USTEDEO: Map<string, VerbEntry> = buildMap((e) => e.ustedeo);
 export const VERB_BY_INFINITIVE: Map<string, VerbEntry> = buildMap((e) => e.infinitive);
+
+/**
+ * Maps keyed by imperative forms (for detecting already-imperative source text).
+ * When a verb has no imperative form, the entry is simply not included.
+ */
+function buildImperativeMap(getter: (e: VerbEntry) => string | undefined): Map<string, VerbEntry> {
+  const map = new Map<string, VerbEntry>();
+  for (const entry of VERB_MAPPINGS) {
+    const key = getter(entry)?.toLowerCase();
+    if (key && !map.has(key)) {
+      map.set(key, entry);
+    }
+  }
+  return map;
+}
+
+export const VERB_BY_VOSEO_IMP: Map<string, VerbEntry> = buildImperativeMap((e) => e.voseoImperative);
+export const VERB_BY_TUTEO_IMP: Map<string, VerbEntry> = buildImperativeMap((e) => e.tuteoImperative);
+export const VERB_BY_USTEDEO_IMP: Map<string, VerbEntry> = buildImperativeMap((e) => e.ustedeoImperative);

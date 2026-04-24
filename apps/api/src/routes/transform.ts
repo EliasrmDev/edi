@@ -35,6 +35,7 @@ const TransformationRequestSchema = z.object({
     'tone-ustedeo',
   ]),
   tone: z.enum(['voseo-cr', 'tuteo', 'ustedeo']).optional(),
+  verbalMode: z.enum(['indicativo', 'imperativo']).optional(),
   locale: z.enum(['es-CR', 'es-419', 'es']),
   // Client must explicitly opt into AI — never default
   requestAIValidation: z.boolean(),

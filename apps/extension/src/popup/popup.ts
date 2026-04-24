@@ -1297,15 +1297,23 @@ function setupMiniEditor(): void {
   ]);
 
   let popupToneMode: 'local' | 'ai' = 'local';
+  let popupVerbalMode: 'indicativo' | 'imperativo' = 'indicativo';
 
   const toneBtnsContainer = document.querySelector<HTMLElement>('#popup-tone-btns');
   const toneLocalBtn = document.querySelector<HTMLButtonElement>('#btn-popup-tone-local');
   const toneAIBtn = document.querySelector<HTMLButtonElement>('#btn-popup-tone-ai');
+  const verbalModeIndBtn = document.querySelector<HTMLButtonElement>('#btn-popup-mode-ind');
+  const verbalModeImpBtn = document.querySelector<HTMLButtonElement>('#btn-popup-mode-imp');
 
   function updatePopupToneModeUI(): void {
     if (toneBtnsContainer) toneBtnsContainer.dataset['mode'] = popupToneMode;
     if (toneLocalBtn) toneLocalBtn.setAttribute('aria-pressed', String(popupToneMode === 'local'));
     if (toneAIBtn) toneAIBtn.setAttribute('aria-pressed', String(popupToneMode === 'ai'));
+  }
+
+  function updatePopupVerbalModeUI(): void {
+    if (verbalModeIndBtn) verbalModeIndBtn.setAttribute('aria-pressed', String(popupVerbalMode === 'indicativo'));
+    if (verbalModeImpBtn) verbalModeImpBtn.setAttribute('aria-pressed', String(popupVerbalMode === 'imperativo'));
   }
 
   toneLocalBtn?.addEventListener('click', () => {
@@ -1315,6 +1323,14 @@ function setupMiniEditor(): void {
   toneAIBtn?.addEventListener('click', () => {
     popupToneMode = 'ai';
     updatePopupToneModeUI();
+  });
+  verbalModeIndBtn?.addEventListener('click', () => {
+    popupVerbalMode = 'indicativo';
+    updatePopupVerbalModeUI();
+  });
+  verbalModeImpBtn?.addEventListener('click', () => {
+    popupVerbalMode = 'imperativo';
+    updatePopupVerbalModeUI();
   });
 
   transformBtns.forEach((btn) => {
@@ -1335,6 +1351,7 @@ function setupMiniEditor(): void {
             const result = transformText(
               text,
               transformation as Parameters<typeof transformText>[1],
+              popupVerbalMode,
             );
             miniEditorTextarea.value = result.result;
             setMiniStatus('', '');
@@ -1374,6 +1391,7 @@ async function runMiniAITransform(
   _btn: HTMLButtonElement,
   transformation: string,
   text: string,
+  verbalMode: 'indicativo' | 'imperativo' = 'indicativo',
 ): Promise<void> {
   const stored = await chrome.storage.local.get(['authToken']) as {
     authToken?: string;
@@ -1402,6 +1420,7 @@ async function runMiniAITransform(
         transformation,
         locale: 'es-CR',
         requestAIValidation: true,
+        verbalMode,
       }),
     });
 
