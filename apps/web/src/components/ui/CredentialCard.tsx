@@ -10,7 +10,9 @@ interface CredentialCardProps {
   credential: ProviderCredential;
   onVerify?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onToggleEnabled?: (id: string) => void;
   verifying?: boolean;
+  togglingEnabled?: boolean;
 }
 
 function getStatus(credential: ProviderCredential): {
@@ -45,7 +47,9 @@ export function CredentialCard({
   credential,
   onVerify,
   onDelete,
+  onToggleEnabled,
   verifying = false,
+  togglingEnabled = false,
 }: CredentialCardProps) {
   const status = getStatus(credential);
 
@@ -80,6 +84,36 @@ export function CredentialCard({
             <span className="font-medium text-gray-500">Expira</span>
             <span>{formatDate(credential.expiresAt)}</span>
           </>
+        )}
+      </div>
+
+      {/* Modelos section */}
+      <div className="mt-4 border-t border-gray-100 pt-3">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Modelos</p>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-600">Habilitada como opción de IA</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={credential.isEnabled}
+            onClick={() => onToggleEnabled?.(credential.id)}
+            disabled={togglingEnabled}
+            aria-label={credential.isEnabled ? 'Deshabilitar credencial' : 'Habilitar credencial'}
+            className={
+              'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 ' +
+              (credential.isEnabled ? 'bg-indigo-600' : 'bg-gray-200')
+            }
+          >
+            <span
+              className={
+                'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition-transform ' +
+                (credential.isEnabled ? 'translate-x-4' : 'translate-x-0')
+              }
+            />
+          </button>
+        </div>
+        {!credential.isEnabled && (
+          <p className="mt-1 text-xs text-amber-600">Oculta de las opciones de uso</p>
         )}
       </div>
 

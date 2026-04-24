@@ -12,6 +12,7 @@ export function ProviderIcon({ provider, className, size = 32 }: ProviderIconPro
     openai: <OpenAIIcon size={size} />,
     anthropic: <AnthropicIcon size={size} />,
     'google-ai': <GoogleAIIcon size={size} />,
+    openrouter: <OpenRouterIcon size={size} />,
   };
 
   return (
@@ -30,6 +31,7 @@ export function providerLabel(provider: ProviderId): string {
     openai: 'OpenAI',
     anthropic: 'Anthropic',
     'google-ai': 'Google AI',
+    openrouter: 'OpenRouter',
   };
   return labels[provider];
 }
@@ -62,4 +64,22 @@ function GoogleAIIcon({ size }: { size: number }) {
   );
 }
 
-
+function OpenRouterIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
+      <title>OpenRouter icon</title>
+      <circle cx="12" cy="12" r="11" stroke="#6C47FF" strokeWidth="2"/>
+      <text
+        x="12"
+        y="16"
+        textAnchor="middle"
+        fontSize="9"
+        fontWeight="700"
+        fontFamily="system-ui, sans-serif"
+        fill="#6C47FF"
+      >
+        OR
+      </text>
+    </svg>
+  );
+}

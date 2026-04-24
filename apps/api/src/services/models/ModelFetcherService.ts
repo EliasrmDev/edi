@@ -7,6 +7,7 @@ import type { EncryptionService } from '../crypto/EncryptionService.js';
 import { fetchOpenAIModels } from './adapters/OpenAIModelAdapter.js';
 import { fetchAnthropicModels } from './adapters/AnthropicModelAdapter.js';
 import { fetchGoogleAIModels } from './adapters/GoogleAIModelAdapter.js';
+import { fetchOpenRouterModels } from './adapters/OpenRouterModelAdapter.js';
 
 export type { ModelInfo as ProviderModelInfo } from './adapters/OpenAIModelAdapter.js';
 
@@ -77,6 +78,8 @@ export class ModelFetcherService {
         return fetchAnthropicModels(rawKey);
       case 'google-ai':
         return fetchGoogleAIModels(rawKey);
+      case 'openrouter':
+        return fetchOpenRouterModels(rawKey);
       default: {
         const _exhaustive: never = provider;
         throw new AppError(

@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import usersRoutes from './routes/users.js';
 import credentialsRoutes from './routes/credentials.js';
 import transformRoutes from './routes/transform.js';
+import { assertRequiredSchemaCompatibility } from './db/index.js';
 import type { AppEnv } from './types.js';
 
 const app = new Hono<AppEnv>();
@@ -68,10 +69,30 @@ app.notFound((c) =>
 // ---------------------------------------------------------------------------
 // Start server
 // ---------------------------------------------------------------------------
-const port = Number(process.env.API_PORT) || 3001;
+const startServer = async (): Promise<void> => {
+  if (process.env.API_SKIP_SCHEMA_CHECK !== 'true') {
+    await assertRequiredSchemaCompatibility();
+  }
 
-serve({ fetch: app.fetch, port }, (info) => {
-  console.error(`EDI API running on http://localhost:${info.port}`);
+  const port = Number(process.env.API_PORT) || 3001;
+
+  serve({ fetch: app.fetch, port }, (info) => {
+    console.error(`EDI API running on http://localhost:${info.port}`);
+  });
+};
+
+startServer().catch((err: unknown) => {
+  const error = err instanceof Error ? err : new Error('Unknown startup error');
+  console.error(
+    JSON.stringify({
+      level: 'error',
+      timestamp: new Date().toISOString(),
+      error: error.message,
+      remediation:
+        'Run pnpm db:migrate against the same DATABASE_URL used by this API process.',
+    }),
+  );
+  process.exit(1);
 });
 
 export default app;

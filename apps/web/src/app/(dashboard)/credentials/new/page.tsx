@@ -19,6 +19,7 @@ const PROVIDERS: { id: ProviderId; placeholder: string }[] = [
   { id: 'openai', placeholder: 'sk-...' },
   { id: 'anthropic', placeholder: 'sk-ant-...' },
   { id: 'google-ai', placeholder: 'AIza...' },
+  { id: 'openrouter', placeholder: 'sk-or-v1-...' },
 ];
 
 function SubmitButton() {
@@ -63,7 +64,7 @@ export default function NewCredentialPage() {
             <legend className="mb-2 block text-sm font-medium text-gray-700">
               Proveedor <span className="text-red-500" aria-hidden="true">*</span>
             </legend>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {PROVIDERS.map((p) => (
                 <label
                   key={p.id}

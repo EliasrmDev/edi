@@ -19,6 +19,7 @@ export function errorMessage(code: string): string {
     FORBIDDEN: 'No tenés permiso para realizar esta acción.',
     NOT_FOUND: 'No se encontró el recurso solicitado.',
     INVALID_KEY_FORMAT: 'El formato de la clave no es válido para este proveedor.',
+    INVALID_API_KEY: 'La clave API no es válida o fue revocada. Verificá que sea correcta.',
     CREDENTIAL_NOT_FOUND: 'No se encontró la credencial.',
     DELETION_ALREADY_REQUESTED: 'Ya existe una solicitud de eliminación pendiente.',
     DISPLAY_NAME_TOO_LONG: 'El nombre es demasiado largo (máx. 100 caracteres).',

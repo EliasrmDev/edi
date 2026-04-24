@@ -8,6 +8,7 @@ const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 
 export type CredentialError =
   | 'INVALID_KEY_FORMAT'
+  | 'INVALID_API_KEY'
   | 'PROVIDER_NOT_SUPPORTED'
   | 'DUPLICATE_CREDENTIAL'
   | 'SERVER_ERROR';
@@ -66,9 +67,10 @@ export async function createCredentialAction(
   }
 
   if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: { code?: string } };
-    const code = body.error?.code as CredentialError | undefined;
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    const code = body.error as CredentialError | undefined;
     if (code === 'INVALID_KEY_FORMAT') return { error: 'INVALID_KEY_FORMAT' };
+    if (code === 'INVALID_API_KEY') return { error: 'INVALID_API_KEY' };
     if (code === 'DUPLICATE_CREDENTIAL') return { error: 'DUPLICATE_CREDENTIAL' };
     return { error: 'SERVER_ERROR' };
   }
@@ -131,6 +133,23 @@ export async function activateCredentialAction(credentialId: string): Promise<{ 
     });
     if (!res.ok) return { error: 'SERVER_ERROR' };
     return {};
+  } catch {
+    return { error: 'SERVER_ERROR' };
+  }
+}
+
+export type ToggleEnabledState = { error?: string; credential?: ProviderCredential } | null;
+
+export async function toggleEnabledAction(credentialId: string): Promise<ToggleEnabledState> {
+  const cookie = await getAuthHeader();
+  try {
+    const res = await fetch(`${API_URL}/api/credentials/${credentialId}/toggle-enabled`, {
+      method: 'PATCH',
+      headers: { Authorization: cookie },
+    });
+    if (!res.ok) return { error: 'SERVER_ERROR' };
+    const body = (await res.json()) as { data?: ProviderCredential };
+    return { credential: body.data };
   } catch {
     return { error: 'SERVER_ERROR' };
   }

@@ -20,7 +20,7 @@ export default async function CredentialsPage({
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Claves de IA</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Gestioná tus claves cifradas de OpenAI, Anthropic y Google AI.
+            Gestioná tus claves cifradas de OpenAI, Anthropic, Google AI y OpenRouter.
           </p>
         </div>
         <Link href="/credentials/new">

@@ -1,7 +1,7 @@
 import type { UserId } from './user';
 
 export type CredentialId = string;
-export type ProviderId = 'openai' | 'anthropic' | 'google-ai';
+export type ProviderId = 'openai' | 'anthropic' | 'google-ai' | 'openrouter';
 export type CredentialMode = 'byok' | 'managed';
 
 export interface ProviderCredential {
@@ -12,6 +12,7 @@ export interface ProviderCredential {
   label: string;
   maskedKey: string;
   isActive: boolean;
+  isEnabled: boolean;
   isExpired: boolean;
   selectedModel: string | null;
   favoriteModels: string[];

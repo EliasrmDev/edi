@@ -130,6 +130,7 @@ export const providerCredentials = pgTable(
     keyVersion: integer('key_version').notNull().default(1),
     maskedKey: text('masked_key').notNull(),
     isActive: boolean('is_active').notNull().default(true),
+    isEnabled: boolean('is_enabled').notNull().default(true),
     selectedModel: text('selected_model'),
     favoriteModels: text('favorite_models').array().notNull().default([]),
     expiresAt: timestamp('expires_at', { withTimezone: true }),

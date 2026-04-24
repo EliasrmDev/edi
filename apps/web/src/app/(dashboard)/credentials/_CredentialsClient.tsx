@@ -2,10 +2,12 @@
 
 import { useActionState, useTransition, useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { ProviderCredential } from '@edi/shared';
 import {
   deleteCredentialAction,
   verifyCredentialAction,
+  toggleEnabledAction,
   type DeleteCredentialState,
   type VerifyCredentialState,
 } from '@/lib/actions/credentials';
@@ -20,6 +22,7 @@ interface CredentialsClientProps {
 }
 
 export function CredentialsClient({ credentials, successMessage }: CredentialsClientProps) {
+  const router = useRouter();
   const [deleteState, deleteAction] = useActionState<DeleteCredentialState, FormData>(
     deleteCredentialAction,
     null,
@@ -30,8 +33,10 @@ export function CredentialsClient({ credentials, successMessage }: CredentialsCl
   );
   const [isVerifyPending, startVerifyTransition] = useTransition();
   const [, startDeleteTransition] = useTransition();
+  const [, startToggleTransition] = useTransition();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [togglingEnabledId, setTogglingEnabledId] = useState<string | null>(null);
   const [showSuccessMsg, setShowSuccessMsg] = useState(!!successMessage);
   const [showDeleteError, setShowDeleteError] = useState(false);
   const [showVerifyError, setShowVerifyError] = useState(false);
@@ -82,6 +87,15 @@ export function CredentialsClient({ credentials, successMessage }: CredentialsCl
     startVerifyTransition(() => verifyAction(fd));
   }
 
+  function handleToggleEnabled(id: string) {
+    setTogglingEnabledId(id);
+    startToggleTransition(async () => {
+      await toggleEnabledAction(id);
+      setTogglingEnabledId(null);
+      router.refresh();
+    });
+  }
+
   if (credentials.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
@@ -115,7 +129,9 @@ export function CredentialsClient({ credentials, successMessage }: CredentialsCl
             credential={credential}
             onVerify={handleVerify}
             onDelete={(id) => setDeleteTarget(id)}
+            onToggleEnabled={handleToggleEnabled}
             verifying={isVerifyPending && verifyingId === credential.id}
+            togglingEnabled={togglingEnabledId === credential.id}
           />
         ))}
       </div>

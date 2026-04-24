@@ -2,6 +2,7 @@ import type { ProviderId, TransformationType, ToneType } from '@edi/shared';
 import { OpenAIAdapter } from './adapters/OpenAIAdapter.js';
 import { AnthropicAdapter } from './adapters/AnthropicAdapter.js';
 import { GoogleAIAdapter } from './adapters/GoogleAIAdapter.js';
+import { OpenRouterAdapter } from './adapters/OpenRouterAdapter.js';
 
 export interface ValidateTextParams {
   rawKey: string;
@@ -60,6 +61,8 @@ export function getAdapter(provider: ProviderId): ProviderAdapter {
       return new AnthropicAdapter();
     case 'google-ai':
       return new GoogleAIAdapter();
+    case 'openrouter':
+      return new OpenRouterAdapter();
     default: {
       const _exhaustive: never = provider;
       throw new Error(`Unknown provider: ${String(_exhaustive)}`);

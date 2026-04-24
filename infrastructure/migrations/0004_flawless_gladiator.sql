@@ -1,0 +1,1 @@
+ALTER TABLE "provider_credentials" ADD COLUMN "is_enabled" boolean DEFAULT true NOT NULL;

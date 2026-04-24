@@ -33,6 +33,7 @@ function toProviderCredential(row: {
   favoriteModels: string[];
   expiresAt: Date | null;
   lastVerifiedAt: Date | null;
+  isEnabled: boolean;
   lastUsedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -45,6 +46,7 @@ function toProviderCredential(row: {
     label: row.label,
     maskedKey: row.maskedKey,
     isActive: row.isActive,
+    isEnabled: row.isEnabled,
     isExpired: row.expiresAt !== null && row.expiresAt < new Date(),
     selectedModel: row.selectedModel,
     favoriteModels: row.favoriteModels,
@@ -65,6 +67,7 @@ const SAFE_COLUMNS = {
   label: providerCredentials.label,
   maskedKey: providerCredentials.maskedKey,
   isActive: providerCredentials.isActive,
+  isEnabled: providerCredentials.isEnabled,
   selectedModel: providerCredentials.selectedModel,
   favoriteModels: providerCredentials.favoriteModels,
   expiresAt: providerCredentials.expiresAt,
@@ -222,6 +225,7 @@ export class CredentialService {
         provider: providerCredentials.provider,
         encryptedKey: providerCredentials.encryptedKey,
         isActive: providerCredentials.isActive,
+        isEnabled: providerCredentials.isEnabled,
         selectedModel: providerCredentials.selectedModel,
         expiresAt: providerCredentials.expiresAt,
       })
@@ -243,6 +247,10 @@ export class CredentialService {
 
     if (!row.isActive) {
       throw new AppError('CREDENTIAL_INACTIVE', 'Credential is not active', 403);
+    }
+
+    if (!row.isEnabled) {
+      throw new AppError('CREDENTIAL_DISABLED', 'Credential is disabled', 403);
     }
 
     if (row.expiresAt !== null && row.expiresAt < new Date()) {
@@ -288,6 +296,7 @@ export class CredentialService {
         and(
           eq(providerCredentials.userId, userId),
           eq(providerCredentials.isActive, true),
+          eq(providerCredentials.isEnabled, true),
           isNull(providerCredentials.deletedAt),
         ),
       )
@@ -672,6 +681,50 @@ export class CredentialService {
       resourceId: credentialId,
       outcome: 'success',
       metadata: { provider: updatedRow.provider },
+    });
+
+    return toProviderCredential(updatedRow);
+  }
+
+  async toggleEnabled(
+    credentialId: string,
+    userId: string,
+  ): Promise<ProviderCredential> {
+    const now = new Date();
+
+    const rows = await this.db
+      .select(SAFE_COLUMNS)
+      .from(providerCredentials)
+      .where(
+        and(
+          eq(providerCredentials.id, credentialId),
+          eq(providerCredentials.userId, userId),
+          isNull(providerCredentials.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    const row = rows[0];
+    if (!row) {
+      throw new AppError('CREDENTIAL_NOT_FOUND', 'Credential not found', 404);
+    }
+
+    const updated = await this.db
+      .update(providerCredentials)
+      .set({ isEnabled: !row.isEnabled, updatedAt: now })
+      .where(eq(providerCredentials.id, credentialId))
+      .returning(SAFE_COLUMNS);
+
+    const updatedRow = updated[0];
+    if (!updatedRow) throw new Error('Failed to toggle credential enabled state');
+
+    await this.audit.log({
+      userId,
+      action: 'credential.updated',
+      resourceType: 'provider_credential',
+      resourceId: credentialId,
+      outcome: 'success',
+      metadata: { provider: updatedRow.provider, isEnabled: updatedRow.isEnabled },
     });
 
     return toProviderCredential(updatedRow);

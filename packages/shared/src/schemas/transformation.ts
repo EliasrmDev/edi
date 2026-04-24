@@ -20,7 +20,7 @@ export const TransformationRequestSchema = z.object({
 });
 
 export const CredentialSubmissionSchema = z.object({
-  provider: z.enum(['openai', 'anthropic', 'google-ai']),
+  provider: z.enum(['openai', 'anthropic', 'google-ai', 'openrouter']),
   rawKey: z
     .string()
     .min(20)

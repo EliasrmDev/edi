@@ -22,7 +22,7 @@ const modelFetcherService = new ModelFetcherService(db, encryption);
 // ---------------------------------------------------------------------------
 
 const CredentialSubmissionSchema = z.object({
-  provider: z.enum(['openai', 'anthropic', 'google-ai']),
+  provider: z.enum(['openai', 'anthropic', 'google-ai', 'openrouter']),
   rawKey: z.string().min(1).max(512),
   label: z.string().min(1).max(100),
   expiresAt: z
@@ -175,6 +175,16 @@ credentialsRouter.patch('/:id/activate', async (c) => {
   const id = c.req.param('id');
 
   const credential = await credentialService.setActive(id, user.id);
+
+  return c.json({ data: credential });
+});
+
+// ---- PATCH /credentials/:id/toggle-enabled — enable/disable a credential ----
+credentialsRouter.patch('/:id/toggle-enabled', async (c) => {
+  const user = c.get('user');
+  const id = c.req.param('id');
+
+  const credential = await credentialService.toggleEnabled(id, user.id);
 
   return c.json({ data: credential });
 });
