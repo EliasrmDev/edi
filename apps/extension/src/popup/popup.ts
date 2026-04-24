@@ -1287,11 +1287,35 @@ function setupMiniEditor(): void {
   );
 
   const AI_TRANSFORMS = new Set([
+    'correct-orthography',
+  ]);
+
+  const TONE_TRANSFORMS = new Set([
     'tone-voseo-cr',
     'tone-tuteo',
     'tone-ustedeo',
-    'correct-orthography',
   ]);
+
+  let popupToneMode: 'local' | 'ai' = 'local';
+
+  const toneBtnsContainer = document.querySelector<HTMLElement>('#popup-tone-btns');
+  const toneLocalBtn = document.querySelector<HTMLButtonElement>('#btn-popup-tone-local');
+  const toneAIBtn = document.querySelector<HTMLButtonElement>('#btn-popup-tone-ai');
+
+  function updatePopupToneModeUI(): void {
+    if (toneBtnsContainer) toneBtnsContainer.dataset['mode'] = popupToneMode;
+    if (toneLocalBtn) toneLocalBtn.setAttribute('aria-pressed', String(popupToneMode === 'local'));
+    if (toneAIBtn) toneAIBtn.setAttribute('aria-pressed', String(popupToneMode === 'ai'));
+  }
+
+  toneLocalBtn?.addEventListener('click', () => {
+    popupToneMode = 'local';
+    updatePopupToneModeUI();
+  });
+  toneAIBtn?.addEventListener('click', () => {
+    popupToneMode = 'ai';
+    updatePopupToneModeUI();
+  });
 
   transformBtns.forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -1303,7 +1327,22 @@ function setupMiniEditor(): void {
         return;
       }
 
-      if (AI_TRANSFORMS.has(transformation)) {
+      if (TONE_TRANSFORMS.has(transformation)) {
+        if (popupToneMode === 'ai') {
+          await runMiniAITransform(btn, transformation, text);
+        } else {
+          try {
+            const result = transformText(
+              text,
+              transformation as Parameters<typeof transformText>[1],
+            );
+            miniEditorTextarea.value = result.result;
+            setMiniStatus('', '');
+          } catch {
+            setMiniStatus('Error al transformar el texto.', 'error');
+          }
+        }
+      } else if (AI_TRANSFORMS.has(transformation)) {
         await runMiniAITransform(btn, transformation, text);
       } else {
         try {

@@ -1,6 +1,6 @@
 /// <reference types="chrome" />
 
-import type { TransformationType, TransformationWarning } from '@edi/shared';
+import type { TransformationType, TransformationWarning, ToneType } from '@edi/shared';
 import { ToneEngine } from '../tone-engine/ToneEngine';
 import { createModalHTML, setModalTextSafe } from './modal-template';
 import { createModalStyles } from './modal-styles';
@@ -38,6 +38,7 @@ export class ModalController {
   private readonly toneEngine: ToneEngine;
   private currentText: string = '';
   private keydownHandler: EventListener | null = null;
+  private toneMode: 'local' | 'ai' = 'local';
 
   constructor() {
     this.toneEngine = new ToneEngine();
@@ -113,15 +114,12 @@ export class ModalController {
       if (textarea) options.onApply(textarea.value);
     });
 
-    // Local transformation buttons
+    // Local transformation buttons (formatting + case — never use AI)
     const localButtons: Array<[string, TransformationType]> = [
       ['#btn-uppercase', 'uppercase'],
       ['#btn-lowercase', 'lowercase'],
       ['#btn-sentence', 'sentence-case'],
       ['#btn-clean', 'remove-formatting'],
-      ['#btn-voseo', 'tone-voseo-cr'],
-      ['#btn-tuteo', 'tone-tuteo'],
-      ['#btn-ustedeo', 'tone-ustedeo'],
       ['#btn-fmt-bold', 'format-unicode-bold'],
       ['#btn-fmt-italic', 'format-unicode-italic'],
       ['#btn-fmt-bold-italic', 'format-unicode-bold-italic'],
@@ -136,6 +134,30 @@ export class ModalController {
       });
     }
 
+    // Tone mode toggle
+    modal.querySelector('#btn-tone-mode-local')?.addEventListener('click', () => {
+      this.setToneMode('local');
+    });
+    modal.querySelector('#btn-tone-mode-ai')?.addEventListener('click', () => {
+      this.setToneMode('ai');
+    });
+
+    // Tone transform buttons — route to local ToneEngine or AI depending on toneMode
+    const toneButtons: Array<[string, TransformationType]> = [
+      ['#btn-voseo', 'tone-voseo-cr'],
+      ['#btn-tuteo', 'tone-tuteo'],
+      ['#btn-ustedeo', 'tone-ustedeo'],
+    ];
+    for (const [selector, transformation] of toneButtons) {
+      modal.querySelector(selector)?.addEventListener('click', () => {
+        if (this.toneMode === 'ai') {
+          void this.requestAIToneTransformation(transformation);
+        } else {
+          this.applyLocalTransformation(transformation);
+        }
+      });
+    }
+
     // AI orthography button
     modal.querySelector('#btn-ortografia')?.addEventListener('click', () => {
       void this.requestAICorrection();
@@ -147,6 +169,9 @@ export class ModalController {
       ?.addEventListener('input', (e) => {
         this.currentText = (e.target as HTMLTextAreaElement).value;
       });
+
+    // Sync toggle UI (toneMode persists across opens within the page session)
+    this.updateToneModeUI();
   }
 
   // ── Transformations ─────────────────────────────────────────────────────────
@@ -195,6 +220,11 @@ export class ModalController {
       };
 
       // Proxy-level error (network, not authenticated to proxy, etc.)
+      if (!response) {
+        this.showError('El service worker no respondió. Recargá la página e intentá de nuevo.');
+        return;
+      }
+
       if (response.error) {
         this.showError(this.friendlyError(response.error));
         return;
@@ -227,6 +257,110 @@ export class ModalController {
       );
     } finally {
       this.setLoadingState(false);
+    }
+  }
+
+  // ── Tone mode ────────────────────────────────────────────────────────────────
+
+  private setToneMode(mode: 'local' | 'ai'): void {
+    this.toneMode = mode;
+    this.updateToneModeUI();
+  }
+
+  private updateToneModeUI(): void {
+    const localBtn = this.shadowRoot.querySelector<HTMLButtonElement>('#btn-tone-mode-local');
+    const aiBtn = this.shadowRoot.querySelector<HTMLButtonElement>('#btn-tone-mode-ai');
+    const toneGroup = this.shadowRoot.querySelector<HTMLElement>('#edi-tone-btns');
+    if (localBtn) localBtn.setAttribute('aria-pressed', String(this.toneMode === 'local'));
+    if (aiBtn) aiBtn.setAttribute('aria-pressed', String(this.toneMode === 'ai'));
+    if (toneGroup) toneGroup.dataset['mode'] = this.toneMode;
+  }
+
+  private async requestAIToneTransformation(transformation: TransformationType): Promise<void> {
+    const TONE_MAP: Partial<Record<TransformationType, ToneType>> = {
+      'tone-voseo-cr': 'voseo-cr',
+      'tone-tuteo': 'tuteo',
+      'tone-ustedeo': 'ustedeo',
+    };
+    const TONE_LABELS: Partial<Record<TransformationType, string>> = {
+      'tone-voseo-cr': 'voseo costarricense',
+      'tone-tuteo': 'tuteo',
+      'tone-ustedeo': 'ustedeo',
+    };
+
+    const tone = TONE_MAP[transformation];
+    const label = TONE_LABELS[transformation] ?? 'tono';
+
+    this.setAIToneLoadingState(true, `Adaptando a ${label} con IA…`);
+
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'PROXY_API_CALL',
+        payload: {
+          endpoint: '/api/transform',
+          method: 'POST',
+          body: {
+            text: this.currentText,
+            transformation,
+            tone,
+            locale: 'es-CR',
+            requestAIValidation: true,
+          },
+        },
+      }) as {
+        error?: string;
+        status?: number;
+        data?: {
+          data?: {
+            result?: string;
+            source?: string;
+            warnings?: Array<{ code: string; message: string }>;
+          };
+          error?: { code?: string; message?: string };
+        };
+      };
+
+      if (!response) {
+        this.showError('El service worker no respondió. Recargá la página e intentá de nuevo.');
+        return;
+      }
+
+      if (response.error) {
+        this.showError(this.friendlyError(response.error));
+        return;
+      }
+
+      const apiErrorCode = response.data?.error?.code;
+      if (apiErrorCode) {
+        this.showError(this.friendlyError(apiErrorCode));
+        return;
+      }
+
+      const transformResult = response.data?.data;
+      const adapted = transformResult?.result;
+      if (typeof adapted === 'string') {
+        this.currentText = adapted;
+        this.updateTextarea(adapted);
+
+        if (transformResult?.source === 'ai-fallback') {
+          const warning = transformResult.warnings?.[0]?.message ?? 'El proveedor de IA no está disponible.';
+          this.showError(`Error del proveedor de IA: ${warning}`);
+        } else {
+          const status = this.shadowRoot.querySelector('#edi-status');
+          if (status) {
+            status.textContent = '';
+            status.setAttribute('role', 'status');
+          }
+        }
+      } else {
+        this.showError('No se recibió resultado del servicio. Intentá de nuevo.');
+      }
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error('[edi] requestAIToneTransformation error:', err);
+      this.showError(`Error al conectar: ${detail}`);
+    } finally {
+      this.setAIToneLoadingState(false);
     }
   }
 
@@ -273,6 +407,25 @@ export class ModalController {
     if (status) {
       status.textContent = message;
       status.setAttribute('role', 'alert');
+    }
+  }
+
+  private setAIToneLoadingState(loading: boolean, message?: string): void {
+    const toneSelectors = ['#btn-voseo', '#btn-tuteo', '#btn-ustedeo', '#btn-tone-mode-local', '#btn-tone-mode-ai'];
+    for (const sel of toneSelectors) {
+      const btn = this.shadowRoot.querySelector<HTMLButtonElement>(sel);
+      if (btn) btn.disabled = loading;
+    }
+
+    const status = this.shadowRoot.querySelector('#edi-status');
+    if (status) {
+      if (loading) {
+        status.textContent = message ?? '';
+        status.removeAttribute('role');
+      } else if (status.getAttribute('role') !== 'alert') {
+        status.textContent = '';
+        status.setAttribute('role', 'status');
+      }
     }
   }
 

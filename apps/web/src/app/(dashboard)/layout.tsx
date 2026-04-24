@@ -80,7 +80,7 @@ function getPathnameFromHeaders(headersList: Headers): string {
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const currentUser = await getCurrentUser();
-  if (!currentUser) redirect('/login');
+  if (!currentUser) redirect('/login?expired=1');
 
   const { user, profile } = currentUser;
   const displayName = profile.displayName ?? user.email.split('@')[0] ?? 'Usuario';

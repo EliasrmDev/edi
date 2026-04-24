@@ -18,6 +18,8 @@ export type VerifyCredentialState = { error?: string; success?: boolean } | null
 
 export async function getCredentials(): Promise<ProviderCredential[]> {
   const cookie = await getAuthHeader();
+  if (!cookie) return [];
+
   try {
     const res = await fetch(`${API_URL}/api/credentials`, {
       headers: { Authorization: cookie },

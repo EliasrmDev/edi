@@ -11,9 +11,11 @@ export default auth(function middleware(
   req: NextRequest & { auth?: { user?: { apiSession?: string } } | null },
 ): NextResponse {
   const { pathname } = req.nextUrl;
+  const isSessionExpiredRedirect = req.nextUrl.searchParams.get('expired') === '1';
   const sessionToken = req.cookies.get(SESSION_COOKIE)?.value;
   const oauthApiSession = req.auth?.user?.apiSession;
   const isAuthenticated = !!sessionToken || !!oauthApiSession;
+  const hasVerifiedOAuthSession = !!oauthApiSession;
 
   // Protect dashboard routes
   if (PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
@@ -27,7 +29,18 @@ export default auth(function middleware(
 
   // Redirect authenticated users away from auth pages
   if (AUTH_PREFIXES.some((p) => pathname.startsWith(p))) {
-    if (isAuthenticated) {
+    // If dashboard redirected here because the API session is expired, clear
+    // the stale session cookie so the next protected navigation is handled
+    // by middleware directly (without another failed API request first).
+    if (isSessionExpiredRedirect && sessionToken && !oauthApiSession) {
+      const response = NextResponse.next();
+      response.cookies.delete(SESSION_COOKIE);
+      return response;
+    }
+
+    // Only trust verified NextAuth state here. A stale raw session cookie can
+    // otherwise trap users in a /login <-> /dashboard redirect loop.
+    if (hasVerifiedOAuthSession) {
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
   }

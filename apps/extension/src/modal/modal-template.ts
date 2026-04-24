@@ -65,8 +65,16 @@ export function createModalHTML(_initialText: string): string {
         </div>
 
         <div class="edi-action-group">
-          <span class="edi-group-label" id="grp-tone">Tono</span>
-          <div role="group" aria-labelledby="grp-tone">
+          <div class="edi-tone-header">
+            <span class="edi-group-label" id="grp-tone">Tono</span>
+            <div class="edi-tone-mode" role="group" aria-label="Motor de transformación de tono">
+              <button id="btn-tone-mode-local" type="button" class="edi-tone-mode-btn"
+                      aria-pressed="true" title="Transformación local (rápida, sin IA)">Local</button>
+              <button id="btn-tone-mode-ai" type="button" class="edi-tone-mode-btn"
+                      aria-pressed="false" title="IA especializada para publicidad en Costa Rica">IA ✶</button>
+            </div>
+          </div>
+          <div role="group" aria-labelledby="grp-tone" id="edi-tone-btns">
             <button id="btn-voseo" type="button">Voseo (CR)</button>
             <button id="btn-tuteo" type="button">Tuteo</button>
             <button id="btn-ustedeo" type="button">Ustedeo</button>

@@ -1,15 +1,19 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/actions/user';
 import { getCredentials } from '@/lib/actions/credentials';
 
 export const metadata: Metadata = { title: 'Inicio' };
 
 export default async function DashboardPage() {
-  const [currentUser, credentials] = await Promise.all([getCurrentUser(), getCredentials()]);
+  const currentUser = await getCurrentUser();
+  if (!currentUser) redirect('/login?expired=1');
 
-  const profile = currentUser?.profile;
-  const user = currentUser?.user;
+  const credentials = await getCredentials();
+
+  const profile = currentUser.profile;
+  const user = currentUser.user;
   const displayName = profile?.displayName ?? user?.email?.split('@')[0] ?? 'Usuario';
 
   const activeCredentials = credentials.filter((c) => c.isActive && !c.isExpired);

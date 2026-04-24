@@ -36,13 +36,26 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const authHeader = await getAuthHeader();
   if (!authHeader) return null;
   try {
-    const [meRes, profileRes] = await Promise.all([
-      fetch(`${API_URL}/api/auth/me`, { headers: { Authorization: authHeader }, cache: 'no-store' }),
-      fetch(`${API_URL}/api/users/profile`, { headers: { Authorization: authHeader }, cache: 'no-store' }),
-    ]);
+    const meRes = await fetch(`${API_URL}/api/auth/me`, {
+      headers: { Authorization: authHeader },
+      cache: 'no-store',
+    });
+
+    if (meRes.status === 401) {
+      await clearAuthCookies();
+      return null;
+    }
+
+    if (!meRes.ok) return null;
+
+    const profileRes = await fetch(`${API_URL}/api/users/profile`, {
+      headers: { Authorization: authHeader },
+      cache: 'no-store',
+    });
+
     // If the API session is revoked or expired, clear stale cookies so the
     // middleware won't block the subsequent redirect to /login.
-    if (meRes.status === 401 || profileRes.status === 401) {
+    if (profileRes.status === 401) {
       await clearAuthCookies();
       return null;
     }

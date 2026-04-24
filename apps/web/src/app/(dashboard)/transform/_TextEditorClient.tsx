@@ -143,6 +143,149 @@ type LocalTransformation =
   | 'format-unicode-monospace'
   | 'format-unicode-fullwidth';
 
+type ToneTransformation = 'tone-voseo-cr' | 'tone-tuteo' | 'tone-ustedeo';
+type ToneTarget = 'voseo' | 'tuteo' | 'ustedeo';
+
+// ── Local tone transformer ────────────────────────────────────────────────────
+// Self-contained port of the ToneEngine for use in the web editor.
+
+type ToneForms = [voseo: string, tuteo: string, ustedeo: string];
+
+// Each row: [voseo, tuteo, ustedeo] — present indicative + key imperatives
+const TONE_VERB_TABLE: ToneForms[] = [
+  ['sos',       'eres',       'es'],
+  ['estás',     'estás',      'está'],
+  ['vas',       'vas',        'va'],
+  ['das',       'das',        'da'],
+  ['habés',     'has',        'ha'],
+  ['tenés',     'tienes',     'tiene'],
+  ['querés',    'quieres',    'quiere'],
+  ['podés',     'puedes',     'puede'],
+  ['sabés',     'sabes',      'sabe'],
+  ['hacés',     'haces',      'hace'],
+  ['venís',     'vienes',     'viene'],
+  ['sentís',    'sientes',    'siente'],
+  ['vivís',     'vives',      'vive'],
+  ['pedís',     'pides',      'pide'],
+  ['decís',     'dices',      'dice'],
+  ['salís',     'sales',      'sale'],
+  ['conocés',   'conoces',    'conoce'],
+  ['parecés',   'pareces',    'parece'],
+  ['entendés',  'entiendes',  'entiende'],
+  ['volvés',    'vuelves',    'vuelve'],
+  ['encontrás', 'encuentras', 'encuentra'],
+  ['contás',    'cuentas',    'cuenta'],
+  ['recordás',  'recuerdas',  'recuerda'],
+  ['probás',    'pruebas',    'prueba'],
+  ['pensás',    'piensas',    'piensa'],
+  ['cerrás',    'cierras',    'cierra'],
+  ['empezás',   'empiezas',   'empieza'],
+  ['comenzás',  'comienzas',  'comienza'],
+  ['preferís',  'prefieres',  'prefiere'],
+  ['dormís',    'duermes',    'duerme'],
+  ['morís',     'mueres',     'muere'],
+  ['seguís',    'sigues',     'sigue'],
+  ['elegís',    'eliges',     'elige'],
+  ['repetís',   'repites',    'repite'],
+  ['movés',     'mueves',     'mueve'],
+  ['resolvés',  'resuelves',  'resuelve'],
+  ['hablás',    'hablas',     'habla'],
+  ['trabajás',  'trabajas',   'trabaja'],
+  ['llegás',    'llegas',     'llega'],
+  ['comprás',   'compras',    'compra'],
+  ['tomás',     'tomas',      'toma'],
+  ['usás',      'usas',       'usa'],
+  ['esperás',   'esperas',    'espera'],
+  ['necesitás', 'necesitas',  'necesita'],
+  ['preguntás', 'preguntas',  'pregunta'],
+  ['ayudás',    'ayudas',     'ayuda'],
+  ['escuchás',  'escuchas',   'escucha'],
+  ['mirás',     'miras',      'mira'],
+  ['pasás',     'pasas',      'pasa'],
+  ['entrás',    'entras',     'entra'],
+  ['ganás',     'ganas',      'gana'],
+  ['dejás',     'dejas',      'deja'],
+  ['buscás',    'buscas',     'busca'],
+  ['guardás',   'guardas',    'guarda'],
+  ['bajás',     'bajas',      'baja'],
+  ['subís',     'subes',      'sube'],
+  ['comés',     'comes',      'come'],
+  ['bebés',     'bebes',      'bebe'],
+  ['leés',      'lees',       'lee'],
+  ['corrés',    'corres',     'corre'],
+  ['vendés',    'vendes',     'vende'],
+  ['rompés',    'rompes',     'rompe'],
+  ['creés',     'crees',      'cree'],
+  ['traés',     'traes',      'trae'],
+  ['ponés',     'pones',      'pone'],
+  ['escribís',  'escribes',   'escribe'],
+  ['abrís',     'abres',      'abre'],
+  ['recibís',   'recibes',    'recibe'],
+  ['servís',    'sirves',     'sirve'],
+  // Imperatives (common in advertising)
+  ['vení',      'ven',        'venga'],
+  ['hacé',      'haz',        'haga'],
+  ['poné',      'pon',        'ponga'],
+  ['salí',      'sal',        'salga'],
+  ['decí',      'di',         'diga'],
+  ['andá',      've',         'vaya'],
+  ['tené',      'ten',        'tenga'],
+];
+
+function _deaccent(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+const _TONE_LOOKUP: Map<string, ToneForms> = (() => {
+  const m = new Map<string, ToneForms>();
+  for (const entry of TONE_VERB_TABLE) {
+    for (const form of entry) {
+      const key1 = form.toLowerCase();
+      const key2 = _deaccent(key1);
+      if (!m.has(key1)) m.set(key1, entry);
+      if (!m.has(key2)) m.set(key2, entry);
+    }
+  }
+  return m;
+})();
+
+function _preserveToneCase(original: string, replacement: string): string {
+  if (original === original.toUpperCase() && original.length > 1) return replacement.toUpperCase();
+  if (original[0] === original[0]?.toUpperCase()) {
+    return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+  }
+  return replacement;
+}
+
+function applyLocalTone(text: string, target: ToneTarget): string {
+  const idx = target === 'voseo' ? 0 : target === 'tuteo' ? 1 : 2;
+
+  // 1. Word-level verb replacements
+  const verbReplaced = text.replace(/[\wáéíóúüñÁÉÍÓÚÜÑ]+/g, (word) => {
+    const entry =
+      _TONE_LOOKUP.get(word.toLowerCase()) ??
+      _TONE_LOOKUP.get(_deaccent(word.toLowerCase()));
+    if (!entry) return word;
+    const replacement = entry[idx] ?? word;
+    if (replacement.toLowerCase() === word.toLowerCase()) return word;
+    return _preserveToneCase(word, replacement);
+  });
+
+  // 2. Pronoun replacements
+  const PRONOUNS: Array<[RegExp, string, string, string]> = [
+    [/\bvos\b/gi,     'vos',     'tú',      'usted'],
+    [/\btú\b/gi,      'vos',     'tú',      'usted'],
+    [/\busted\b/gi,   'vos',     'tú',      'usted'],
+    [/\bti\b/gi,      'vos',     'ti',      'usted'],
+    [/\bcontigo\b/gi, 'con vos', 'contigo', 'con usted'],
+  ];
+
+  return PRONOUNS.reduce((t, [pattern, v, tu, u]) => {
+    const rep = idx === 0 ? v : idx === 1 ? tu : u;
+    return t.replace(pattern, (match) => _preserveToneCase(match, rep));
+  }, verbReplaced);
+}
+
 type Status = { type: 'success' | 'error' | 'warning'; message: string } | null;
 
 function applyLocalTransform(text: string, t: LocalTransformation): string {
@@ -218,6 +361,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
   const [isPending, startTransition] = useTransition();
   const [isActivating, startActivating] = useTransition();
   const [localActiveId, setLocalActiveId] = useState(activeCredential?.id ?? null);
+  const [toneMode, setToneMode] = useState<'local' | 'ai'>('local');
 
   const localActive = allCredentials.find((c) => c.id === localActiveId) ?? activeCredential;
 
@@ -233,6 +377,20 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
   function handleLocal(t: LocalTransformation) {
     setText((prev) => applyLocalTransform(prev, t));
     setStatus(null);
+  }
+
+  function handleTone(t: ToneTransformation) {
+    if (toneMode === 'local') {
+      const targetMap: Record<ToneTransformation, ToneTarget> = {
+        'tone-voseo-cr': 'voseo',
+        'tone-tuteo': 'tuteo',
+        'tone-ustedeo': 'ustedeo',
+      };
+      setText((prev) => applyLocalTone(prev, targetMap[t]));
+      setStatus(null);
+    } else {
+      handleApi(t);
+    }
   }
 
   function handleApi(transformation: ApiTransformation) {
@@ -406,31 +564,65 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
 
         {/* Tono */}
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-            Tono
-          </p>
+          <div className="mb-2 flex items-center gap-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+              Tono
+            </p>
+            <div
+              role="group"
+              aria-label="Motor de transformación de tono"
+              className="flex overflow-hidden rounded-full border border-gray-200 bg-gray-100 text-xs"
+            >
+              <button
+                type="button"
+                aria-pressed={toneMode === 'local'}
+                onClick={() => setToneMode('local')}
+                className={
+                  'px-2.5 py-0.5 font-medium transition-colors ' +
+                  (toneMode === 'local'
+                    ? 'bg-white text-gray-800 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700')
+                }
+              >
+                Local
+              </button>
+              <button
+                type="button"
+                aria-pressed={toneMode === 'ai'}
+                onClick={() => setToneMode('ai')}
+                className={
+                  'px-2.5 py-0.5 font-medium transition-colors ' +
+                  (toneMode === 'ai'
+                    ? 'bg-white text-indigo-700 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700')
+                }
+              >
+                IA ✦
+              </button>
+            </div>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               className={transformBtnClass}
-              disabled={isPending}
-              onClick={() => handleApi('tone-voseo-cr')}
+              disabled={toneMode === 'ai' && isPending}
+              onClick={() => handleTone('tone-voseo-cr')}
             >
               Voseo (CR)
             </button>
             <button
               type="button"
               className={transformBtnClass}
-              disabled={isPending}
-              onClick={() => handleApi('tone-tuteo')}
+              disabled={toneMode === 'ai' && isPending}
+              onClick={() => handleTone('tone-tuteo')}
             >
               Tuteo
             </button>
             <button
               type="button"
               className={transformBtnClass}
-              disabled={isPending}
-              onClick={() => handleApi('tone-ustedeo')}
+              disabled={toneMode === 'ai' && isPending}
+              onClick={() => handleTone('tone-ustedeo')}
             >
               Ustedeo
             </button>

@@ -1205,6 +1205,62 @@ body {
   background: var(--c-surf-2);
 }
 
+/* ─── Tone mode toggle (inside mini editor) ──────────────────────── */
+
+.mini-tone-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.mini-tone-header .mini-group-label {
+  margin-bottom: 0;
+}
+
+.mini-tone-mode {
+  display: flex;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--c-border);
+  background: var(--c-surf-2);
+}
+
+.mini-tone-mode-btn {
+  padding: 2px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--c-text-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background var(--t), color var(--t), box-shadow var(--t);
+  white-space: nowrap;
+}
+
+.mini-tone-mode-btn[aria-pressed="true"] {
+  background: var(--c-surface);
+  color: var(--c-text-1);
+  box-shadow: 0 1px 2px rgba(0,0,0,.08);
+}
+
+/* AI mode: tint the pressed button */
+#btn-popup-tone-ai[aria-pressed="true"] {
+  color: var(--c-primary);
+}
+
+/* When AI mode is active, tone buttons get the AI style */
+#popup-tone-btns[data-mode="ai"] .mini-btn {
+  color: var(--c-primary);
+  background: var(--c-primary-faint);
+  border-color: color-mix(in srgb, var(--c-primary) 30%, transparent);
+}
+
+#popup-tone-btns[data-mode="ai"] .mini-btn:hover {
+  background: color-mix(in srgb, var(--c-primary-faint) 80%, var(--c-primary) 20%);
+  border-color: var(--c-primary);
+}
+
 /* ─── AI info card ───────────────────────────────────────────────── */
 
 .ai-info-card {

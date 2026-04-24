@@ -294,11 +294,17 @@
 
         <!-- Tono -->
         <div class="mini-group">
-          <span class="mini-group-label">Tono</span>
-          <div class="mini-btns-row">
-            <button class="mini-btn mini-btn--ai" type="button" data-transform="tone-voseo-cr">Voseo CR</button>
-            <button class="mini-btn mini-btn--ai" type="button" data-transform="tone-tuteo">Tuteo</button>
-            <button class="mini-btn mini-btn--ai" type="button" data-transform="tone-ustedeo">Ustedeo</button>
+          <div class="mini-tone-header">
+            <span class="mini-group-label">Tono</span>
+            <div class="mini-tone-mode" role="group" aria-label="Motor de transformación de tono">
+              <button id="btn-popup-tone-local" class="mini-tone-mode-btn" type="button" aria-pressed="true">Local</button>
+              <button id="btn-popup-tone-ai" class="mini-tone-mode-btn" type="button" aria-pressed="false">IA ✦</button>
+            </div>
+          </div>
+          <div id="popup-tone-btns" class="mini-btns-row" data-mode="local">
+            <button class="mini-btn" type="button" data-transform="tone-voseo-cr">Voseo CR</button>
+            <button class="mini-btn" type="button" data-transform="tone-tuteo">Tuteo</button>
+            <button class="mini-btn" type="button" data-transform="tone-ustedeo">Ustedeo</button>
           </div>
         </div>
 

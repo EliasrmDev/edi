@@ -306,6 +306,58 @@ button[id^="btn-"]:disabled {
   cursor: default;
 }
 
+/* ── Tone mode toggle ─────────────────────────────────────────────────────── */
+
+.edi-tone-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.edi-tone-mode {
+  display: flex;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.edi-tone-mode-btn {
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: none;
+  border-right: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+  line-height: 1.4;
+}
+
+.edi-tone-mode-btn:last-child { border-right: none; }
+
+.edi-tone-mode-btn[aria-pressed="true"] {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+#btn-tone-mode-ai[aria-pressed="true"] {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+#edi-tone-btns[data-mode="ai"] button {
+  background: #eef2ff;
+  border-color: #818cf8;
+  color: #4338ca;
+}
+
+#edi-tone-btns[data-mode="ai"] button:hover:not(:disabled) {
+  background: #e0e7ff;
+  border-color: #6366f1;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
