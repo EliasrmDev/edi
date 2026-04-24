@@ -527,7 +527,11 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
       ? 'text-red-600'
       : status?.type === 'warning'
         ? 'text-amber-600'
-        : 'text-green-600';
+        : status?.type === 'success'
+          ? 'text-green-600'
+          : 'text-gray-500';
+
+  const statusMessage = status?.message ?? (isPending ? 'Transformando con IA…' : '');
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -604,9 +608,9 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
         role="status"
         aria-live="polite"
         aria-atomic="true"
-        className={`mb-4 min-h-[1.25rem] text-sm ${status ? statusColorClass : ''}`}
+        className={`mb-4 min-h-[1.25rem] text-sm ${statusMessage ? statusColorClass : ''}`}
       >
-        {status?.message}
+        {statusMessage}
       </div>
 
       {/* Action groups */}

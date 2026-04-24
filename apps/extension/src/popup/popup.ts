@@ -1406,7 +1406,7 @@ async function runMiniAITransform(
     document.querySelectorAll<HTMLButtonElement>('#text-panel-editor [data-transform]'),
   );
   allBtns.forEach((b) => { b.disabled = true; });
-  setMiniStatus('Procesando…', '');
+  setMiniStatus('Transformando con IA…', '');
 
   try {
     const res = await fetch(`${API_BASE}/api/transform`, {

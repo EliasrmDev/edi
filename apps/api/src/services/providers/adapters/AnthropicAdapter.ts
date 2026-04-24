@@ -86,6 +86,9 @@ export class AnthropicAdapter implements ProviderAdapter {
         },
         body: JSON.stringify({
           model: params.model ?? MODEL,
+          max_tokens: 4096,
+          system: params.systemPrompt,
+          messages: [{ role: 'user', content: params.text }],
         }),
         signal: controller.signal,
       });
