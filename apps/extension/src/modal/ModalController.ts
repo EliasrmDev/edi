@@ -247,17 +247,22 @@ export class ModalController {
 
   private setLoadingState(loading: boolean, message?: string): void {
     const btn = this.shadowRoot.querySelector<HTMLButtonElement>('#btn-ortografia');
-    const status = this.shadowRoot.querySelector('#edi-status');
-
     if (btn) {
       btn.disabled = loading;
       btn.setAttribute('aria-busy', String(loading));
     }
+
+    const status = this.shadowRoot.querySelector('#edi-status');
     if (status) {
-      status.textContent = loading ? (message ?? '') : '';
       if (loading) {
+        // Show the loading message and remove any error role
+        status.textContent = message ?? '';
         status.removeAttribute('role');
-      } else {
+      } else if (status.getAttribute('role') !== 'alert') {
+        // Only clear the status text if it is NOT showing an error message.
+        // Error messages are set with role="alert" by showError(); we must not
+        // overwrite them here so that users actually see the feedback.
+        status.textContent = '';
         status.setAttribute('role', 'status');
       }
     }
@@ -339,18 +344,23 @@ export class ModalController {
   // ── AI credential picker ────────────────────────────────────────────────────
 
   async loadCredentials(): Promise<void> {
-    const stored = await chrome.storage.local.get(['authToken']) as { authToken?: string };
-    if (!stored.authToken) return;
+    try {
+      const stored = await chrome.storage.local.get(['authToken']) as { authToken?: string };
+      if (!stored.authToken) return;
 
-    const response = await chrome.runtime.sendMessage({
-      type: 'PROXY_API_CALL',
-      payload: { endpoint: '/api/credentials', method: 'GET' },
-    }) as { error?: string; status?: number; data?: { data?: CredentialItem[] } };
+      const response = await chrome.runtime.sendMessage({
+        type: 'PROXY_API_CALL',
+        payload: { endpoint: '/api/credentials', method: 'GET' },
+      }) as { error?: string; status?: number; data?: { data?: CredentialItem[] } };
 
-    if (response.error || !response.data?.data) return;
+      if (response?.error || !response?.data?.data) return;
 
-    const creds = response.data.data;
-    this.renderCredentialBar(creds);
+      const creds = response.data.data;
+      this.renderCredentialBar(creds);
+    } catch {
+      // Non-blocking — credential bar simply won't render if the service worker
+      // is unavailable (e.g. extension just reloaded).
+    }
   }
 
   private renderCredentialBar(creds: CredentialItem[]): void {
