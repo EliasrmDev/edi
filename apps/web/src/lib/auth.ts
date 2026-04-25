@@ -2,10 +2,11 @@ import NextAuth from 'next-auth';
 import type { DefaultSession } from 'next-auth';
 import Google from 'next-auth/providers/google';
 import MicrosoftEntraID from 'next-auth/providers/microsoft-entra-id';
+import type { MicrosoftEntraIDProfile } from 'next-auth/providers/microsoft-entra-id';
 
 declare module 'next-auth' {
   interface Session {
-    user: { id: string; apiSession?: string } & DefaultSession['user'];
+    user: { id: string; apiSession?: string; error?: string } & DefaultSession['user'];
   }
   interface JWT {
     id?: string;
@@ -27,6 +28,17 @@ const providers = [
           clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
           clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET!,
           issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
+          // Override profile to add preferred_username fallback for work/school accounts
+          // where the `email` claim may be absent from the ID token even with the email scope.
+          // Profile photo fetch is intentionally skipped (extra MS Graph call; base64 bloats JWT).
+          profile(profile: MicrosoftEntraIDProfile) {
+            return {
+              id: profile.sub,
+              name: profile.name ?? profile.preferred_username,
+              email: profile.email ?? profile.preferred_username,
+              image: null,
+            };
+          },
         }),
       ]
     : []),
@@ -97,6 +109,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     session({ session, token }) {
       if (typeof token.id === 'string') session.user.id = token.id;
       if (typeof token.apiSession === 'string') session.user.apiSession = token.apiSession;
+      if (typeof token.error === 'string') session.user.error = token.error;
       return session;
     },
   },
