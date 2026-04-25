@@ -28,9 +28,14 @@ const providers = [
           clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
           clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET!,
           issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
-          // Override profile to add preferred_username fallback for work/school accounts
-          // where the `email` claim may be absent from the ID token even with the email scope.
-          // Profile photo fetch is intentionally skipped (extra MS Graph call; base64 bloats JWT).
+          // Personal Microsoft accounts (e.g. @hotmail.com) issue tokens where
+          // iss = ".../9188040d-6c67-4c5b-b112-36a304b66dad/v2.0" — a special
+          // consumer tenant GUID — which never matches the "common" issuer from
+          // the discovery document. idToken: false skips jose's iss validation
+          // so both personal and work/school accounts can sign in.
+          // The built-in customFetch interceptor still patches the discovery doc,
+          // and the profile is fetched from graph.microsoft.com/oidc/userinfo.
+          idToken: false,
           profile(profile: MicrosoftEntraIDProfile) {
             return {
               id: profile.sub,
