@@ -28,22 +28,6 @@ const providers = [
           clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
           clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET!,
           issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
-          // Personal Microsoft accounts (e.g. @hotmail.com) issue tokens where
-          // iss = ".../9188040d-6c67-4c5b-b112-36a304b66dad/v2.0" — a special
-          // consumer tenant GUID — which never matches the "common" issuer from
-          // the discovery document. idToken: false skips jose's iss validation
-          // so both personal and work/school accounts can sign in.
-          // The built-in customFetch interceptor still patches the discovery doc,
-          // and the profile is fetched from graph.microsoft.com/oidc/userinfo.
-          idToken: false,
-          profile(profile: MicrosoftEntraIDProfile) {
-            return {
-              id: profile.sub,
-              name: profile.name ?? profile.preferred_username,
-              email: profile.email ?? profile.preferred_username,
-              image: null,
-            };
-          },
         }),
       ]
     : []),
@@ -73,49 +57,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
-    async jwt({ token, user, account }) {
-      // Only on initial OAuth sign-in (account is present on first callback)
-      if (account && user?.email) {
-        try {
-          const internalSecret = process.env.OAUTH_INTERNAL_SECRET;
-          const res = await fetch(`${INTERNAL_API_URL}/api/auth/oauth/signin`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(internalSecret ? { 'x-internal-secret': internalSecret } : {}),
-            },
-            body: JSON.stringify({
-              provider: account.provider,
-              providerAccountId: account.providerAccountId,
-              email: user.email,
-              displayName: user.name ?? null,
-            }),
-          });
-          if (!res.ok) {
-            const text = await res.text().catch(() => '(no body)');
-            console.error(
-              `[auth] oauth/signin failed: ${res.status} ${res.statusText} — ${text}`,
-            );
-            token.error = 'OAuthSigninError';
-            return token;
-          }
-          const body = (await res.json()) as {
-            data: { userId: string; sessionToken: string };
-          };
-          token.id = body.data.userId;
-          token.apiSession = body.data.sessionToken;
-        } catch (err) {
-          console.error('[auth] oauth/signin network error:', err);
-          token.error = 'OAuthSigninError';
-        }
-      }
-      return token;
+    async jwt({ token, user }) {
+      if (user?.id) token.id = user.id
+      return token
     },
     session({ session, token }) {
-      if (typeof token.id === 'string') session.user.id = token.id;
-      if (typeof token.apiSession === 'string') session.user.apiSession = token.apiSession;
-      if (typeof token.error === 'string') session.user.error = token.error;
-      return session;
+      if (token.id) session.user.id = token.id as string
+      return session
     },
   },
   pages: { signIn: '/login', error: '/login' },
