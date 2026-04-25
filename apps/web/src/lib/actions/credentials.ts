@@ -67,8 +67,8 @@ export async function createCredentialAction(
   }
 
   if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    const code = body.error as CredentialError | undefined;
+    const body = (await res.json().catch(() => ({}))) as { error?: { code?: string } };
+    const code = body.error?.code as CredentialError | undefined;
     if (code === 'INVALID_KEY_FORMAT') return { error: 'INVALID_KEY_FORMAT' };
     if (code === 'INVALID_API_KEY') return { error: 'INVALID_API_KEY' };
     if (code === 'DUPLICATE_CREDENTIAL') return { error: 'DUPLICATE_CREDENTIAL' };

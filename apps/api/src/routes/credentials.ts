@@ -4,6 +4,7 @@ import { db } from '../db/index.js';
 import type { AppEnv } from '../types.js';
 import { requireAuth } from '../middleware/auth.js';
 import { apiLimiter, credentialLimiter } from '../middleware/rateLimit.js';
+import { AppError } from '../middleware/errorHandler.js';
 import { EncryptionService } from '../services/crypto/EncryptionService.js';
 import { AuditService } from '../services/audit/AuditService.js';
 import { CredentialService } from '../services/credentials/CredentialService.js';
@@ -194,9 +195,15 @@ credentialsRouter.get('/:id/models', apiLimiter(), async (c) => {
   const user = c.get('user');
   const id = c.req.param('id');
 
-  const models = await modelFetcherService.fetchModels(id, user.id);
-
-  return c.json({ data: models });
+  try {
+    const models = await modelFetcherService.fetchModels(id, user.id);
+    return c.json({ data: models });
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    // Provider API errors (network, auth, unexpected status) — surface as 502
+    const message = err instanceof Error ? err.message : 'Failed to fetch models from provider';
+    throw new AppError('PROVIDER_ERROR', message, 502);
+  }
 });
 
 // ---- PATCH /credentials/:id/model — set selected model for a credential ----

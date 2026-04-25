@@ -25,8 +25,8 @@ export async function getCredentialModels(
     });
 
     if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { message?: string };
-      return { error: body.message ?? `Error ${res.status}` };
+      const body = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+      return { error: body.error?.message ?? `Error ${res.status}` };
     }
 
     const json = (await res.json()) as { data: ModelInfo[] };
@@ -54,8 +54,8 @@ export async function setCredentialModel(
     });
 
     if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { message?: string };
-      return { error: body.message ?? `Error ${res.status}` };
+      const body = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+      return { error: body.error?.message ?? `Error ${res.status}` };
     }
 
     return {};
@@ -77,8 +77,8 @@ export async function clearCredentialModel(
     });
 
     if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { message?: string };
-      return { error: body.message ?? `Error ${res.status}` };
+      const body = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+      return { error: body.error?.message ?? `Error ${res.status}` };
     }
 
     return {};
@@ -109,8 +109,8 @@ export async function toggleFavoriteModel(
     );
 
     if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { message?: string };
-      return { error: body.message ?? `Error ${res.status}` };
+      const body = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+      return { error: body.error?.message ?? `Error ${res.status}` };
     }
 
     return {};
