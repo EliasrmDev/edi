@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import type { ReactNode } from 'react';
 import type { UsageStats } from '@/lib/actions/transform';
 
@@ -132,11 +133,20 @@ function QuotaBar({
         ? 'text-amber-500'
         : 'text-gray-400 dark:text-slate-500';
 
-  const resetDate = new Date(resetAt);
-  const isToday = resetDate.toDateString() === new Date().toDateString();
-  const resetLabel = isToday
-    ? `Reinicia hoy ${resetDate.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}`
-    : `Reinicia ${resetDate.toLocaleDateString('es-CR', { day: 'numeric', month: 'short' })}`;
+  // Computed client-side to avoid server (UTC) vs client (UTC-6) date formatting mismatch.
+  const [resetLabel, setResetLabel] = React.useState('');
+  React.useEffect(() => {
+    const tz = 'America/Costa_Rica';
+    const resetDate = new Date(resetAt);
+    const now = new Date();
+    const dayFmt = new Intl.DateTimeFormat('es-CR', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
+    const isToday = dayFmt.format(resetDate) === dayFmt.format(now);
+    setResetLabel(
+      isToday
+        ? `Reinicia hoy ${resetDate.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', timeZone: tz })}`
+        : `Reinicia ${resetDate.toLocaleDateString('es-CR', { day: 'numeric', month: 'short', timeZone: tz })}`,
+    );
+  }, [resetAt]);
 
   return (
     <div>
@@ -161,7 +171,7 @@ function QuotaBar({
         />
       </div>
       <p className={`mt-1 text-xs ${textColor}`}>
-        {pct}% usado · {resetLabel}
+        {pct}% usado{resetLabel ? ` · ${resetLabel}` : ''}
       </p>
     </div>
   );
@@ -252,16 +262,20 @@ function BarList({
 
 function DailyChart({
   data,
+  serverDateStr,
 }: {
   data: UsageStats['dailyActivity'];
+  // Passed from the server component so both server and client use the same anchor date,
+  // preventing hydration mismatches when the component renders near a UTC midnight boundary.
+  serverDateStr: string;
 }) {
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = serverDateStr;
 
   // Build last 30 days, filling gaps with 0
+  const today = new Date(`${serverDateStr}T12:00:00Z`); // noon UTC to avoid DST edge cases
   const days = Array.from({ length: 30 }, (_, i) => {
     const d = new Date(today);
-    d.setDate(d.getDate() - (29 - i));
+    d.setUTCDate(d.getUTCDate() - (29 - i));
     const key = d.toISOString().slice(0, 10);
     const found = data.find((r) => r.date === key);
     return {
@@ -441,7 +455,7 @@ function RecentTable({ records }: { records: UsageStats['recentRecords'] }) {
 
 // ── Main dashboard ────────────────────────────────────────────────────────
 
-export function UsageDashboard({ stats }: { stats: UsageStats | null }) {
+export function UsageDashboard({ stats, serverDateStr }: { stats: UsageStats | null; serverDateStr: string }) {
   if (!stats) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -551,7 +565,7 @@ export function UsageDashboard({ stats }: { stats: UsageStats | null }) {
           <BarList items={sourceItems} total={summary.totalRequests} />
         </Card>
         <Card title="Actividad diaria — últimos 30 días">
-          <DailyChart data={dailyActivity} />
+          <DailyChart data={dailyActivity} serverDateStr={serverDateStr} />
           {dailyActivity.length > 0 && (
             <div className="mt-3 flex items-center gap-4 text-xs text-gray-400 dark:text-slate-500">
               <span className="flex items-center gap-1.5">

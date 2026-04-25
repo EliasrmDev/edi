@@ -16,31 +16,37 @@ interface CredentialCardProps {
   togglingEnabled?: boolean;
 }
 
-function getStatus(credential: ProviderCredential): {
+// Base status that doesn't depend on current time — safe for SSR.
+function getBaseStatus(credential: ProviderCredential): {
   label: string;
   variant: 'success' | 'warning' | 'error' | 'neutral';
 } {
   if (!credential.isActive) return { label: 'Inactiva', variant: 'neutral' };
   if (credential.isExpired) return { label: 'Expirada', variant: 'error' };
-
-  if (credential.expiresAt) {
-    const daysUntilExpiry = Math.ceil(
-      (new Date(credential.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-    );
-    if (daysUntilExpiry <= 7) {
-      return { label: `Expira en ${daysUntilExpiry}d`, variant: 'warning' };
-    }
-  }
-
   return { label: 'Activa', variant: 'success' };
 }
 
+// Full status with time-sensitive expiry warning — only computed after client mount.
+function getStatus(
+  credential: ProviderCredential,
+  daysUntilExpiry: number | null,
+): { label: string; variant: 'success' | 'warning' | 'error' | 'neutral' } {
+  const base = getBaseStatus(credential);
+  if (base.variant !== 'success') return base;
+  if (daysUntilExpiry !== null && daysUntilExpiry <= 7) {
+    return { label: `Expira en ${daysUntilExpiry}d`, variant: 'warning' };
+  }
+  return base;
+}
+
+// Explicit timezone prevents server (UTC) vs client (UTC-6) date formatting mismatch.
 function formatDate(date: Date | string | null): string {
   if (!date) return '—';
   return new Intl.DateTimeFormat('es-CR', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+    timeZone: 'America/Costa_Rica',
   }).format(new Date(date));
 }
 
@@ -52,7 +58,17 @@ export function CredentialCard({
   verifying = false,
   togglingEnabled = false,
 }: CredentialCardProps) {
-  const status = getStatus(credential);
+  // Computed client-side only to avoid SSR/client Date.now() mismatch.
+  const [daysUntilExpiry, setDaysUntilExpiry] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    if (!credential.expiresAt || credential.isExpired) return;
+    const days = Math.ceil(
+      (new Date(credential.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+    );
+    setDaysUntilExpiry(days);
+  }, [credential.expiresAt, credential.isExpired]);
+
+  const status = getStatus(credential, daysUntilExpiry);
 
   return (
     <article

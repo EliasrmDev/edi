@@ -6,6 +6,9 @@ export const metadata: Metadata = { title: 'Estadísticas de uso' };
 
 export default async function UsagePage() {
   const stats = await getUsageStats();
+  // Computed server-side so client and server render the chart with the same anchor date,
+  // preventing hydration mismatches near UTC midnight boundaries.
+  const serverDateStr = new Date().toISOString().slice(0, 10);
   return (
     <div>
       <div className="mb-6">
@@ -16,7 +19,7 @@ export default async function UsagePage() {
           Consumo de cuota de IA y actividad de transformaciones.
         </p>
       </div>
-      <UsageDashboard stats={stats} />
+      <UsageDashboard stats={stats} serverDateStr={serverDateStr} />
     </div>
   );
 }

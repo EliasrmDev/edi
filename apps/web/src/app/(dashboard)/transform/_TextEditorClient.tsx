@@ -435,15 +435,18 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
   const [localActiveId, setLocalActiveId] = useState(activeCredential?.id ?? null);
   const [toneMode, setToneMode] = useState<'local' | 'ai'>('local');
   const [verbalMode, setVerbalMode] = useState<'indicativo' | 'imperativo'>('indicativo');
-  const [copyConfig, setCopyConfig] = useState<CopyConfig>(() => {
-    if (typeof window === 'undefined') return DEFAULT_COPY_CONFIG;
+  const [copyConfig, setCopyConfig] = useState<CopyConfig>(DEFAULT_COPY_CONFIG);
+
+  // Read from localStorage after mount only — avoids SSR/client hydration mismatch
+  // caused by `typeof window === 'undefined'` returning different values on server vs client.
+  useEffect(() => {
     try {
       const saved = localStorage.getItem(COPY_LS_KEY);
-      return saved ? (JSON.parse(saved) as CopyConfig) : DEFAULT_COPY_CONFIG;
+      if (saved) setCopyConfig(JSON.parse(saved) as CopyConfig);
     } catch {
-      return DEFAULT_COPY_CONFIG;
+      // ignore corrupt/missing storage
     }
-  });
+  }, []);
 
   // Diff panel state
   const [diffData, setDiffData] = useState<{ origHtml: string; transHtml: string } | null>(null);
