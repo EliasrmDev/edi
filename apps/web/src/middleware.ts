@@ -15,6 +15,7 @@ export default auth(function middleware(
   const sessionToken = req.cookies.get(SESSION_COOKIE)?.value;
   const oauthApiSession = req.auth?.user?.apiSession;
   const oauthError = (req.auth?.user as { apiSession?: string; error?: string } | undefined)?.error;
+  const hasIncompleteOAuthSession = !!req.auth?.user && !oauthApiSession;
   const isAuthenticated = !!sessionToken || !!oauthApiSession;
   const hasVerifiedOAuthSession = !!oauthApiSession;
 
@@ -60,9 +61,9 @@ export default auth(function middleware(
   if (PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
     if (!isAuthenticated) {
       const url = new URL('/login', req.url);
-      if (oauthError) {
+      if (oauthError || hasIncompleteOAuthSession) {
         // OAuth completed but API session creation failed — show error on login page
-        url.searchParams.set('error', oauthError);
+        url.searchParams.set('error', oauthError ?? 'OAuthSigninError');
       } else {
         // Normal unauthenticated redirect: preserve full path + query string
         url.searchParams.set('redirect', pathname + req.nextUrl.search);

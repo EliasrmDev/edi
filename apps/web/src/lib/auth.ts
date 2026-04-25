@@ -91,11 +91,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.error = 'OAuthSigninError';
             return token;
           }
-          const body = (await res.json()) as {
-            data: { userId: string; sessionToken: string };
-          };
-          token.id = body.data.userId;
-          token.apiSession = body.data.sessionToken;
+          const body = (await res.json().catch(() => null)) as
+            | { data?: { userId?: string; sessionToken?: string } }
+            | null;
+          const userId = body?.data?.userId;
+          const apiSession = body?.data?.sessionToken;
+
+          if (!userId || !apiSession) {
+            console.error(
+              `[auth] oauth/signin returned an invalid payload for provider "${account.provider}"`,
+              body,
+            );
+            delete token.id;
+            delete token.apiSession;
+            token.error = 'OAuthSigninError';
+            return token;
+          }
+
+          token.id = userId;
+          token.apiSession = apiSession;
+          delete token.error;
         } catch (err) {
           console.error('[auth] oauth/signin network error:', err);
           token.error = 'OAuthSigninError';
