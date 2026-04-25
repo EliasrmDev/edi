@@ -91,6 +91,9 @@ export class AIOrchestrationService {
           ? `AI provider error (${err.statusCode}): ${err.message}`
           : 'AI processing unavailable';
 
+      // Record fallback so it shows in usage stats (best-effort)
+      void this.recordUsage(userId, credentialId, provider, request.transformation, 'ai-fallback', 0, processingMs);
+
       return {
         original: request.text,
         result: request.text, // Return original text unchanged

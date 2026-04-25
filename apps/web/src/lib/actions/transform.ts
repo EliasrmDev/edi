@@ -19,6 +19,37 @@ export interface TransformResult {
   error?: string;
 }
 
+export interface UsageStats {
+  quota: {
+    dailyUsed: number;
+    dailyLimit: number;
+    monthlyUsed: number;
+    monthlyLimit: number;
+    resetDailyAt: string;
+    resetMonthlyAt: string;
+  } | null;
+  summary: {
+    totalRequests: number;
+    totalAiRequests: number;
+    totalFallbacks: number;
+    totalTokens: number;
+    avgProcessingMs: number;
+  };
+  byProvider: { provider: string; requestCount: number; totalTokens: number }[];
+  byType: { transformationType: string; requestCount: number }[];
+  bySource: { source: string; requestCount: number }[];
+  dailyActivity: { date: string; requestCount: number; totalTokens: number; localCount: number; aiCount: number }[];
+  recentRecords: {
+    id: string;
+    provider: string | null;
+    transformationType: string;
+    source: string;
+    tokensUsed: number | null;
+    processingMs: number;
+    createdAt: string;
+  }[];
+}
+
 export async function transformTextAction(
   text: string,
   transformation: ApiTransformation,
@@ -65,4 +96,43 @@ export async function transformTextAction(
     source: body.data?.source,
     warnings: body.data?.warnings,
   };
+}
+
+export async function getUsageStats(): Promise<UsageStats | null> {
+  const authHeader = await getAuthHeader();
+  try {
+    const res = await fetch(`${API_URL}/api/transform/usage-stats`, {
+      headers: { Authorization: authHeader },
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { data?: UsageStats };
+    return body.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function recordLocalUsageAction(
+  transformationType: string,
+  processingMs: number,
+  clientHint?: string,
+): Promise<void> {
+  try {
+    const authHeader = await getAuthHeader();
+    await fetch(`${API_URL}/api/transform/record-local`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: authHeader,
+      },
+      body: JSON.stringify({
+        transformationType,
+        processingMs,
+        ...(clientHint ? { clientHint } : {}),
+      }),
+    });
+  } catch {
+    // best-effort — never throw
+  }
 }

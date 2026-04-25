@@ -240,10 +240,12 @@ export class ModalController {
 
   private applyLocalTransformation(transformation: TransformationType): void {
     const originalText = this.currentText;
+    const start = Date.now();
     const { result, warnings } = this.toneEngine.transform(this.currentText, transformation, this.verbalMode);
     this.currentText = result;
     this.updateTextarea(result);
     this.showDiff(originalText, result);
+    void this.proxyPost('/api/transform/record-local', { transformationType: transformation, processingMs: Date.now() - start, clientHint: 'modal' });
 
     if (warnings.length > 0) {
       this.showWarnings(warnings);
@@ -980,6 +982,17 @@ export class ModalController {
       return await chrome.runtime.sendMessage({
         type: 'PROXY_API_CALL',
         payload: { endpoint, method: 'GET' },
+      }) as ProxyResponse<T>;
+    } catch {
+      return null;
+    }
+  }
+
+  private async proxyPost<T>(endpoint: string, body: unknown): Promise<ProxyResponse<T> | null> {
+    try {
+      return await chrome.runtime.sendMessage({
+        type: 'PROXY_API_CALL',
+        payload: { endpoint, method: 'POST', body },
       }) as ProxyResponse<T>;
     } catch {
       return null;

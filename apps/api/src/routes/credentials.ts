@@ -253,4 +253,14 @@ credentialsRouter.patch('/:id/model-favorites', async (c) => {
   return c.json({ data: credential });
 });
 
+// ---- GET /credentials/:id/provider-usage — fetch live usage data from the provider's API ----
+credentialsRouter.get('/:id/provider-usage', async (c) => {
+  const user = c.get('user');
+  const id = c.req.param('id');
+
+  const usage = await credentialService.getProviderUsage(id, user.id);
+
+  return c.json({ data: usage });
+});
+
 export default credentialsRouter;

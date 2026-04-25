@@ -5,6 +5,7 @@ import type { ProviderCredential } from '@edi/shared';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { ProviderIcon, providerLabel } from './ProviderIcon';
+import { ProviderUsageBlock } from './ProviderUsageBlock';
 
 interface CredentialCardProps {
   credential: ProviderCredential;
@@ -86,6 +87,9 @@ export function CredentialCard({
           </>
         )}
       </div>
+
+      {/* Provider usage section */}
+      <ProviderUsageBlock credentialId={credential.id} />
 
       {/* Modelos section */}
       <div className="mt-4 border-t border-gray-100 dark:border-slate-700/60 pt-3">

@@ -1,5 +1,5 @@
 import type { ProviderId } from '@edi/shared';
-import { ProviderError, type ProviderAdapter, type ValidateTextParams } from '../ProviderAdapter.js';
+import { ProviderError, type ProviderAdapter, type ProviderUsageData, type ValidateTextParams } from '../ProviderAdapter.js';
 
 // Hardcoded base URL — no user-supplied URLs (SSRF protection)
 const OPENAI_BASE = 'https://api.openai.com/v1';
@@ -103,6 +103,57 @@ export class OpenAIAdapter implements ProviderAdapter {
         throw new ProviderError('openai', 504, 'OpenAI request timed out after 30s');
       }
       throw new ProviderError('openai', 500, 'Failed to reach OpenAI API');
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async getUsage(rawKey: string): Promise<ProviderUsageData> {
+    const FALLBACK_URL = 'https://platform.openai.com/usage';
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS);
+
+    try {
+      // OpenAI billing API: get subscription limits + current month usage in parallel
+      const now = new Date();
+      const startDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      const endDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      const [subRes, usageRes] = await Promise.all([
+        fetch(`${OPENAI_BASE}/dashboard/billing/subscription`, {
+          headers: { Authorization: `Bearer ${rawKey}` },
+          signal: controller.signal,
+        }),
+        fetch(`${OPENAI_BASE}/dashboard/billing/usage?start_date=${startDate}&end_date=${endDate}`, {
+          headers: { Authorization: `Bearer ${rawKey}` },
+          signal: controller.signal,
+        }),
+      ]);
+
+      if (!subRes.ok || !usageRes.ok) {
+        return { supported: false, unavailableUrl: FALLBACK_URL };
+      }
+
+      interface BillingSubscription { hard_limit_usd?: number; soft_limit_usd?: number; }
+      interface BillingUsage { total_usage?: number; } // in units of 0.01 cents
+
+      const [sub, usage] = await Promise.all([
+        subRes.json() as Promise<BillingSubscription>,
+        usageRes.json() as Promise<BillingUsage>,
+      ]);
+
+      const usedUsd = (usage.total_usage ?? 0) / 10000; // convert 0.01 cents → USD
+      const limitUsd = sub.hard_limit_usd ?? null;
+
+      return {
+        supported: true,
+        creditsUsed: usedUsd,
+        creditsLimit: limitUsd,
+        creditsRemaining: limitUsd !== null ? Math.max(0, limitUsd - usedUsd) : null,
+        isFreeTier: false,
+      };
+    } catch {
+      return { supported: false, unavailableUrl: FALLBACK_URL };
     } finally {
       clearTimeout(timer);
     }

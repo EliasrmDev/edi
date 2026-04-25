@@ -103,7 +103,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900 lg:hidden"
         aria-label="Navegación móvil"
       >
-        <div className="grid grid-cols-6">
+        <div className="flex overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           <DashboardMobileLinks />
         </div>
       </nav>

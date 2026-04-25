@@ -66,6 +66,15 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
+  {
+    href: '/usage',
+    label: 'Estadísticas',
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+  },
 ];
 
 export { navItems };
@@ -110,7 +119,7 @@ export function DashboardMobileLinks() {
             key={item.href}
             href={item.href}
             aria-current={isActive ? 'page' : undefined}
-            className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors
+            className={`flex min-w-[56px] shrink-0 flex-col items-center gap-1 px-1 py-3 text-xs font-medium transition-colors
               ${isActive
                 ? 'text-blue-600 dark:text-blue-400'
                 : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100'

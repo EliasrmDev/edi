@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { ProviderCredential, CopyConfig } from '@edi/shared';
-import { transformTextAction, type ApiTransformation } from '@/lib/actions/transform';
+import { transformTextAction, recordLocalUsageAction, type ApiTransformation } from '@/lib/actions/transform';
 import { activateCredentialAction } from '@/lib/actions/credentials';
 import { Button } from '@/components/ui/Button';
 import { renderDiff, parseHtmlToCharTokens, type CharToken } from '@/lib/diff';
@@ -478,11 +478,13 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
 
   function handleLocal(t: LocalTransformation) {
     const prev = textRef.current;
+    const start = Date.now();
     const next = applyLocalTransform(prev, t);
     setText(next);
     const diff = renderDiff(prev, next);
     setDiffData(prev !== next ? { origHtml: diff.originalHtml, transHtml: diff.transformedHtml } : null);
     setStatus(null);
+    void recordLocalUsageAction(t, Date.now() - start, 'web-editor');
   }
 
   function handleTone(t: ToneTransformation) {
@@ -493,11 +495,13 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
         'tone-ustedeo': 'ustedeo',
       };
       const prev = textRef.current;
+      const start = Date.now();
       const next = applyLocalTone(prev, targetMap[t], verbalMode);
       setText(next);
       const diff = renderDiff(prev, next);
       setDiffData(prev !== next ? { origHtml: diff.originalHtml, transHtml: diff.transformedHtml } : null);
       setStatus(null);
+      void recordLocalUsageAction(t, Date.now() - start, 'web-editor');
     } else {
       handleApi(t);
     }

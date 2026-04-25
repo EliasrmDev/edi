@@ -761,4 +761,37 @@ export class CredentialService {
 
     return toProviderCredential(updatedRow);
   }
+
+  async getProviderUsage(
+    credentialId: string,
+    userId: string,
+  ): Promise<{ provider: ProviderId; supported: boolean; creditsUsed?: number; creditsLimit?: number | null; creditsRemaining?: number | null; isFreeTier?: boolean; unavailableUrl?: string }> {
+    const rows = await this.db
+      .select({
+        id: providerCredentials.id,
+        userId: providerCredentials.userId,
+        provider: providerCredentials.provider,
+        encryptedKey: providerCredentials.encryptedKey,
+      })
+      .from(providerCredentials)
+      .where(
+        and(
+          eq(providerCredentials.id, credentialId),
+          isNull(providerCredentials.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    const row = rows[0];
+    if (!row || row.userId !== userId) {
+      throw new AppError('CREDENTIAL_NOT_FOUND', 'Credential not found', 404);
+    }
+
+    const rawKey = await this.encryption.decrypt(row.encryptedKey);
+    const provider = row.provider as ProviderId;
+    const adapter = getAdapter(provider);
+    const usage = await adapter.getUsage(rawKey);
+
+    return { provider, ...usage };
+  }
 }

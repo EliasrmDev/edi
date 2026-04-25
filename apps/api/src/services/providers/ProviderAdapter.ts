@@ -4,6 +4,24 @@ import { AnthropicAdapter } from './adapters/AnthropicAdapter.js';
 import { GoogleAIAdapter } from './adapters/GoogleAIAdapter.js';
 import { OpenRouterAdapter } from './adapters/OpenRouterAdapter.js';
 
+/**
+ * Normalised usage data returned by a provider's usage API.
+ * `supported: false` means this provider has no per-key usage API;
+ * `unavailableUrl` links the user to their dashboard instead.
+ */
+export type ProviderUsageData =
+  | {
+      supported: true;
+      creditsUsed: number;        // USD spent
+      creditsLimit: number | null; // null = no limit / pay-as-you-go
+      creditsRemaining: number | null;
+      isFreeTier: boolean;
+    }
+  | {
+      supported: false;
+      unavailableUrl: string;     // link to provider's own dashboard
+    };
+
 export interface ValidateTextParams {
   rawKey: string;
   text: string;
@@ -48,6 +66,12 @@ export interface ProviderAdapter {
    * Returns the transformed text and token count.
    */
   validateText(params: ValidateTextParams): Promise<{ result: string; tokensUsed: number }>;
+
+  /**
+   * Fetch current usage/credits for the given API key from the provider.
+   * Returns normalised ProviderUsageData; never throws (errors are returned as supported:false).
+   */
+  getUsage(rawKey: string): Promise<ProviderUsageData>;
 }
 
 /**

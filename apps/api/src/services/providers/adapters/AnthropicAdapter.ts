@@ -1,5 +1,5 @@
 import type { ProviderId } from '@edi/shared';
-import { ProviderError, type ProviderAdapter, type ValidateTextParams } from '../ProviderAdapter.js';
+import { ProviderError, type ProviderAdapter, type ProviderUsageData, type ValidateTextParams } from '../ProviderAdapter.js';
 
 // Hardcoded base URL — no user-supplied URLs (SSRF protection)
 const ANTHROPIC_BASE = 'https://api.anthropic.com/v1';
@@ -121,5 +121,10 @@ export class AnthropicAdapter implements ProviderAdapter {
     } finally {
       clearTimeout(timer);
     }
+  }
+
+  async getUsage(_rawKey: string): Promise<ProviderUsageData> {
+    // Anthropic does not expose a per-key usage API via the same credentials
+    return { supported: false, unavailableUrl: 'https://console.anthropic.com/settings/usage' };
   }
 }

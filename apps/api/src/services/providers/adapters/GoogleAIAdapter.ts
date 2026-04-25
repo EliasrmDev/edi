@@ -1,5 +1,5 @@
 import type { ProviderId } from '@edi/shared';
-import { ProviderError, type ProviderAdapter, type ValidateTextParams } from '../ProviderAdapter.js';
+import { ProviderError, type ProviderAdapter, type ProviderUsageData, type ValidateTextParams } from '../ProviderAdapter.js';
 
 // Hardcoded base URL — no user-supplied URLs (SSRF protection)
 const GOOGLE_AI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
@@ -117,5 +117,10 @@ export class GoogleAIAdapter implements ProviderAdapter {
     } finally {
       clearTimeout(timer);
     }
+  }
+
+  async getUsage(_rawKey: string): Promise<ProviderUsageData> {
+    // Google AI Studio does not expose a per-key billing/usage API via the same credentials
+    return { supported: false, unavailableUrl: 'https://aistudio.google.com/app/usage' };
   }
 }

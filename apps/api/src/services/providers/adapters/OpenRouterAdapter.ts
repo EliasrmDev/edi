@@ -1,5 +1,5 @@
 import type { ProviderId } from '@edi/shared';
-import { ProviderError, type ProviderAdapter, type ValidateTextParams } from '../ProviderAdapter.js';
+import { ProviderError, type ProviderAdapter, type ProviderUsageData, type ValidateTextParams } from '../ProviderAdapter.js';
 
 // Hardcoded base URL — no user-supplied URLs (SSRF protection)
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
@@ -105,6 +105,44 @@ export class OpenRouterAdapter implements ProviderAdapter {
         throw new ProviderError('openrouter', 408, 'Request timed out');
       }
       throw new ProviderError('openrouter', 500, 'Unexpected error calling OpenRouter');
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async getUsage(rawKey: string): Promise<ProviderUsageData> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS);
+
+    try {
+      const res = await fetch(`${OPENROUTER_BASE}/auth/key`, {
+        headers: { Authorization: `Bearer ${rawKey}` },
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        return { supported: false, unavailableUrl: 'https://openrouter.ai/settings/credits' };
+      }
+
+      const body = (await res.json()) as {
+        data?: {
+          usage?: number;
+          limit?: number | null;
+          limit_remaining?: number | null;
+          is_free_tier?: boolean;
+        };
+      };
+
+      const d = body.data ?? {};
+      return {
+        supported: true,
+        creditsUsed: d.usage ?? 0,
+        creditsLimit: d.limit ?? null,
+        creditsRemaining: d.limit_remaining ?? null,
+        isFreeTier: d.is_free_tier ?? false,
+      };
+    } catch {
+      return { supported: false, unavailableUrl: 'https://openrouter.ai/settings/credits' };
     } finally {
       clearTimeout(timer);
     }

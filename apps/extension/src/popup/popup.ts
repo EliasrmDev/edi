@@ -1227,6 +1227,27 @@ function escHtml(str: string): string {
 
 const API_BASE: string = import.meta.env['VITE_API_URL'] ?? 'http://localhost:3001';
 
+/** Fire-and-forget: record a local transform in the usage DB. */
+async function recordLocalTransform(
+  transformationType: string,
+  processingMs: number,
+): Promise<void> {
+  try {
+    const stored = await chrome.storage.local.get(['authToken']) as { authToken?: string };
+    if (!stored.authToken) return;
+    await fetch(`${API_BASE}/api/transform/record-local`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${stored.authToken}`,
+      },
+      body: JSON.stringify({ transformationType, processingMs, clientHint: 'popup' }),
+    });
+  } catch {
+    // best-effort — never throw
+  }
+}
+
 // ─── AI provider/model constants ──────────────────────────────────────────
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -1351,6 +1372,7 @@ function setupMiniEditor(): void {
           await runMiniAITransform(btn, transformation, text);
         } else {
           try {
+            const start = Date.now();
             const result = transformText(
               text,
               transformation as Parameters<typeof transformText>[1],
@@ -1358,6 +1380,7 @@ function setupMiniEditor(): void {
             );
             miniEditorTextarea.value = result.result;
             setMiniStatus('', '');
+            void recordLocalTransform(transformation, Date.now() - start);
           } catch {
             setMiniStatus('Error al transformar el texto.', 'error');
           }
@@ -1366,12 +1389,14 @@ function setupMiniEditor(): void {
         await runMiniAITransform(btn, transformation, text);
       } else {
         try {
+          const start = Date.now();
           const result = transformText(
             text,
             transformation as Parameters<typeof transformText>[1],
           );
           miniEditorTextarea.value = result.result;
           setMiniStatus('', '');
+          void recordLocalTransform(transformation, Date.now() - start);
         } catch {
           setMiniStatus('Error al transformar el texto.', 'error');
         }
@@ -1496,6 +1521,90 @@ interface CredentialInfo {
   selectedModel: string | null;
 }
 
+interface ProviderUsageResult {
+  provider: string;
+  supported: boolean;
+  creditsUsed?: number;
+  creditsLimit?: number | null;
+  creditsRemaining?: number | null;
+  isFreeTier?: boolean;
+  unavailableUrl?: string;
+}
+
+async function loadProviderUsage(credentialId: string): Promise<ProviderUsageResult | null> {
+  const stored = (await chrome.storage.local.get(['authToken'])) as { authToken?: string };
+  if (!stored.authToken) return null;
+  try {
+    const res = await fetch(`${API_BASE}/api/credentials/${credentialId}/provider-usage`, {
+      headers: { Authorization: `Bearer ${stored.authToken}` },
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { data?: ProviderUsageResult };
+    console.log('/provider-usage', body);
+    return body.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function renderUsageBlock(container: HTMLElement, usage: ProviderUsageResult | null): void {
+  container.innerHTML = '';
+
+  if (usage === null) {
+    const err = document.createElement('span');
+    err.className = 'cred-usage-error';
+    err.textContent = 'No se pudo cargar el consumo';
+    container.appendChild(err);
+    return;
+  }
+
+  if (!usage.supported) {
+    const link = document.createElement('a');
+    link.href = usage.unavailableUrl ?? '#';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.className = 'cred-usage-link';
+    link.textContent = 'Ver consumo →';
+    container.appendChild(link);
+    return;
+  }
+
+  const usedUsd = (usage.creditsUsed ?? 0).toFixed(4);
+
+  if (usage.isFreeTier) {
+    const stat = document.createElement('span');
+    stat.className = 'cred-usage-stat';
+    stat.textContent = `$${usedUsd} USD · Free tier`;
+    container.appendChild(stat);
+    return;
+  }
+
+  const limit = usage.creditsLimit;
+  if (limit !== null && limit !== undefined && limit > 0) {
+    const used = usage.creditsUsed ?? 0;
+    const pct = Math.min(100, (used / limit) * 100);
+    const remaining = usage.creditsRemaining ?? Math.max(0, limit - used);
+
+    const barWrap = document.createElement('div');
+    barWrap.className = 'cred-usage-bar-wrap';
+    const barFill = document.createElement('div');
+    barFill.className = 'cred-usage-bar-fill';
+    barFill.style.width = `${pct}%`;
+    barWrap.appendChild(barFill);
+    container.appendChild(barWrap);
+
+    const stat = document.createElement('span');
+    stat.className = 'cred-usage-stat';
+    stat.textContent = `$${usedUsd} / $${limit.toFixed(2)} USD · Disponible: $${remaining.toFixed(4)}`;
+    container.appendChild(stat);
+  } else {
+    const stat = document.createElement('span');
+    stat.className = 'cred-usage-stat';
+    stat.textContent = `$${usedUsd} USD gastado este mes`;
+    container.appendChild(stat);
+  }
+}
+
 function renderCredentialList(creds: CredentialInfo[]): void {
   // Update active provider chip in the editor panel
   const chip = document.getElementById('active-provider-chip');
@@ -1564,7 +1673,22 @@ function renderCredentialList(creds: CredentialInfo[]): void {
       item.appendChild(btn);
     }
 
+    // Usage block — filled asynchronously
+    const usageBlock = document.createElement('div');
+    usageBlock.className = 'cred-usage-block';
+    const usageLoading = document.createElement('span');
+    usageLoading.className = 'cred-usage-loading';
+    usageLoading.textContent = 'Cargando…';
+    usageBlock.appendChild(usageLoading);
+    item.appendChild(usageBlock);
+
     aiCredentialList.appendChild(item);
+
+    loadProviderUsage(cred.id).then((usage) => {
+      renderUsageBlock(usageBlock, usage);
+    }).catch(() => {
+      renderUsageBlock(usageBlock, null);
+    });
   }
 }
 

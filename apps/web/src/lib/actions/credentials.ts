@@ -161,3 +161,28 @@ export async function toggleEnabledAction(credentialId: string): Promise<ToggleE
     return { error: 'SERVER_ERROR' };
   }
 }
+
+export interface ProviderUsageInfo {
+  provider: string;
+  supported: boolean;
+  creditsUsed?: number;
+  creditsLimit?: number | null;
+  creditsRemaining?: number | null;
+  isFreeTier?: boolean;
+  unavailableUrl?: string;
+}
+
+export async function getProviderUsageAction(credentialId: string): Promise<ProviderUsageInfo | null> {
+  const cookie = await getAuthHeader();
+  try {
+    const res = await fetch(`${API_URL}/api/credentials/${credentialId}/provider-usage`, {
+      headers: { Authorization: cookie },
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { data?: ProviderUsageInfo };
+    return body.data ?? null;
+  } catch {
+    return null;
+  }
+}
