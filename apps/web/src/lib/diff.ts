@@ -95,18 +95,18 @@ export function renderDiff(
   const dp = lcsTable(origTokens, transTokens);
   const ops = backtrack(dp, origTokens, transTokens, origTokens.length, transTokens.length);
 
-  let originalHtml = '';
-  let transformedHtml = '';
+  let _originalHtml = '';
+  let _transformedHtml = '';
 
   for (const op of ops) {
     if (op.type === 'eq') {
       const escaped = escapeHtml(op.value);
-      originalHtml += escaped;
-      transformedHtml += escaped;
+      _originalHtml += escaped;
+      _transformedHtml += escaped;
     } else if (op.type === 'del') {
-      originalHtml += `<mark class="diff-del">${escapeHtml(op.value)}</mark>`;
+      _originalHtml += `<mark class="diff-del">${escapeHtml(op.value)}</mark>`;
     } else if (op.type === 'ins') {
-      transformedHtml += `<mark class="diff-add">${escapeHtml(op.value)}</mark>`;
+      _transformedHtml += `<mark class="diff-add">${escapeHtml(op.value)}</mark>`;
     }
   }
 

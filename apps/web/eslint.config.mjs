@@ -1,6 +1,7 @@
 import { default as nextConfig } from '@next/eslint-plugin-next';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
 
 /** @type {import('eslint').Linter.Config[]} */
 const eslintConfig = [
@@ -9,6 +10,7 @@ const eslintConfig = [
     plugins: {
       '@next/next': nextConfig,
       '@typescript-eslint': tsPlugin,
+      'react-hooks': reactHooksPlugin,
     },
     languageOptions: {
       parser: tsParser,
@@ -23,6 +25,8 @@ const eslintConfig = [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
     },
   },
   {
