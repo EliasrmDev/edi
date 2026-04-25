@@ -1,8 +1,9 @@
 name = "edi-api"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
-# nodejs_compat gives us: process.env, node:crypto, Buffer, and more.
-# CF Worker secrets/vars are automatically available via process.env.
+# nodejs_compat gives us: node:crypto, Buffer, and Node.js built-ins.
+# NOTE: CF Worker secrets/vars are NOT auto-injected into process.env.
+# We handle this manually in the fetch handler in src/index.ts.
 compatibility_flags = ["nodejs_compat"]
 
 [observability]

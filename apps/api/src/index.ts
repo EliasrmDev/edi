@@ -66,7 +66,19 @@ app.notFound((c) =>
 
 // ---------------------------------------------------------------------------
 // Cloudflare Workers export
-// wrangler bundles this and passes fetch requests to app.fetch automatically.
+// CF Worker secrets set via `wrangler secret put` are only available on the
+// `env` binding object — they are NOT automatically injected into process.env
+// even with nodejs_compat. We copy them here so the rest of the app can use
+// process.env safely (db/index.ts, services, etc.).
 // Run `pnpm db:migrate` against DATABASE_URL before deploying.
 // ---------------------------------------------------------------------------
-export default app;
+export default {
+  fetch(req: Request, env: Record<string, string>, ctx: unknown) {
+    for (const [key, value] of Object.entries(env)) {
+      if (typeof value === 'string') {
+        process.env[key] = value;
+      }
+    }
+    return app.fetch(req, env, ctx as never);
+  },
+};

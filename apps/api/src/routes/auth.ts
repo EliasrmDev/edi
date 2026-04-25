@@ -341,6 +341,8 @@ auth.post('/oauth/signin', async (c) => {
       return c.json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, 401);
     }
   }
+
+  try {
   const body = OAuthSigninSchema.parse(await c.req.json());
   const { provider, providerAccountId, email, displayName } = body;
   const ip = getClientIP(c);
@@ -435,6 +437,16 @@ auth.post('/oauth/signin', async (c) => {
       expiresAt: session.expiresAt.toISOString(),
     },
   });
+  } catch (err) {
+    console.error(JSON.stringify({
+      level: 'error',
+      event: 'oauth_signin_error',
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      timestamp: new Date().toISOString(),
+    }));
+    throw err;
+  }
 });
 
 export default auth;
