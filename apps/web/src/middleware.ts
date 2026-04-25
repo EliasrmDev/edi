@@ -17,35 +17,10 @@ export default auth(function middleware(
   const isAuthenticated = !!sessionToken || !!oauthApiSession;
   const hasVerifiedOAuthSession = !!oauthApiSession;
 
-  // Protect dashboard routes
-  if (PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
-    if (!isAuthenticated) {
-      const url = new URL('/login', req.url);
-      // Preserve full path + query string so params like ?extId survive the bounce
-      url.searchParams.set('redirect', pathname + req.nextUrl.search);
-      return NextResponse.redirect(url);
-    }
-  }
-
-  // Redirect authenticated users away from auth pages
-  if (AUTH_PREFIXES.some((p) => pathname.startsWith(p))) {
-    // If dashboard redirected here because the API session is expired, clear
-    // the stale session cookie so the next protected navigation is handled
-    // by middleware directly (without another failed API request first).
-    if (isSessionExpiredRedirect && sessionToken && !oauthApiSession) {
-      const response = NextResponse.next();
-      response.cookies.delete(SESSION_COOKIE);
-      return response;
-    }
-
-    // Only trust verified NextAuth state here. A stale raw session cookie can
-    // otherwise trap users in a /login <-> /dashboard redirect loop.
-    if (hasVerifiedOAuthSession) {
-      return NextResponse.redirect(new URL('/dashboard', req.url));
-    }
-  }
-
-  // Generate a per-request nonce for CSP
+  // Generate nonce early so every NextResponse.next() path can use it.
+  // next.config.ts no longer sets a static CSP — this middleware is the sole
+  // owner of CSP headers. A static CSP with 'strict-dynamic' but no nonce/hash
+  // would block ALL inline scripts (including Next.js hydration).
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const isDev = process.env.NODE_ENV === 'development';
   const csp = [
@@ -62,10 +37,59 @@ export default auth(function middleware(
     `upgrade-insecure-requests`,
   ].join('; ');
 
+  // Forward nonce to the app so server components can read it via headers().
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('x-nonce', nonce);
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  function buildPageResponse(): NextResponse {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  function applySecurityHeaders(res: NextResponse): NextResponse {
+    res.headers.set('Content-Security-Policy', csp);
+    res.headers.set('X-Content-Type-Options', 'nosniff');
+    res.headers.set('X-Frame-Options', 'DENY');
+    res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+    res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    return res;
+  }
+
+  // Protect dashboard routes
+  if (PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
+    if (!isAuthenticated) {
+      const url = new URL('/login', req.url);
+      // Preserve full path + query string so params like ?extId survive the bounce
+      url.searchParams.set('redirect', pathname + req.nextUrl.search);
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Redirect authenticated users away from auth pages
+  if (AUTH_PREFIXES.some((p) => pathname.startsWith(p))) {
+    // If the dashboard explicitly expired the session (API session invalid),
+    // always let the user reach the login page regardless of session type.
+    // This breaks the /login <-> /dashboard loop that occurs when an OAuth
+    // user's API session expires: NextAuth JWT still exists (hasVerifiedOAuthSession
+    // is true) but the API rejects the token, so dashboard calls redirect('/login?expired=1').
+    // Without this early return the middleware would redirect them back to /dashboard forever.
+    if (isSessionExpiredRedirect) {
+      const response = buildPageResponse();
+      // Also clear a stale raw session cookie when present (non-OAuth expiry case)
+      if (sessionToken && !oauthApiSession) {
+        response.cookies.delete(SESSION_COOKIE);
+      }
+      return applySecurityHeaders(response);
+    }
+
+    // Only trust verified NextAuth state here. A stale raw session cookie can
+    // otherwise trap users in a /login <-> /dashboard redirect loop.
+    if (hasVerifiedOAuthSession) {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+  }
+
+  const response = buildPageResponse();
 
   // Bridge OAuth session into the session cookie for Hono API compatibility
   if (oauthApiSession && !sessionToken) {
@@ -78,16 +102,7 @@ export default auth(function middleware(
     });
   }
 
-  response.headers.set('Content-Security-Policy', csp);
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set(
-    'Strict-Transport-Security',
-    'max-age=63072000; includeSubDomains; preload',
-  );
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  return response;
+  return applySecurityHeaders(response);
 });
 
 export const config = {

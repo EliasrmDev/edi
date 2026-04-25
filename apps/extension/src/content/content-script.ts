@@ -9,6 +9,13 @@ import {
 import type { TextFieldHandler } from './TextFieldHandler';
 import { scanImages } from '../image-converter/scanner';
 
+// Only run on real web pages — skip chrome-error://, chrome://, about:, etc.
+// Without this guard, Chrome blocks frame navigations attempted from error pages.
+if (!location.protocol.startsWith('http')) {
+  // Stop module execution on non-HTTP(S) pages
+  throw new Error('[EDI] Skipping content script on non-HTTP page.');
+}
+
 let modalController: ModalController | null = null;
 let activeHandler: TextFieldHandler | null = null;
 let floatingBtnEnabled = true; // default on; updated from storage

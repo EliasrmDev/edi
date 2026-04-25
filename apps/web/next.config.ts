@@ -1,9 +1,5 @@
 import type { NextConfig } from 'next';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
-const isDev = process.env.NODE_ENV === 'development';
-
 const nextConfig: NextConfig = {
   transpilePackages: ['@edi/shared'],
   reactStrictMode: true,
@@ -28,24 +24,10 @@ const nextConfig: NextConfig = {
           key: 'Permissions-Policy',
           value: 'camera=(), microphone=(), geolocation=()',
         },
-        // CSP — note: Next.js 15 nonce support reads x-nonce from middleware.
-        // For nonce-per-request, see middleware.ts which overrides this per-request.
-        {
-          key: 'Content-Security-Policy',
-          value: [
-            "default-src 'self'",
-            `script-src 'self' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-            `style-src 'self'${isDev ? " 'unsafe-inline'" : ''}`,
-            `img-src 'self' data: blob:`,
-            `font-src 'self'`,
-            `connect-src 'self' ${apiUrl}${isDev ? ' ws://localhost:* ws://127.0.0.1:*' : ''}`,
-            `form-action 'self'`,
-            `base-uri 'self'`,
-            `frame-ancestors 'none'`,
-            `object-src 'none'`,
-            `upgrade-insecure-requests`,
-          ].join('; '),
-        },
+        // CSP is set per-request in middleware.ts with a unique nonce.
+        // A static CSP here with 'strict-dynamic' and no nonce would block
+        // all inline scripts (including Next.js hydration) on any path the
+        // middleware returns early on. Do NOT add a CSP here.
       ],
     },
   ],

@@ -5,6 +5,11 @@
  * Detects text selections and provides transformation UI trigger.
  */
 
+// Only run on real web pages — skip chrome-error://, chrome://, about:, etc.
+if (!location.protocol.startsWith('http')) {
+  throw new Error('[EDI] Skipping content script on non-HTTP page.');
+}
+
 function getSelectedText(): string {
   const selection = window.getSelection();
   return selection ? selection.toString().trim() : '';

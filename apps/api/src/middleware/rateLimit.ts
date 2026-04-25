@@ -21,14 +21,8 @@ export function clearRateLimitStore(): void {
 }
 
 // Periodic cleanup every 60s to prevent memory leaks
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of store) {
-    if (entry.resetAt <= now) {
-      store.delete(key);
-    }
-  }
-}, 60_000).unref();
+// NOTE: setInterval is not used here because CF Workers isolates are short-lived
+// and don't support .unref(). Cleanup is done lazily inside checkLimit instead.
 
 function checkLimit(
   key: string,
@@ -36,6 +30,14 @@ function checkLimit(
   windowMs: number,
 ): { allowed: boolean; remaining: number; resetAt: number } {
   const now = Date.now();
+
+  // Lazy cleanup: evict a few expired entries on each call to bound memory usage
+  if (store.size > 500) {
+    for (const [k, e] of store) {
+      if (e.resetAt <= now) store.delete(k);
+    }
+  }
+
   const entry = store.get(key);
 
   if (!entry || entry.resetAt <= now) {

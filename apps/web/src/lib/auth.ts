@@ -60,9 +60,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Only on initial OAuth sign-in (account is present on first callback)
       if (account && user?.email) {
         try {
+          const internalSecret = process.env.OAUTH_INTERNAL_SECRET;
           const res = await fetch(`${INTERNAL_API_URL}/api/auth/oauth/signin`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(internalSecret ? { 'x-internal-secret': internalSecret } : {}),
+            },
             body: JSON.stringify({
               provider: account.provider,
               providerAccountId: account.providerAccountId,
@@ -71,6 +75,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }),
           });
           if (!res.ok) {
+            if (process.env.NODE_ENV === 'development') {
+              const text = await res.text().catch(() => '(no body)');
+              console.error(
+                `[auth] oauth/signin failed: ${res.status} ${res.statusText} — ${text}`,
+              );
+            }
             token.error = 'OAuthSigninError';
             return token;
           }
@@ -79,7 +89,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           };
           token.id = body.data.userId;
           token.apiSession = body.data.sessionToken;
-        } catch {
+        } catch (err) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[auth] oauth/signin network error:', err);
+          }
           token.error = 'OAuthSigninError';
         }
       }

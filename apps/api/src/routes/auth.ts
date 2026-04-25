@@ -329,7 +329,18 @@ auth.get('/me', requireAuth(), async (c) => {
 });
 
 // ---- POST /auth/oauth/signin  (server-to-server: called by Next.js during OAuth flow) ----
-auth.post('/oauth/signin', strictLimiter(), async (c) => {
+// No IP-based rate limit here: this endpoint is only called from the Next.js server, not
+// directly from clients. IP-based limiting would block all users after 3 sign-ins/hour
+// because all Vercel requests share the same outgoing IP.
+// Instead we validate a shared secret set in both the Next.js and CF Workers environments.
+auth.post('/oauth/signin', async (c) => {
+  const expectedSecret = process.env.OAUTH_INTERNAL_SECRET;
+  if (expectedSecret) {
+    const provided = c.req.header('x-internal-secret');
+    if (!provided || provided !== expectedSecret) {
+      return c.json({ error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } }, 401);
+    }
+  }
   const body = OAuthSigninSchema.parse(await c.req.json());
   const { provider, providerAccountId, email, displayName } = body;
   const ip = getClientIP(c);
