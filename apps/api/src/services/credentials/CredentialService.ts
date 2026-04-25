@@ -311,12 +311,36 @@ export class CredentialService {
 
   /**
    * Verify a credential's API key is still working and update lastVerifiedAt.
+   * Unlike getForAIUse, this allows verifying inactive/disabled credentials
+   * (the user just wants to know if the key itself is still valid).
    */
   async verify(
     credentialId: string,
     userId: string,
   ): Promise<{ valid: boolean; error?: string }> {
-    const { rawKey, provider } = await this.getForAIUse(credentialId, userId);
+    // Fetch only ownership + encrypted key — do NOT require isActive/isEnabled
+    const rows = await this.db
+      .select({
+        userId: providerCredentials.userId,
+        provider: providerCredentials.provider,
+        encryptedKey: providerCredentials.encryptedKey,
+      })
+      .from(providerCredentials)
+      .where(
+        and(
+          eq(providerCredentials.id, credentialId),
+          isNull(providerCredentials.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    const row = rows[0];
+    if (!row || row.userId !== userId) {
+      throw new AppError('CREDENTIAL_NOT_FOUND', 'Credential not found', 404);
+    }
+
+    const rawKey = await this.encryption.decrypt(row.encryptedKey);
+    const provider = row.provider as ProviderId;
 
     const adapter = getAdapter(provider);
     const result = await adapter.verifyKey(rawKey);

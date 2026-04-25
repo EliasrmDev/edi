@@ -121,6 +121,13 @@ export async function verifyCredentialAction(
   }
 
   if (!res.ok) return { error: 'Verification failed. Check the key is still valid.' };
+
+  const body = (await res.json().catch(() => ({}))) as {
+    data?: { valid?: boolean; error?: string | null };
+  };
+  if (body.data?.valid === false) {
+    return { error: body.data.error ?? 'Key is invalid or has been revoked.' };
+  }
   return { success: true };
 }
 
