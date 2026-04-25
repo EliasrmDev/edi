@@ -26,32 +26,7 @@ const providers = [
         MicrosoftEntraID({
           clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
           clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET!,
-          // The 'common' endpoint returns tokens whose 'iss' claim contains the
-          // user's real tenant ID (e.g. .../REAL-GUID/v2.0), but OIDC discovery
-          // for 'common' advertises the literal template "{tenantid}/v2.0".
-          // Jose's strict iss check always fails. Fix: disable ID-token validation
-          // and use the Graph userinfo endpoint to read the profile instead.
-          idToken: false,
-          authorization: {
-            url: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-            params: { scope: 'openid profile email' },
-          },
-          token: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-          userinfo: 'https://graph.microsoft.com/oidc/userinfo',
-          profile(profile: {
-            sub: string;
-            name?: string;
-            email?: string;
-            preferred_username?: string;
-            picture?: string;
-          }) {
-            return {
-              id: profile.sub,
-              name: profile.name ?? null,
-              email: (profile.email ?? profile.preferred_username ?? null) as string,
-              image: profile.picture ?? null,
-            };
-          },
+          issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
         }),
       ]
     : []),
@@ -100,12 +75,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }),
           });
           if (!res.ok) {
-            if (process.env.NODE_ENV === 'development') {
-              const text = await res.text().catch(() => '(no body)');
-              console.error(
-                `[auth] oauth/signin failed: ${res.status} ${res.statusText} — ${text}`,
-              );
-            }
+            const text = await res.text().catch(() => '(no body)');
+            console.error(
+              `[auth] oauth/signin failed: ${res.status} ${res.statusText} — ${text}`,
+            );
             token.error = 'OAuthSigninError';
             return token;
           }
@@ -115,9 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.id = body.data.userId;
           token.apiSession = body.data.sessionToken;
         } catch (err) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('[auth] oauth/signin network error:', err);
-          }
+          console.error('[auth] oauth/signin network error:', err);
           token.error = 'OAuthSigninError';
         }
       }
