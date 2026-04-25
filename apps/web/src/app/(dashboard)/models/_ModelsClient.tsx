@@ -174,7 +174,7 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
 
   if (credentials.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 bg-white py-16 text-center">
+      <div className="rounded-xl border border-dashed border-gray-300 bg-white py-16 text-center dark:border-slate-600 dark:bg-slate-800">
         <svg
           className="mx-auto mb-4 h-10 w-10 text-gray-300"
           fill="none"
@@ -189,8 +189,8 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
             d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"
           />
         </svg>
-        <p className="text-sm font-medium text-gray-500">No hay claves de IA configuradas.</p>
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="text-sm font-medium text-gray-500 dark:text-slate-400">No hay claves de IA configuradas.</p>
+        <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
           Agregá una clave en{' '}
           <a href="/credentials" className="text-blue-600 hover:underline">
             Claves de IA
@@ -255,7 +255,7 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
   return (
     <div className="space-y-4">
       {/* ── Tabs ── */}
-      <div className="flex flex-wrap items-center gap-1 rounded-xl border border-gray-200 bg-white p-1.5 shadow-sm">
+      <div className="flex flex-wrap items-center gap-1 rounded-xl border border-gray-200 bg-white p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         {(['all', ...providers] as Tab[]).map((tab) => {
           const isActive = activeTab === tab;
           const label = tab === 'all' ? 'Todos' : providerLabel(tab as ProviderId);
@@ -268,7 +268,7 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
                 'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ' +
                 (isActive
                   ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900')
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-slate-100')
               }
             >
               {tab !== 'all' && (
@@ -278,7 +278,7 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
               <span
                 className={
                   'rounded-full px-1.5 py-0.5 text-xs font-semibold ' +
-                  (isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500')
+                  (isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-400')
                 }
               >
                 {countLabel(tab)}
@@ -307,7 +307,8 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar modelos…"
-            className="h-9 w-full rounded-lg border border-gray-300 bg-white pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="h-9 w-full rounded-lg border border-gray-300 bg-white pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200
+              dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-400 dark:focus:ring-blue-800/40"
             aria-label="Buscar modelos"
           />
         </div>
@@ -316,7 +317,8 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
         <button
           type="button"
           onClick={() => setSort((s) => (s === 'selected-first' ? 'az' : 'selected-first'))}
-          className="flex h-9 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-50"
+          className="flex h-9 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-50
+            dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
           title={sort === 'selected-first' ? 'Ordenado: Seleccionados primero' : 'Ordenado: A-Z'}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -342,7 +344,7 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
           variant="secondary"
           size="sm"
           onClick={() => { void handleDeactivateAll(); }}
-          className="h-9 gap-1.5 text-red-600 hover:border-red-300 hover:bg-red-50"
+          className="h-9 gap-1.5 text-red-600 hover:border-red-300 hover:bg-red-50 dark:text-red-400 dark:hover:border-red-700 dark:hover:bg-red-950/40"
         >
           Desactivar todos
         </Button>
@@ -377,25 +379,25 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
         return (
           <div
             key={cred.id}
-            className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+            className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800"
           >
             {/* Credential header */}
-            <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-3.5">
+            <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-3.5 dark:border-slate-700">
               <div className="flex items-center gap-3 min-w-0">
                 <ProviderIcon provider={cred.provider} size={24} />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-gray-900">{cred.label}</p>
-                  <p className="text-xs text-gray-400 font-mono">{cred.maskedKey}</p>
+                  <p className="truncate text-sm font-semibold text-gray-900 dark:text-slate-100">{cred.label}</p>
+                  <p className="text-xs text-gray-400 font-mono dark:text-slate-500">{cred.maskedKey}</p>
                 </div>
                 {cred.isExpired && (
-                  <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 border border-red-100">
+                  <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 border border-red-100 dark:bg-red-950/50 dark:border-red-800/50 dark:text-red-400">
                     Expirada
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {state.selectedModel && (
-                  <span className="hidden sm:inline-flex max-w-[160px] truncate items-center rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                  <span className="hidden sm:inline-flex max-w-[160px] truncate items-center rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950/50 dark:border-blue-800/50 dark:text-blue-300">
                     {state.selectedModel}
                   </span>
                 )}
@@ -404,13 +406,13 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
                   type="button"
                   onClick={() => { void syncCredentials([cred.id]); }}
                   disabled={state.loading}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40 dark:hover:bg-slate-700 dark:hover:text-slate-200"
                   title="Recargar modelos"
                   aria-label="Recargar modelos"
                 >
                   {state.loading ? <Spinner className="h-3.5 w-3.5" /> : <SyncIcon className="h-3.5 w-3.5" />}
                 </button>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-400 dark:text-slate-500">
                   {state.loading
                     ? '…'
                     : `${state.models?.length ?? 0} ${(state.models?.length ?? 0) === 1 ? 'modelo' : 'modelos'}`}
@@ -420,14 +422,14 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
 
             {/* Error */}
             {state.error && (
-              <div className="border-b border-red-100 bg-red-50 px-5 py-2.5">
-                <p className="text-sm text-red-600">{state.error}</p>
+              <div className="border-b border-red-100 bg-red-50 px-5 py-2.5 dark:border-red-900/40 dark:bg-red-950/40">
+                <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>
               </div>
             )}
 
             {/* Loading skeleton */}
             {state.loading && (
-              <div className="flex items-center justify-center gap-2 py-10 text-gray-400">
+              <div className="flex items-center justify-center gap-2 py-10 text-gray-400 dark:text-slate-500">
                 <Spinner />
                 <span className="text-sm">Cargando modelos…</span>
               </div>
@@ -435,7 +437,7 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
 
             {/* Empty after filter */}
             {!state.loading && state.models !== null && sorted.length === 0 && (
-              <div className="px-5 py-8 text-center text-sm text-gray-400">
+              <div className="px-5 py-8 text-center text-sm text-gray-400 dark:text-slate-500">
                 {search
                   ? `Sin resultados para "${search}"`
                   : 'No se encontraron modelos para esta clave.'}
@@ -444,7 +446,7 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
 
             {/* Model rows */}
             {!state.loading && sorted.length > 0 && (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-gray-50 dark:divide-slate-700/50">
                 {sorted.map((model) => {
                   const isActive = state.selectedModel === model.id;
                   const isToggling = state.toggling === model.id;
@@ -455,25 +457,29 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
                     <div
                       key={model.id}
                       className={`flex items-center justify-between gap-4 px-5 py-3 transition-colors ${
-                        isActive ? 'bg-blue-50/60' : isFav ? 'bg-amber-50/40' : 'hover:bg-gray-50'
+                        isActive
+                          ? 'bg-blue-50/60 dark:bg-blue-950/30'
+                          : isFav
+                          ? 'bg-amber-50/40 dark:bg-amber-950/20'
+                          : 'hover:bg-gray-50 dark:hover:bg-slate-700/40'
                       }`}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-gray-900">{model.name}</p>
-                        <p className="truncate font-mono text-xs text-gray-400">{model.id}</p>
+                        <p className="truncate text-sm font-semibold text-gray-900 dark:text-slate-100">{model.name}</p>
+                        <p className="truncate font-mono text-xs text-gray-400 dark:text-slate-500">{model.id}</p>
                         <div className="mt-1 flex flex-wrap gap-1.5">
                           {model.supportsVision && (
-                            <span className="inline-flex items-center rounded border border-purple-100 bg-purple-50 px-1.5 py-0.5 text-xs text-purple-700">
+                            <span className="inline-flex items-center rounded border border-purple-100 bg-purple-50 px-1.5 py-0.5 text-xs text-purple-700 dark:border-purple-800/50 dark:bg-purple-950/40 dark:text-purple-300">
                               Visión
                             </span>
                           )}
                           {model.supportsStreaming && (
-                            <span className="inline-flex items-center rounded border border-green-100 bg-green-50 px-1.5 py-0.5 text-xs text-green-700">
+                            <span className="inline-flex items-center rounded border border-green-100 bg-green-50 px-1.5 py-0.5 text-xs text-green-700 dark:border-green-800/50 dark:bg-green-950/40 dark:text-green-300">
                               Streaming
                             </span>
                           )}
                           {model.maxOutputTokens !== null && (
-                            <span className="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                            <span className="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 dark:bg-slate-700 dark:text-slate-300">
                               {model.maxOutputTokens.toLocaleString('es')} tokens
                             </span>
                           )}

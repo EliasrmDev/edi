@@ -45,13 +45,13 @@ export default function NewCredentialPage() {
   return (
     <div className="max-w-xl">
       <div className="mb-6">
-        <Link href="/credentials" className="text-sm text-blue-600 hover:underline">
+        <Link href="/credentials" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
           ← Volver a claves
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-gray-900">Agregar clave de IA</h1>
+        <h1 className="mt-2 text-2xl font-semibold text-gray-900 dark:text-slate-100">Agregar clave de IA</h1>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         {state?.error && (
           <div ref={alertRef} tabIndex={-1} className="mb-5">
             <Alert variant="error">{errorMessage(state.error)}</Alert>
@@ -61,7 +61,7 @@ export default function NewCredentialPage() {
         <form action={formAction} className="space-y-5" noValidate>
           {/* Provider Selector */}
           <fieldset>
-            <legend className="mb-2 block text-sm font-medium text-gray-700">
+            <legend className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">
               Proveedor <span className="text-red-500" aria-hidden="true">*</span>
             </legend>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -69,7 +69,8 @@ export default function NewCredentialPage() {
                 <label
                   key={p.id}
                   className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-gray-200 p-3
-                    hover:border-blue-300 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 transition-colors"
+                    hover:border-blue-300 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 transition-colors
+                    dark:border-slate-600 dark:hover:border-blue-500 dark:has-[:checked]:border-blue-400 dark:has-[:checked]:bg-blue-950/40"
                 >
                   <input
                     type="radio"
@@ -80,7 +81,7 @@ export default function NewCredentialPage() {
                     defaultChecked={p.id === 'openai'}
                   />
                   <ProviderIcon provider={p.id} size={32} />
-                  <span className="text-xs font-medium text-gray-700">{providerLabel(p.id)}</span>
+                  <span className="text-xs font-medium text-gray-700 dark:text-slate-300">{providerLabel(p.id)}</span>
                 </label>
               ))}
             </div>

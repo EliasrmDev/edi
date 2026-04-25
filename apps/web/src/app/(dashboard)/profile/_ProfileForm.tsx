@@ -54,7 +54,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       />
 
       <fieldset>
-        <legend className="mb-2 block text-sm font-medium text-gray-700">Tono por defecto</legend>
+        <legend className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">Tono por defecto</legend>
         <div className="space-y-2">
           {[
             { value: 'voseo-cr', label: 'Voseo costarricense', description: 'vos sabés, vos tenés' },
@@ -63,7 +63,8 @@ export function ProfileForm({ profile }: ProfileFormProps) {
           ].map((tone) => (
             <label
               key={tone.value}
-              className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50"
+              className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50
+                dark:border-slate-600 dark:hover:bg-slate-700/50 dark:has-[:checked]:border-blue-400 dark:has-[:checked]:bg-blue-950/40"
             >
               <input
                 type="radio"
@@ -73,8 +74,8 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                 className="mt-0.5 accent-blue-600"
               />
               <div>
-                <p className="text-sm font-medium text-gray-900">{tone.label}</p>
-                <p className="text-xs text-gray-500 font-mono">{tone.description}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-slate-100">{tone.label}</p>
+                <p className="text-xs text-gray-500 font-mono dark:text-slate-400">{tone.description}</p>
               </div>
             </label>
           ))}
@@ -82,14 +83,15 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       </fieldset>
 
       <div>
-        <label htmlFor="preferredLocale" className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label htmlFor="preferredLocale" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-300">
           Localización preferida
         </label>
         <select
           id="preferredLocale"
           name="preferredLocale"
           defaultValue={profile?.preferredLocale ?? 'es-CR'}
-          className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500
+            dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:focus:ring-blue-400"
         >
           <option value="es-CR">Español (Costa Rica)</option>
           <option value="es-419">Español (Latinoamérica)</option>

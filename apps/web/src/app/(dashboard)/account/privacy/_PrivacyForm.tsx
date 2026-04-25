@@ -49,9 +49,9 @@ export function PrivacyForm({ initialRetainHistory }: PrivacyFormProps) {
   return (
     <div className="space-y-6">
       {/* History toggle */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-1 text-base font-semibold text-gray-900">Historial de transformaciones</h2>
-        <p className="mb-4 text-sm text-gray-500">
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-slate-100">Historial de transformaciones</h2>
+        <p className="mb-4 text-sm text-gray-500 dark:text-slate-400">
           Cuando está activo, guardamos un registro de las transformaciones que realizás con la
           extensión para poderte mostrar estadísticas de uso.
         </p>
@@ -88,7 +88,7 @@ export function PrivacyForm({ initialRetainHistory }: PrivacyFormProps) {
                   transition-transform data-[state=checked]:translate-x-5.5"
               />
             </Switch.Root>
-            <label htmlFor="retain-history" className="cursor-pointer text-sm text-gray-700">
+            <label htmlFor="retain-history" className="cursor-pointer text-sm text-gray-700 dark:text-slate-300">
               {optimisticHistory ? 'Historial activado' : 'Historial desactivado'}
             </label>
           </div>
@@ -100,9 +100,9 @@ export function PrivacyForm({ initialRetainHistory }: PrivacyFormProps) {
       </section>
 
       {/* Export data */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-1 text-base font-semibold text-gray-900">Exportar tus datos</h2>
-        <p className="mb-4 text-sm text-gray-500">
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-slate-100">Exportar tus datos</h2>
+        <p className="mb-4 text-sm text-gray-500 dark:text-slate-400">
           Descargá una copia de todos tus datos: perfil, historial y configuración. Recibirás el
           archivo por correo electrónico.
         </p>

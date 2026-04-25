@@ -29,12 +29,12 @@ export function ChangePasswordSection({ hasPassword }: { hasPassword: boolean })
   }, [state]);
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-1 text-base font-semibold text-gray-900">
+    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-slate-100">
         {hasPassword ? 'Cambiar contraseña' : 'Establecer contraseña'}
       </h2>
       {!hasPassword && (
-        <p className="mb-4 text-sm text-gray-500">
+        <p className="mb-4 text-sm text-gray-500 dark:text-slate-400">
           Tu cuenta fue creada con Google o Microsoft. Podés agregar una contraseña para iniciar
           sesión también con tu correo electrónico.
         </p>

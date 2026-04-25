@@ -10,8 +10,8 @@ export default async function ModelsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Modelos de IA</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">Modelos de IA</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
           Seleccioná el modelo que cada clave de IA usará en las transformaciones.
         </p>
       </div>

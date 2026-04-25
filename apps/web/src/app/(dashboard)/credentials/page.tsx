@@ -18,8 +18,8 @@ export default async function CredentialsPage({
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Claves de IA</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">Claves de IA</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
             Gestioná tus claves cifradas de OpenAI, Anthropic, Google AI y OpenRouter.
           </p>
         </div>

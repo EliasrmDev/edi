@@ -11,8 +11,8 @@ export default async function AccountPage() {
   return (
     <div className="max-w-xl space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Cuenta</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">Cuenta</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
           Gestioná la seguridad y privacidad de tu cuenta.
         </p>
       </div>
@@ -20,16 +20,16 @@ export default async function AccountPage() {
       <ChangePasswordSection hasPassword={currentUser.user.hasPassword} />
 
       {/* Danger zone */}
-      <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+      <section className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div className="px-6 py-4">
-          <h2 className="text-base font-semibold text-gray-900">Zona peligrosa</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Zona peligrosa</h2>
         </div>
 
-        <div className="divide-y divide-gray-100 border-t border-gray-100">
+        <div className="divide-y divide-gray-100 border-t border-gray-100 dark:divide-slate-700 dark:border-slate-700">
           <div className="flex items-center justify-between px-6 py-4">
             <div>
-              <p className="text-sm font-medium text-gray-900">Privacidad y exportación de datos</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm font-medium text-gray-900 dark:text-slate-100">Privacidad y exportación de datos</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">
                 Controlá qué datos guardamos y exportá tu información.
               </p>
             </div>
@@ -40,8 +40,8 @@ export default async function AccountPage() {
 
           <div className="flex items-center justify-between px-6 py-4">
             <div>
-              <p className="text-sm font-medium text-red-700">Eliminar cuenta</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm font-medium text-red-700 dark:text-red-400">Eliminar cuenta</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">
                 Elimina todas tus claves de IA, perfil y datos de uso de forma permanente.
               </p>
             </div>

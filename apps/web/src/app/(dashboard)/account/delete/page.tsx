@@ -68,17 +68,17 @@ export default function DeleteAccountPage() {
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Eliminar cuenta</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">Eliminar cuenta</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
           Esta acción no se puede deshacer fácilmente. Leé con atención.
         </p>
       </div>
 
       {step === 1 && (
         <div className="space-y-4">
-          <div className="rounded-xl border border-red-200 bg-red-50 p-5">
-            <h2 className="mb-3 font-semibold text-red-800">¿Qué se elimina?</h2>
-            <ul className="space-y-1.5 text-sm text-red-700">
+          <div className="rounded-xl border border-red-200 bg-red-50 p-5 dark:border-red-800/50 dark:bg-red-950/40">
+            <h2 className="mb-3 font-semibold text-red-800 dark:text-red-300">¿Qué se elimina?</h2>
+            <ul className="space-y-1.5 text-sm text-red-700 dark:text-red-400">
               {[
                 'Todas tus claves de API cifradas',
                 'Tu perfil y preferencias',
@@ -96,8 +96,8 @@ export default function DeleteAccountPage() {
             </ul>
           </div>
 
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <p className="text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-950/40">
+            <p className="text-sm text-amber-800 dark:text-amber-300">
               <strong>Período de gracia:</strong> Tu cuenta se eliminará definitivamente después de
               30 días. Durante ese tiempo podés reactivarla iniciando sesión.
             </p>
@@ -120,10 +120,10 @@ export default function DeleteAccountPage() {
             <Alert variant="error">{requestState.error}</Alert>
           )}
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="mb-4 text-sm text-gray-700">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <p className="mb-4 text-sm text-gray-700 dark:text-slate-300">
               Para confirmar, escribí{' '}
-              <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm font-medium">
+              <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm font-medium dark:bg-slate-700 dark:text-slate-200">
                 ELIMINAR
               </code>{' '}
               en el campo de abajo:
