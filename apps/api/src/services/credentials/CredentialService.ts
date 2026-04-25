@@ -113,7 +113,15 @@ export class CredentialService {
 
     const now = new Date();
 
-    // 4. Store credential
+    // 4. Deactivate any existing credentials so only one is active at a time
+    await this.db
+      .update(providerCredentials)
+      .set({ isActive: false, updatedAt: now })
+      .where(
+        and(eq(providerCredentials.userId, userId), isNull(providerCredentials.deletedAt)),
+      );
+
+    // 5. Store new credential (active by default — others just deactivated)
     const result = await this.db
       .insert(providerCredentials)
       .values({
@@ -626,7 +634,7 @@ export class CredentialService {
     const next =
       action === 'add'
         ? [...new Set([...current, modelId])]
-        : current.filter((id) => id !== modelId);
+        : current.filter((id: string) => id !== modelId);
 
     const updated = await this.db
       .update(providerCredentials)

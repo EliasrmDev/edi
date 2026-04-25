@@ -188,18 +188,6 @@ function handleOpenModal(selectedText: string): void {
   removeTransformButton();
   modalController.open({
     initialText: textToEdit,
-    onApply: (transformedText: string) => {
-      if (activeHandler) {
-        const success = activeHandler.applyText(transformedText);
-        if (!success) {
-          // Fallback: copy to clipboard and notify the user
-          navigator.clipboard.writeText(transformedText).catch(() => {});
-          modalController?.showFallbackNotice();
-          return;
-        }
-      }
-      modalController?.close();
-    },
     onClose: () => {
       modalOpen = false;
       modalController?.close();

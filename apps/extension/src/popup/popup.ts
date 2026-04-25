@@ -1233,12 +1233,14 @@ const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   'google-ai': 'Google AI',
+  openrouter: 'OpenRouter',
 };
 
 const AI_MODELS: Record<string, string> = {
   openai: 'gpt-4o-mini',
   anthropic: 'claude-3-5-haiku-20241022',
   'google-ai': 'gemini-1.5-flash',
+  openrouter: 'openai/gpt-4o-mini',
 };
 
 // ─── Text sub-tabs ────────────────────────────────────────────────────────
@@ -1495,6 +1497,21 @@ interface CredentialInfo {
 }
 
 function renderCredentialList(creds: CredentialInfo[]): void {
+  // Update active provider chip in the editor panel
+  const chip = document.getElementById('active-provider-chip');
+  const chipText = document.getElementById('active-provider-chip-text');
+  const activeCred = creds.find((c) => c.isActive && !c.isExpired);
+  if (chip && chipText) {
+    if (activeCred) {
+      const providerLabel = PROVIDER_LABELS[activeCred.provider] ?? activeCred.provider;
+      const model = activeCred.selectedModel ?? AI_MODELS[activeCred.provider] ?? activeCred.label;
+      chipText.textContent = `${providerLabel} · ${model}`;
+      chip.hidden = false;
+    } else {
+      chip.hidden = true;
+    }
+  }
+
   if (creds.length === 0) {
     aiInfoCard.hidden = true;
     aiNoCredential.hidden = false;
@@ -1508,8 +1525,12 @@ function renderCredentialList(creds: CredentialInfo[]): void {
   aiCredentialList.innerHTML = '';
 
   for (const cred of creds) {
+    console.log('Rendering credential: ', cred);
+    console.log('activeCred: ', activeCred);
     const item = document.createElement('div');
-    item.className = 'ai-cred-item' + (cred.isActive ? ' ai-cred-item--active' : '');
+    item.className = 'ai-cred-item'
+      + (cred.id === activeCred?.id ? ' ai-cred-item--active' : '')
+      + (cred.isExpired ? ' ai-cred-item--expired' : '');
 
     const info = document.createElement('div');
     info.className = 'ai-cred-info';
@@ -1526,40 +1547,72 @@ function renderCredentialList(creds: CredentialInfo[]): void {
 
     info.appendChild(name);
     info.appendChild(meta);
+    item.appendChild(info);
 
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'ai-cred-activate-btn';
-    btn.textContent = cred.isActive ? 'Activa' : 'Usar';
-    btn.disabled = cred.isActive || cred.isExpired;
-
-    if (!cred.isActive && !cred.isExpired) {
+    if (cred.isActive && !cred.isExpired && cred.id === activeCred?.id) {
+      const badge = document.createElement('span');
+      badge.className = 'ai-cred-active-badge';
+      badge.textContent = '✓ En uso';
+      item.appendChild(badge);
+    } else if (!cred.isExpired) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ai-cred-activate-btn';
+      btn.textContent = 'Usar';
+      btn.setAttribute('aria-label', `Usar ${PROVIDER_LABELS[cred.provider] ?? cred.provider} · ${cred.label}`);
       btn.addEventListener('click', () => {
-        void activateCredential(cred.id, creds);
+        void activateCredential(cred.id, creds, btn);
       });
+      item.appendChild(btn);
     }
 
-    item.appendChild(info);
-    item.appendChild(btn);
     aiCredentialList.appendChild(item);
   }
 }
 
-async function activateCredential(credentialId: string, currentCreds: CredentialInfo[]): Promise<void> {
+async function activateCredential(
+  credentialId: string,
+  currentCreds: CredentialInfo[],
+  triggerBtn?: HTMLButtonElement,
+): Promise<void> {
   const stored = await chrome.storage.local.get(['authToken']) as { authToken?: string };
   if (!stored.authToken) return;
+
+  if (triggerBtn) {
+    triggerBtn.textContent = '…';
+    triggerBtn.disabled = true;
+  }
+  // Disable all other Usar buttons while request is in flight
+  aiCredentialList?.querySelectorAll<HTMLButtonElement>('.ai-cred-activate-btn')
+    .forEach((b) => { b.disabled = true; });
 
   try {
     const res = await fetch(`${API_BASE}/api/credentials/${credentialId}/activate`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${stored.authToken}` },
     });
-    if (!res.ok) return;
+    if (!res.ok) {
+      if (triggerBtn) {
+        triggerBtn.textContent = 'Error';
+        setTimeout(() => {
+          triggerBtn.textContent = 'Usar';
+          triggerBtn.disabled = false;
+          aiCredentialList?.querySelectorAll<HTMLButtonElement>('.ai-cred-activate-btn')
+            .forEach((b) => { b.disabled = false; });
+        }, 2000);
+      }
+      return;
+    }
 
     const updated = currentCreds.map((c) => ({ ...c, isActive: c.id === credentialId }));
     renderCredentialList(updated);
   } catch {
-    // non-fatal
+    if (triggerBtn) {
+      triggerBtn.textContent = 'Usar';
+      triggerBtn.disabled = false;
+    }
+    aiCredentialList?.querySelectorAll<HTMLButtonElement>('.ai-cred-activate-btn')
+      .forEach((b) => { b.disabled = false; });
   }
 }
 

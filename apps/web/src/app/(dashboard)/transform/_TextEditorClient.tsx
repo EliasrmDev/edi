@@ -51,64 +51,6 @@ function _mapChars(text: string, fn: (cp: number) => number | null): string {
     .join('');
 }
 
-const _isUC = (c: number) => c >= 65 && c <= 90;
-const _isLC = (c: number) => c >= 97 && c <= 122;
-const _isDig = (c: number) => c >= 48 && c <= 57;
-
-function toUnicodeBold(text: string): string {
-  return _mapChars(text, (c) => {
-    if (_isUC(c)) return 0x1d400 + (c - 65);
-    if (_isLC(c)) return 0x1d41a + (c - 97);
-    if (_isDig(c)) return 0x1d7ce + (c - 48);
-    return null;
-  });
-}
-
-function toUnicodeItalic(text: string): string {
-  return _mapChars(text, (c) => {
-    if (_isUC(c)) return 0x1d434 + (c - 65);
-    if (_isLC(c)) {
-      if (c === 104) return 0x210e;
-      return 0x1d44e + (c - 97);
-    }
-    return null;
-  });
-}
-
-function toUnicodeBoldItalic(text: string): string {
-  return _mapChars(text, (c) => {
-    if (_isUC(c)) return 0x1d468 + (c - 65);
-    if (_isLC(c)) return 0x1d482 + (c - 97);
-    return null;
-  });
-}
-
-function toUnicodeBoldScript(text: string): string {
-  return _mapChars(text, (c) => {
-    if (_isUC(c)) return 0x1d4d0 + (c - 65);
-    if (_isLC(c)) return 0x1d4ea + (c - 97);
-    return null;
-  });
-}
-
-function toUnicodeMonospace(text: string): string {
-  return _mapChars(text, (c) => {
-    if (_isUC(c)) return 0x1d670 + (c - 65);
-    if (_isLC(c)) return 0x1d68a + (c - 97);
-    if (_isDig(c)) return 0x1d7f6 + (c - 48);
-    return null;
-  });
-}
-
-function toUnicodeFullwidth(text: string): string {
-  return _mapChars(text, (c) => {
-    if (_isUC(c)) return 0xff21 + (c - 65);
-    if (_isLC(c)) return 0xff41 + (c - 97);
-    if (_isDig(c)) return 0xff10 + (c - 48);
-    return null;
-  });
-}
-
 function stripUnicodeStyles(text: string): string {
   const upperBases = [
     0x1d400, 0x1d434, 0x1d468, 0x1d4d0, 0x1d5a0,
@@ -164,13 +106,7 @@ type LocalTransformation =
   | 'uppercase'
   | 'lowercase'
   | 'sentence-case'
-  | 'remove-formatting'
-  | 'format-unicode-bold'
-  | 'format-unicode-italic'
-  | 'format-unicode-bold-italic'
-  | 'format-unicode-bold-script'
-  | 'format-unicode-monospace'
-  | 'format-unicode-fullwidth';
+  | 'remove-formatting';
 
 type ToneTransformation = 'tone-voseo-cr' | 'tone-tuteo' | 'tone-ustedeo';
 type ToneTarget = 'voseo' | 'tuteo' | 'ustedeo';
@@ -423,18 +359,6 @@ function applyLocalTransform(text: string, t: LocalTransformation): string {
       return toSentenceCase(stripUnicodeStyles(text));
     case 'remove-formatting':
       return removeFormatting(text);
-    case 'format-unicode-bold':
-      return toUnicodeBold(stripUnicodeStyles(text));
-    case 'format-unicode-italic':
-      return toUnicodeItalic(stripUnicodeStyles(text));
-    case 'format-unicode-bold-italic':
-      return toUnicodeBoldItalic(stripUnicodeStyles(text));
-    case 'format-unicode-bold-script':
-      return toUnicodeBoldScript(stripUnicodeStyles(text));
-    case 'format-unicode-monospace':
-      return toUnicodeMonospace(stripUnicodeStyles(text));
-    case 'format-unicode-fullwidth':
-      return toUnicodeFullwidth(stripUnicodeStyles(text));
   }
 }
 
@@ -466,18 +390,7 @@ const FORMAT_STYLES: ReadonlyArray<{ key: LocalTransformation; icon: string; nam
   { key: 'uppercase',         icon: 'AA', name: 'Mayúsculas',    ariaName: 'Convertir a mayúsculas'   },
   { key: 'lowercase',         icon: 'aa', name: 'Minúsculas',    ariaName: 'Convertir a minúsculas'   },
   { key: 'sentence-case',     icon: 'Aa', name: 'Tipo Oración', ariaName: 'Convertir a tipo oración' },
-  { key: 'remove-formatting', icon: '✕T', name: 'Quitar Fmt',   ariaName: 'Quitar formato de texto'   },
-];
-
-// ── Unicode style definitions ─────────────────────────────────────────────────
-
-const UNICODE_STYLES: ReadonlyArray<{ key: LocalTransformation; icon: string; name: string }> = [
-  { key: 'format-unicode-bold',        icon: '𝐁', name: 'Negrita'           },
-  { key: 'format-unicode-italic',      icon: '𝐼', name: 'Cursiva'           },
-  { key: 'format-unicode-bold-italic', icon: '𝑩', name: 'Negrita Cursiva'   },
-  { key: 'format-unicode-bold-script', icon: '𝓢', name: 'Caligrafía Script' },
-  { key: 'format-unicode-monospace',   icon: '𝙼', name: 'Monoespacio'       },
-  { key: 'format-unicode-fullwidth',   icon: 'Ａ', name: 'Ancho Completo'   },
+  { key: 'remove-formatting', icon: '❌', name: 'Quitar Fmt',   ariaName: 'Quitar formato de texto'   },
 ];
 
 // ── AI provider/model constants ───────────────────────────────────────────────
@@ -893,30 +806,6 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
           </div>
         </div>
 
-        {/* Estilo */}
-        <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 dark:border-slate-700/60 dark:bg-slate-800/40">
-          <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" focusable="false">
-              <path d="M8.5 1.5a1.5 1.5 0 012.12 2.12l-7 7L1 11l.38-2.62 7.12-6.88z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Estilo
-          </p>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Estilos de texto Unicode">
-            {UNICODE_STYLES.map(({ key, icon, name }) => (
-              <button
-                key={key}
-                type="button"
-                title={`${name} (Unicode)`}
-                aria-label={`Aplicar ${name} Unicode`}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-[1.1rem] leading-none transition-colors hover:border-indigo-300 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40 dark:focus-visible:ring-offset-slate-900"
-                onClick={() => handleLocal(key)}
-              >
-                <span aria-hidden="true">{icon}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Tono */}
         <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 dark:border-slate-700/60 dark:bg-slate-800/40">
           <div className="mb-2 flex flex-wrap items-center gap-3">
@@ -1109,7 +998,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
             size="sm"
             loading={isPending}
             onClick={() => handleApi('copy-writing-cr')}
-            className="border-violet-200 bg-violet-50 text-violet-700 hover:border-violet-300 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-300 dark:hover:border-violet-700 dark:hover:bg-violet-950"
+            className="border-violet-200 bg-violet-50 text-violet-700 hover:border-violet-300 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-100 dark:hover:border-violet-700 dark:hover:bg-violet-950"
           >
             Generar Copy CR
           </Button>
@@ -1118,15 +1007,12 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
         {/* IA + Copiar */}
         <div className="flex flex-col gap-3 border-t border-gray-100 dark:border-slate-700/60 pt-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">
-              Inteligencia Artificial
-            </p>
             <Button
               variant="secondary"
               size="sm"
               loading={isPending}
               onClick={() => handleApi('correct-orthography')}
-              className="border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300 dark:hover:border-blue-700 dark:hover:bg-blue-950"
+              className="border-violet-200 bg-violet-50 text-violet-700 hover:border-violet-300 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-100 dark:hover:border-violet-700 dark:hover:bg-violet-950"
             >
               Corregir ortografía
             </Button>

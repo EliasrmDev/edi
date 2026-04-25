@@ -18,6 +18,13 @@ type ProviderId = 'openai' | 'anthropic' | 'google-ai';
 type Tab = 'all' | ProviderId;
 type Sort = 'selected-first' | 'az';
 
+// Locale-independent token count formatter (avoids SSR/client hydration mismatch)
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)}k`;
+  return String(n);
+}
+
 interface CredentialState {
   models: ModelInfo[] | null;
   loading: boolean;
@@ -480,7 +487,7 @@ export function ModelsClient({ credentials }: ModelsClientProps) {
                           )}
                           {model.maxOutputTokens !== null && (
                             <span className="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 dark:bg-slate-700 dark:text-slate-300">
-                              {model.maxOutputTokens.toLocaleString('es')} tokens
+                              {formatTokens(model.maxOutputTokens)} tokens
                             </span>
                           )}
                         </div>

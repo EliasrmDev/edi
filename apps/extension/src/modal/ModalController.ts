@@ -19,7 +19,6 @@ function unescapeHtml(html: string): string {
 
 export interface ModalOptions {
   initialText: string;
-  onApply: (text: string) => void;
   onClose: () => void;
 }
 
@@ -60,10 +59,12 @@ export class ModalController {
   private toneMode: 'local' | 'ai' = 'local';
   private verbalMode: VerbalMode = 'indicativo';
   private activeToneTarget: 'voseo' | 'tuteo' | 'ustedeo' = 'voseo';
-  private readonly COPY_LS_KEY = 'edi-copy-config-default';
-  private copyConfigDefaults: Pick<CopyConfig, 'contexto' | 'objetivo'> = {
+  private copyConfigDefaults: Pick<CopyConfig, 'contexto' | 'objetivo' | 'formalidad' | 'canal' | 'intensidadCambio'> = {
     contexto: 'anuncio',
     objetivo: 'convertir',
+    formalidad: 'medio',
+    canal: 'web',
+    intensidadCambio: 'moderada',
   };
   /** ID of the running typewriter timeout, or null when idle. */
   private diffAnimationId: ReturnType<typeof setTimeout> | null = null;
@@ -142,12 +143,6 @@ export class ModalController {
       if ((e as KeyboardEvent).key === 'Escape') options.onClose();
     });
 
-    // Apply button
-    modal.querySelector('#edi-apply')?.addEventListener('click', () => {
-      const textarea = modal.querySelector<HTMLTextAreaElement>('#edi-text');
-      if (textarea) options.onApply(textarea.value);
-    });
-
     // Copy button
     modal.querySelector('#edi-copy')?.addEventListener('click', () => {
       void this.copyCurrentText();
@@ -159,12 +154,6 @@ export class ModalController {
       ['#btn-lowercase', 'lowercase'],
       ['#btn-sentence', 'sentence-case'],
       ['#btn-clean', 'remove-formatting'],
-      ['#btn-fmt-bold', 'format-unicode-bold'],
-      ['#btn-fmt-italic', 'format-unicode-italic'],
-      ['#btn-fmt-bold-italic', 'format-unicode-bold-italic'],
-      ['#btn-fmt-bold-script', 'format-unicode-bold-script'],
-      ['#btn-fmt-mono', 'format-unicode-monospace'],
-      ['#btn-fmt-wide', 'format-unicode-fullwidth'],
     ];
 
     for (const [selector, transformation] of localButtons) {
@@ -341,25 +330,17 @@ export class ModalController {
     const originalText = this.currentText;
     this.setLoadingState(true, 'Generando copy con IA…');
 
-    // Read contexto/objetivo from the modal selects; fall back to stored defaults
+    // Read all copy config options from the modal selects; fall back to stored defaults
     const contextoEl = this.shadowRoot.querySelector<HTMLSelectElement>('#edi-copy-contexto');
     const objetivoEl = this.shadowRoot.querySelector<HTMLSelectElement>('#edi-copy-objetivo');
+    const formalidadEl = this.shadowRoot.querySelector<HTMLSelectElement>('#edi-copy-formalidad');
+    const canalEl = this.shadowRoot.querySelector<HTMLSelectElement>('#edi-copy-canal');
+    const intensidadEl = this.shadowRoot.querySelector<HTMLSelectElement>('#edi-copy-intensidad');
     const contexto = (contextoEl?.value ?? this.copyConfigDefaults.contexto) as CopyConfig['contexto'];
     const objetivo = (objetivoEl?.value ?? this.copyConfigDefaults.objetivo) as CopyConfig['objetivo'];
-
-    // Read formalidad + intensidad from localStorage (persisted by web editor or default)
-    let formalidad: CopyConfig['formalidad'] = 'medio';
-    let intensidadCambio: CopyConfig['intensidadCambio'] = 'moderada';
-    let canal: CopyConfig['canal'] = 'web';
-    try {
-      const saved = localStorage.getItem(this.COPY_LS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as Partial<CopyConfig>;
-        if (parsed.formalidad) formalidad = parsed.formalidad;
-        if (parsed.intensidadCambio) intensidadCambio = parsed.intensidadCambio;
-        if (parsed.canal) canal = parsed.canal;
-      }
-    } catch { /* ignore */ }
+    const formalidad = (formalidadEl?.value ?? this.copyConfigDefaults.formalidad) as CopyConfig['formalidad'];
+    const canal = (canalEl?.value ?? this.copyConfigDefaults.canal) as CopyConfig['canal'];
+    const intensidadCambio = (intensidadEl?.value ?? this.copyConfigDefaults.intensidadCambio) as CopyConfig['intensidadCambio'];
 
     const copyConfig: CopyConfig = {
       tratamiento: this.activeToneTarget,

@@ -61,38 +61,6 @@ export function createModalHTML(_initialText: string): string {
       </div>
 
       <div id="edi-actions" role="group" aria-label="Transformaciones de texto">
-        <div class="edi-action-group">
-          <span class="edi-group-label" id="grp-format">Formato</span>
-          <div role="group" aria-labelledby="grp-format" class="edi-style-group">
-            <button id="btn-uppercase" class="edi-style-btn" type="button" title="Mayúsculas" aria-label="Convertir a mayúsculas"><span aria-hidden="true">AA</span></button>
-            <button id="btn-lowercase" class="edi-style-btn" type="button" title="Minúsculas" aria-label="Convertir a minúsculas"><span aria-hidden="true">aa</span></button>
-            <button id="btn-sentence" class="edi-style-btn" type="button" title="Tipo oración" aria-label="Convertir a tipo oración"><span aria-hidden="true">Aa</span></button>
-            <button id="btn-clean" class="edi-style-btn" type="button" title="Quitar formato" aria-label="Quitar formato de texto">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
-                <path d="M9.5 2L12 4.5 5.5 11H3V8.5L9.5 2Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="2" y1="11" x2="12" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="edi-action-group">
-          <span class="edi-group-label edi-group-label--icon" id="grp-unicode">
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true" focusable="false">
-              <path d="M8.5 1.5a1.5 1.5 0 012.12 2.12l-7 7L1 11l.38-2.62 7.12-6.88z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Estilo
-          </span>
-          <div role="group" aria-labelledby="grp-unicode" class="edi-style-group">
-            <button id="btn-fmt-bold" class="edi-style-btn" type="button" title="Negrita (Unicode)" aria-label="Aplicar negrita Unicode"><span aria-hidden="true">𝐁</span></button>
-            <button id="btn-fmt-italic" class="edi-style-btn" type="button" title="Cursiva (Unicode)" aria-label="Aplicar cursiva Unicode"><span aria-hidden="true">𝐼</span></button>
-            <button id="btn-fmt-bold-italic" class="edi-style-btn" type="button" title="Negrita Cursiva (Unicode)" aria-label="Aplicar negrita cursiva Unicode"><span aria-hidden="true">𝑩</span></button>
-            <button id="btn-fmt-bold-script" class="edi-style-btn" type="button" title="Caligrafía Script (Unicode)" aria-label="Aplicar caligrafía script Unicode"><span aria-hidden="true">𝓢</span></button>
-            <button id="btn-fmt-mono" class="edi-style-btn" type="button" title="Monoespacio (Unicode)" aria-label="Aplicar monoespacio Unicode"><span aria-hidden="true">𝙼</span></button>
-            <button id="btn-fmt-wide" class="edi-style-btn" type="button" title="Ancho Completo (Unicode)" aria-label="Aplicar ancho completo Unicode"><span aria-hidden="true">Ａ</span></button>
-          </div>
-        </div>
-
         <div class="edi-group-wrapper">
           <div class="edi-tone-header">
             <span class="edi-group-label" id="grp-tone">Tono</span>
@@ -116,6 +84,21 @@ export function createModalHTML(_initialText: string): string {
           </div>
         </div>
 
+        <div class="edi-action-group">
+          <span class="edi-group-label" id="grp-format">Formato</span>
+          <div role="group" aria-labelledby="grp-format" class="edi-style-group">
+            <button id="btn-uppercase" class="edi-style-btn" type="button" title="Mayúsculas" aria-label="Convertir a mayúsculas"><span aria-hidden="true">AA</span></button>
+            <button id="btn-lowercase" class="edi-style-btn" type="button" title="Minúsculas" aria-label="Convertir a minúsculas"><span aria-hidden="true">aa</span></button>
+            <button id="btn-sentence" class="edi-style-btn" type="button" title="Tipo oración" aria-label="Convertir a tipo oración"><span aria-hidden="true">Aa</span></button>
+            <button id="btn-clean" class="edi-style-btn" type="button" title="Quitar formato" aria-label="Quitar formato de texto">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
+                <path d="M9.5 2L12 4.5 5.5 11H3V8.5L9.5 2Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="2" y1="11" x2="12" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
         <div role="group" aria-labelledby="grp-tone" id="edi-copy-cr-group">
           <div class="edi-copy-cr-group" role="group" aria-labelledby="grp-copy-cr">
             <span class="edi-group-label" id="grp-copy-cr">✦ Motor de Copy CR</span>
@@ -136,19 +119,37 @@ export function createModalHTML(_initialText: string): string {
                 <option value="informar">Informar</option>
                 <option value="guiar">Guiar</option>
               </select>
+              <label class="edi-copy-config-label" for="edi-copy-formalidad">Formalidad</label>
+              <select id="edi-copy-formalidad" class="edi-copy-select">
+                <option value="medio">Medio</option>
+                <option value="bajo">Informal</option>
+                <option value="alto">Formal</option>
+              </select>
+              <label class="edi-copy-config-label" for="edi-copy-canal">Canal</label>
+              <select id="edi-copy-canal" class="edi-copy-select">
+                <option value="web">Web</option>
+                <option value="meta-ads">Meta Ads</option>
+                <option value="email">Email</option>
+                <option value="app">App</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="display">Display</option>
+                <option value="sms">SMS</option>
+              </select>
+              <label class="edi-copy-config-label" for="edi-copy-intensidad">Intensidad</label>
+              <select id="edi-copy-intensidad" class="edi-copy-select">
+                <option value="moderada">Moderada</option>
+                <option value="minima">Mínima</option>
+                <option value="alta">Alta</option>
+              </select>
             </div>
             <button id="btn-copy-cr" type="button" aria-busy="false">Generar Copy CR</button>
           </div>
         </div>
 
         <div class="edi-action-group-actions">
-          <div role="group" aria-labelledby="grp-ai">
-            <span class="edi-group-label" id="grp-ai">Inteligencia Artificial</span>
-            <button id="btn-ortografia" type="button" aria-busy="false">Corregir ortografía</button>
-          </div>
           <footer id="edi-footer">
+            <button id="btn-ortografia" type="button" aria-busy="false">Corregir ortografía</button>
             <button id="edi-copy" type="button" aria-label="Copiar texto editado">Copiar texto</button>
-            <button id="edi-apply" type="button">Aplicar al texto original</button>
           </footer>
         </div>
       </div>

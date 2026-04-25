@@ -108,8 +108,8 @@ label[for="edi-text"] {
 }
 
 #edi-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(auto, 200px));
   gap: 10px;
 }
 
@@ -168,18 +168,19 @@ label[for="edi-text"] {
 .edi-action-group-actions {
   display: flex;
   gap: 6px;
+  align-items: center;
+  margin: auto;
 }
 
 .edi-action-group-actions div {
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
   gap: 6px;
-  width: 50%;
 }
 
 button[id^="btn-"] {
   min-height: 36px;
-  padding: 7px 14px;
   border: 1.5px solid #d1d5db;
   border-radius: 6px;
   background: #f9fafb;
@@ -202,9 +203,16 @@ button[id^="btn-"]:disabled {
 }
 
 #btn-ortografia {
-  background: #eff6ff;
-  border-color: #3b82f6;
-  color: #1d4ed8;
+  align-self: flex-start;
+  border: 1.5px solid #7c3aed;
+  padding: 7px 14px;
+  background: #7c3aed;
+  color: #ffffff;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms;
 }
 
 #btn-ortografia:hover:not(:disabled) {
@@ -270,10 +278,10 @@ button[id^="btn-"]:disabled {
 }
 
 .edi-copy-config {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, auto));
   align-items: center;
-  gap: 6px 10px;
+  gap: 10px 0;
 }
 
 .edi-copy-config-label {
@@ -311,6 +319,7 @@ button[id^="btn-"]:disabled {
   font-weight: 600;
   cursor: pointer;
   transition: background 150ms, border-color 150ms;
+  margin: 6px auto 0;
 }
 
 #btn-copy-cr:hover:not(:disabled) {
@@ -325,9 +334,10 @@ button[id^="btn-"]:disabled {
 
 #edi-footer {
   display: flex;
+  flex-direction: column;
   justify-content: flex-end;
-  align-items: flex-end;
-  gap: 8px;
+  align-items: center;
+  gap: 20px;
   width: 100%;
 }
 
@@ -347,20 +357,6 @@ button[id^="btn-"]:disabled {
   background: #f9fafb;
   border-color: #9ca3af;
 }
-
-#edi-apply {
-  min-height: 36px;
-  border: 1.5px solid #3b82f6;
-  padding: 7px 14px;
-  background: #1d4ed8;
-  color: #ffffff;
-  border-radius: 8px;
-  font-size: 0.9375rem;
-  cursor: pointer;
-  transition: background 150ms;
-}
-
-#edi-apply:hover { background: #1e40af; }
 
 /* ── AI provider bar (accordion) ─────────────────────────────────────────── */
 
@@ -494,7 +490,7 @@ button[id^="btn-"]:disabled {
   border-radius: 10px;
   padding: 30px 10px 10px;
   margin: 18px 0 10px;
-  min-width: 362px;
+  min-width: 342px;
 }
 
 .edi-group-wrapper .edi-tone-header {
@@ -646,10 +642,6 @@ button[id^="btn-"]:disabled {
     gap: 8px;
   }
 
-  .edi-action-group-actions {
-    flex-direction: column;
-  }
-
   .edi-action-group-actions div {
     width: 100%;
   }
@@ -660,8 +652,7 @@ button[id^="btn-"]:disabled {
     flex-wrap: wrap;
   }
 
-  #edi-copy,
-  #edi-apply {
+  #edi-copy {
     flex: 1 1 100%;
     justify-content: center;
   }
@@ -790,14 +781,12 @@ button[id^="btn-"]:disabled {
   button[id^="btn-"] { background: #263348; border-color: #334155; color: #cbd5e1; }
   button[id^="btn-"]:hover:not(:disabled) { background: #334155; border-color: #475569; }
   button[id^="btn-"]:disabled { opacity: 0.4; }
-  #btn-ortografia { background: #1e2f4a; border-color: #3b82f6; color: #93c5fd; }
-  #btn-ortografia:hover:not(:disabled) { background: #1e3a5f; border-color: #60a5fa; }
+  #btn-ortografia { background: #5b21b6; border-color: #7c3aed; }
+  #btn-ortografia:hover:not(:disabled) { background: #4c1d95; border-color: #6d28d9; }
   .edi-style-btn { background: #263348; border-color: #334155; color: #cbd5e1; }
   .edi-style-btn:hover:not(:disabled) { background: #121b3a; border-color: #818cf8; color: #a5b4fc; }
   #edi-copy { background: #263348; border-color: #334155; color: #cbd5e1; }
   #edi-copy:hover { background: #334155; border-color: #475569; }
-  #edi-apply { background: #4338ca; border-color: #6366f1; color: #ffffff; }
-  #edi-apply:hover { background: #3730a3; }
   #edi-ai-bar { border-color: #2d3561; }
   #edi-ai-info-row { background: #1a1f3a; }
   #edi-cred-picker:not([hidden]) { background: #131929; border-top-color: #2d3561; }
