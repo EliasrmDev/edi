@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import type { DefaultSession } from 'next-auth';
 import Google from 'next-auth/providers/google';
 import MicrosoftEntraID from 'next-auth/providers/microsoft-entra-id';
+import type { MicrosoftEntraIDProfile } from 'next-auth/providers/microsoft-entra-id';
 
 declare module 'next-auth' {
   interface Session {
@@ -14,6 +15,8 @@ declare module 'next-auth' {
   }
 }
 
+const INTERNAL_API_URL = process.env.API_URL ?? 'http://localhost:3001';
+
 const providers = [
   Google({
     clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -25,6 +28,14 @@ const providers = [
           clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
           clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET!,
           issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
+          profile(profile: MicrosoftEntraIDProfile) {
+            return {
+              id: profile.sub,
+              name: profile.name ?? profile.preferred_username,
+              email: profile.email ?? profile.preferred_username,
+              image: null,
+            };
+          },
         }),
       ]
     : []),
@@ -54,13 +65,49 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user?.id) token.id = user.id
-      return token
+    async jwt({ token, user, account }) {
+      // Only on initial OAuth sign-in (account is present on first callback)
+      if (account && user?.email) {
+        try {
+          const internalSecret = process.env.OAUTH_INTERNAL_SECRET;
+          const res = await fetch(`${INTERNAL_API_URL}/api/auth/oauth/signin`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(internalSecret ? { 'x-internal-secret': internalSecret } : {}),
+            },
+            body: JSON.stringify({
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              email: user.email,
+              displayName: user.name ?? null,
+            }),
+          });
+          if (!res.ok) {
+            const text = await res.text().catch(() => '(no body)');
+            console.error(
+              `[auth] oauth/signin failed: ${res.status} ${res.statusText} — ${text}`,
+            );
+            token.error = 'OAuthSigninError';
+            return token;
+          }
+          const body = (await res.json()) as {
+            data: { userId: string; sessionToken: string };
+          };
+          token.id = body.data.userId;
+          token.apiSession = body.data.sessionToken;
+        } catch (err) {
+          console.error('[auth] oauth/signin network error:', err);
+          token.error = 'OAuthSigninError';
+        }
+      }
+      return token;
     },
     session({ session, token }) {
-      if (token.id) session.user.id = token.id as string
-      return session
+      if (typeof token.id === 'string') session.user.id = token.id;
+      if (typeof token.apiSession === 'string') session.user.apiSession = token.apiSession;
+      if (typeof token.error === 'string') session.user.error = token.error;
+      return session;
     },
   },
   pages: { signIn: '/login', error: '/login' },
