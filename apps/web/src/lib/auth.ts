@@ -2,7 +2,6 @@ import NextAuth from 'next-auth';
 import type { DefaultSession } from 'next-auth';
 import Google from 'next-auth/providers/google';
 import MicrosoftEntraID from 'next-auth/providers/microsoft-entra-id';
-import type { MicrosoftEntraIDProfile } from 'next-auth/providers/microsoft-entra-id';
 
 declare module 'next-auth' {
   interface Session {
@@ -14,8 +13,6 @@ declare module 'next-auth' {
     error?: string;
   }
 }
-
-const INTERNAL_API_URL = process.env.API_URL ?? 'http://localhost:3001';
 
 const providers = [
   Google({
