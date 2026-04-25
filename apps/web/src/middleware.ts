@@ -14,6 +14,7 @@ export default auth(function middleware(
   const isSessionExpiredRedirect = req.nextUrl.searchParams.get('expired') === '1';
   const sessionToken = req.cookies.get(SESSION_COOKIE)?.value;
   const oauthApiSession = req.auth?.user?.apiSession;
+  const oauthError = (req.auth?.user as { apiSession?: string; error?: string } | undefined)?.error;
   const isAuthenticated = !!sessionToken || !!oauthApiSession;
   const hasVerifiedOAuthSession = !!oauthApiSession;
 
@@ -59,8 +60,13 @@ export default auth(function middleware(
   if (PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
     if (!isAuthenticated) {
       const url = new URL('/login', req.url);
-      // Preserve full path + query string so params like ?extId survive the bounce
-      url.searchParams.set('redirect', pathname + req.nextUrl.search);
+      if (oauthError) {
+        // OAuth completed but API session creation failed — show error on login page
+        url.searchParams.set('error', oauthError);
+      } else {
+        // Normal unauthenticated redirect: preserve full path + query string
+        url.searchParams.set('redirect', pathname + req.nextUrl.search);
+      }
       return NextResponse.redirect(url);
     }
   }

@@ -26,12 +26,14 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const passwordChanged = searchParams.get('success') === 'password-changed';
   const redirect = searchParams.get('redirect') ?? '';
+  // NextAuth puts OAuth errors in ?error= (e.g. OAuthSigninError, AccessDenied)
+  const oauthError = searchParams.get('error');
 
   useEffect(() => {
-    if (state?.error) {
+    if (state?.error || oauthError) {
       alertRef.current?.focus();
     }
-  }, [state]);
+  }, [state, oauthError]);
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
@@ -51,9 +53,9 @@ export default function LoginPage() {
         </div>
       )}
 
-      {state?.error && (
+      {(state?.error || oauthError) && (
         <div className="mt-4" ref={alertRef} tabIndex={-1}>
-          <Alert variant="error">{errorMessage(state.error)}</Alert>
+          <Alert variant="error">{errorMessage(state?.error ?? oauthError ?? '')}</Alert>
         </div>
       )}
 

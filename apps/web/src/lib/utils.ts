@@ -31,6 +31,9 @@ export function errorMessage(code: string): string {
     VALIDATION_ERROR: 'Los datos ingresados no son válidos.',
     INTERNAL_SERVER_ERROR: 'Error interno del servidor. Por favor intentá más tarde.',
     SERVER_ERROR: 'Error del servidor. Por favor intentá más tarde.',
+    OAuthSigninError: 'No se pudo completar el inicio de sesión. Por favor intentá de nuevo.',
+    AccessDenied: 'Acceso denegado. No tenés permiso para iniciar sesión.',
+    Configuration: 'Error de configuración del servidor. Contactá al administrador.',
   };
   return messages[code] ?? 'Ocurrió un error inesperado.';
 }
