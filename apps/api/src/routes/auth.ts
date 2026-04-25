@@ -376,46 +376,59 @@ auth.post('/oauth/signin', async (c) => {
         .onConflictDoNothing();
     } else {
       // 3. Create new OAuth user (emailVerified = true — provider has already verified it)
-      userId = await db.transaction(async (tx) => {
-        const now = new Date();
-        const dailyReset = new Date(now);
-        dailyReset.setHours(24, 0, 0, 0);
-        const monthlyReset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const now = new Date();
+      const dailyReset = new Date(now);
+      dailyReset.setHours(24, 0, 0, 0);
+      const monthlyReset = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-        const [newUser] = await tx
-          .insert(users)
-          .values({
-            email: normalizedEmail,
-            passwordHash: null,
-            emailVerified: true,
-            role: 'user',
-          })
-          .returning({ id: users.id });
-        if (!newUser) throw new Error('Failed to create OAuth user');
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          email: normalizedEmail,
+          passwordHash: null,
+          emailVerified: true,
+          role: 'user',
+        })
+        .onConflictDoNothing()
+        .returning({ id: users.id });
 
-        await tx.insert(userProfiles).values({
-          userId: newUser.id,
+      const linkedUser = newUser ?? (await findUserByEmail(normalizedEmail));
+      if (!linkedUser) throw new Error('Failed to create or find OAuth user');
+
+      userId = linkedUser.id;
+
+      await db
+        .insert(userProfiles)
+        .values({
+          userId,
           displayName: displayName ?? null,
           defaultTone: 'voseo-cr',
           preferredLocale: 'es-CR',
           retainHistory: false,
-        });
-        await tx.insert(quotaLimits).values({
-          userId: newUser.id,
+        })
+        .onConflictDoNothing();
+
+      await db
+        .insert(quotaLimits)
+        .values({
+          userId,
           dailyAiRequests: Number(process.env.DEFAULT_DAILY_AI_QUOTA) || 100,
           monthlyAiRequests: 1000,
           dailyUsed: 0,
           monthlyUsed: 0,
           resetDailyAt: dailyReset,
           resetMonthlyAt: monthlyReset,
-        });
-        await tx.insert(oauthAccounts).values({
-          userId: newUser.id,
+        })
+        .onConflictDoNothing();
+
+      await db
+        .insert(oauthAccounts)
+        .values({
+          userId,
           provider,
           providerAccountId,
-        });
-        return newUser.id;
-      });
+        })
+        .onConflictDoNothing();
     }
   }
 
