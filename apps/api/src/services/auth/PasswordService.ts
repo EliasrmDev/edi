@@ -1,14 +1,16 @@
-import { hash, verify } from '@node-rs/argon2';
+import { argon2id, argon2Verify } from 'hash-wasm';
 import { AppError } from '../../middleware/errorHandler.js';
 
 /**
  * Argon2id parameters — OWASP recommended:
  * memoryCost: 65536 KB (64 MB), timeCost: 3 iterations, parallelism: 4 threads
+ * Outputs PHC-encoded string compatible with @node-rs/argon2 stored hashes.
  */
 const ARGON2_OPTIONS = {
-  memoryCost: 65536,
-  timeCost: 3,
+  memorySize: 65536,  // KiB
+  iterations: 3,
   parallelism: 4,
+  hashLength: 32,
 } as const;
 
 const MIN_PASSWORD_LENGTH = 12;
@@ -73,11 +75,18 @@ export function validatePasswordStrength(password: string, email?: string): void
 }
 
 /**
- * Hash a password with Argon2id.
- * The plain-text password is not retained after this call.
+ * Hash a password with Argon2id (WASM implementation, works in CF Workers).
+ * Outputs a PHC-encoded string compatible with hashes stored by @node-rs/argon2.
  */
 export async function hashPassword(password: string): Promise<string> {
-  return hash(password, ARGON2_OPTIONS);
+  // crypto.getRandomValues is available globally in CF Workers and Node.js ≥19
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  return argon2id({
+    password,
+    salt,
+    outputType: 'encoded',
+    ...ARGON2_OPTIONS,
+  });
 }
 
 /**
@@ -89,7 +98,7 @@ export async function verifyPassword(
   candidatePassword: string,
 ): Promise<boolean> {
   try {
-    return await verify(hashedPassword, candidatePassword, ARGON2_OPTIONS);
+    return await argon2Verify({ password: candidatePassword, hash: hashedPassword });
   } catch {
     return false;
   }

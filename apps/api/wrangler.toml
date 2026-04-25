@@ -1,0 +1,21 @@
+name = "edi-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+# nodejs_compat gives us: process.env, node:crypto, Buffer, and more.
+# CF Worker secrets/vars are automatically available via process.env.
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+DEFAULT_DAILY_AI_QUOTA = "100"
+# Non-sensitive overrides. Secrets go in the CF dashboard or .dev.vars (local only):
+#   DATABASE_URL
+#   ENCRYPTION_MASTER_KEY  (openssl rand -hex 32)
+#   SESSION_SECRET         (openssl rand -hex 64)
+#   API_CORS_ORIGINS       (comma-separated origins)
+#   ENABLE_MANAGED_MODE    (optional, "true"/"false")
+
+# Run once before first deploy:
+#   wrangler secret put DATABASE_URL
+#   wrangler secret put ENCRYPTION_MASTER_KEY
+#   wrangler secret put SESSION_SECRET
+#   wrangler secret put API_CORS_ORIGINS

@@ -1,0 +1,7 @@
+# Local dev secrets for `wrangler dev` — DO NOT commit this file.
+# Copy from .env or fill in your own values.
+
+DATABASE_URL=postgresql://edi:password@localhost:5432/edi_dev
+ENCRYPTION_MASTER_KEY=<generate: openssl rand -hex 32>
+SESSION_SECRET=<generate: openssl rand -hex 64>
+API_CORS_ORIGINS=http://localhost:3000,chrome-extension://YOUR_EXTENSION_ID

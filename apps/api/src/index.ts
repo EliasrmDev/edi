@@ -1,5 +1,3 @@
-import 'dotenv/config';
-import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
@@ -11,7 +9,6 @@ import authRoutes from './routes/auth.js';
 import usersRoutes from './routes/users.js';
 import credentialsRoutes from './routes/credentials.js';
 import transformRoutes from './routes/transform.js';
-import { assertRequiredSchemaCompatibility } from './db/index.js';
 import type { AppEnv } from './types.js';
 
 const app = new Hono<AppEnv>();
@@ -23,16 +20,17 @@ app.use('*', secureHeaders());
 app.use('*', requestId());
 app.use('*', structuredLogger());
 app.use('*', inputSanitization());
-app.use(
-  '*',
-  cors({
-    origin: (process.env.API_CORS_ORIGINS ?? '').split(',').filter(Boolean),
+// CORS: read at request time so CF Workers bindings are fully loaded
+app.use('*', async (c, next) => {
+  const origins = (process.env['API_CORS_ORIGINS'] ?? '').split(',').filter(Boolean);
+  return cors({
+    origin: origins,
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
     maxAge: 86_400,
-  }),
-);
+  })(c, next);
+});
 
 // ---------------------------------------------------------------------------
 // Health check (before auth)
@@ -67,32 +65,8 @@ app.notFound((c) =>
 );
 
 // ---------------------------------------------------------------------------
-// Start server
+// Cloudflare Workers export
+// wrangler bundles this and passes fetch requests to app.fetch automatically.
+// Run `pnpm db:migrate` against DATABASE_URL before deploying.
 // ---------------------------------------------------------------------------
-const startServer = async (): Promise<void> => {
-  if (process.env.API_SKIP_SCHEMA_CHECK !== 'true') {
-    await assertRequiredSchemaCompatibility();
-  }
-
-  const port = Number(process.env.API_PORT) || 3001;
-
-  serve({ fetch: app.fetch, port }, (info) => {
-    console.error(`EDI API running on http://localhost:${info.port}`);
-  });
-};
-
-startServer().catch((err: unknown) => {
-  const error = err instanceof Error ? err : new Error('Unknown startup error');
-  console.error(
-    JSON.stringify({
-      level: 'error',
-      timestamp: new Date().toISOString(),
-      error: error.message,
-      remediation:
-        'Run pnpm db:migrate against the same DATABASE_URL used by this API process.',
-    }),
-  );
-  process.exit(1);
-});
-
 export default app;

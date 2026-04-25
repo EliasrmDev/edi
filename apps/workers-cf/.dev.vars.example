@@ -1,0 +1,4 @@
+# Local dev secrets for `wrangler dev` — DO NOT commit this file.
+DATABASE_URL=postgresql://edi:password@ep-xxxx.neon.tech/neondb?sslmode=require
+RESEND_API_KEY=re_xxxxxxxxxxxxxx
+EMAIL_FROM=EDI <noreply@yourdomain.com>
