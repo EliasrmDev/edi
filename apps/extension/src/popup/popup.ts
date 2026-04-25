@@ -1525,8 +1525,6 @@ function renderCredentialList(creds: CredentialInfo[]): void {
   aiCredentialList.innerHTML = '';
 
   for (const cred of creds) {
-    console.log('Rendering credential: ', cred);
-    console.log('activeCred: ', activeCred);
     const item = document.createElement('div');
     item.className = 'ai-cred-item'
       + (cred.id === activeCred?.id ? ' ai-cred-item--active' : '')

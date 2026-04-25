@@ -16,7 +16,7 @@ export default async function DashboardPage() {
   const user = currentUser.user;
   const displayName = profile?.displayName ?? user?.email?.split('@')[0] ?? 'Usuario';
 
-  const activeCredentials = credentials.filter((c) => c.isActive && !c.isExpired);
+  const enabledCredentials = credentials.filter((c) => c.isEnabled && !c.isExpired);
   const expiringCredentials = credentials.filter((c) => {
     if (!c.expiresAt || c.isExpired) return false;
     const days = Math.ceil(
@@ -40,7 +40,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-8">
         <StatCard
           label="Claves activas"
-          value={String(activeCredentials.length)}
+          value={String(enabledCredentials.length)}
           href="/credentials"
           icon={
             <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} aria-hidden="true">
@@ -50,7 +50,7 @@ export default async function DashboardPage() {
         />
         <StatCard
           label="Proveedor por defecto"
-          value={activeCredentials[0]?.provider ?? '—'}
+          value={enabledCredentials.filter(c => c.isActive).map(c => c.provider).join(', ') || '—'}
           href="/credentials"
           icon={
             <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} aria-hidden="true">
