@@ -88,9 +88,15 @@ function UsageContent({ usage }: { usage: ProviderUsageInfo }) {
 }
 
 export function ProviderUsageBlock({ credentialId }: ProviderUsageBlockProps) {
+  const [mounted, setMounted] = React.useState(false);
   const [usage, setUsage] = React.useState<ProviderUsageInfo | null | 'loading'>('loading');
 
   React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (!mounted) return;
     let cancelled = false;
     getProviderUsageAction(credentialId).then((data) => {
       if (!cancelled) setUsage(data);
@@ -98,7 +104,10 @@ export function ProviderUsageBlock({ credentialId }: ProviderUsageBlockProps) {
       if (!cancelled) setUsage(null);
     });
     return () => { cancelled = true; };
-  }, [credentialId]);
+  }, [credentialId, mounted]);
+
+  // Avoid SSR — this component is client-only to prevent hydration mismatches
+  if (!mounted) return null;
 
   return (
     <div className="mt-4 border-t border-gray-100 dark:border-slate-700/60 pt-3">
