@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import type { User, UserProfile } from '@edi/shared';
 import { getAuthHeader } from '@/lib/session';
@@ -76,7 +77,6 @@ export async function updateProfileAction(
   formData: FormData,
 ): Promise<UpdateProfileState> {
   const displayName = formData.get('displayName');
-  const defaultTone = formData.get('defaultTone');
   const preferredLocale = formData.get('preferredLocale');
 
   const cookie = await getAuthHeader();
@@ -88,7 +88,6 @@ export async function updateProfileAction(
       headers: { 'Content-Type': 'application/json', Authorization: cookie },
       body: JSON.stringify({
         displayName: typeof displayName === 'string' ? displayName || null : undefined,
-        defaultTone: typeof defaultTone === 'string' ? defaultTone : undefined,
         preferredLocale: typeof preferredLocale === 'string' ? preferredLocale : undefined,
       }),
     });
@@ -102,6 +101,7 @@ export async function updateProfileAction(
     return { error: code ?? 'SERVER_ERROR' };
   }
 
+  revalidatePath('/profile');
   return { success: true };
 }
 

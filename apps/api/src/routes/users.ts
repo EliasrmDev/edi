@@ -27,7 +27,7 @@ import { AppError } from '../middleware/errorHandler.js';
 
 const UpdateProfileSchema = z
   .object({
-    displayName: z.string().max(100).optional(),
+    displayName: z.string().max(100).nullable().optional(),
     defaultTone: z.string().max(50).optional(),
     preferredLocale: z.string().max(10).optional(),
     retainHistory: z.boolean().optional(),

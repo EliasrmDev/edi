@@ -167,7 +167,7 @@ export async function getUserProfile(userId: string): Promise<SafeProfile> {
 export async function updateUserProfile(
   userId: string,
   updates: {
-    displayName?: string;
+    displayName?: string | null;
     defaultTone?: string;
     preferredLocale?: string;
     retainHistory?: boolean;

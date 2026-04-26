@@ -123,7 +123,6 @@ chrome.runtime.onMessage.addListener(
 // ── External messages (from the web app via externally_connectable) ──────────
 
 const ALLOWED_WEB_ORIGINS = [
-  'http://localhost:3000',
   'https://edi.eliasrm.dev',
 ];
 
@@ -182,7 +181,7 @@ async function handleAPIProxy(
     return;
   }
 
-  const API_BASE: string = import.meta.env['VITE_API_URL'] ?? 'http://localhost:3001';
+  const API_BASE: string = import.meta.env['VITE_API_URL'] ?? 'https://api.edi.eliasrm.dev';
 
   try {
     const response = await fetch(`${API_BASE}${payload.endpoint}`, {
@@ -227,7 +226,7 @@ async function handleTransformRequest(payload: {
   transformation: string;
 }): Promise<{ result: string } | { error: string }> {
   try {
-    const API_BASE: string = import.meta.env['VITE_API_URL'] ?? 'http://localhost:3001';
+    const API_BASE: string = import.meta.env['VITE_API_URL'] ?? 'https://api.edi.eliasrm.dev';
     const response = await fetch(`${API_BASE}/api/transform`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

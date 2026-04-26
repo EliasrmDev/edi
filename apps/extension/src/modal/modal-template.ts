@@ -142,7 +142,7 @@ export function createModalHTML(_initialText: string): string {
                 <option value="alta">Alta</option>
               </select>
             </div>
-            <button id="btn-copy-cr" type="button" aria-busy="false">Generar Copy CR</button>
+            <button id="btn-copy-cr" type="button" aria-busy="false">Generar Copy</button>
           </div>
         </div>
 

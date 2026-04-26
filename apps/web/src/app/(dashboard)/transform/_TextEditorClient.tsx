@@ -920,7 +920,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [], locale
         {/* Motor de Copy CR */}
         <div className="rounded-xl border border-violet-100 bg-violet-50/40 p-3 sm:p-4 dark:border-violet-900/40 dark:bg-violet-950/20">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">
-            ✦ Motor de Copy CR
+            ✦ Motor de Copy
           </p>
           <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
             <div className="flex flex-col gap-1">
@@ -1011,7 +1011,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [], locale
             onClick={() => handleApi('copy-writing-cr')}
             className="border-violet-200 bg-violet-50 text-violet-700 hover:border-violet-300 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-100 dark:hover:border-violet-700 dark:hover:bg-violet-950"
           >
-            Generar Copy CR
+            Generar Copy
           </Button>
         </div>
 

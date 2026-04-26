@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { updateProfileAction, type UpdateProfileState } from '@/lib/actions/user';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -28,18 +28,33 @@ export function ProfileForm({ profile }: ProfileFormProps) {
     null,
   );
   const alertRef = useRef<HTMLDivElement>(null);
+  const [selectedLocale, setSelectedLocale] = useState<string>(profile?.preferredLocale ?? 'es-CR');
+  const [successVisible, setSuccessVisible] = useState(false);
 
   useEffect(() => {
-    if (state) alertRef.current?.focus();
+    if (profile?.preferredLocale) setSelectedLocale(profile.preferredLocale);
+  }, [profile?.preferredLocale]);
+
+  useEffect(() => {
+    if (!state) return;
+    alertRef.current?.focus();
+    if (state.success) {
+      setSuccessVisible(true);
+      const t = setTimeout(() => setSuccessVisible(false), 5000);
+      return () => clearTimeout(t);
+    }
   }, [state]);
 
   return (
     <form action={formAction} className="space-y-5" noValidate>
-      {state && (
+      {state?.success && successVisible && (
         <div ref={alertRef} tabIndex={-1}>
-          <Alert variant={state.success ? 'success' : 'error'}>
-            {state.success ? 'Perfil actualizado.' : errorMessage(state.error ?? 'SERVER_ERROR')}
-          </Alert>
+          <Alert variant="success">Perfil actualizado.</Alert>
+        </div>
+      )}
+      {state?.error && (
+        <div ref={alertRef} tabIndex={-1}>
+          <Alert variant="error">{errorMessage(state.error)}</Alert>
         </div>
       )}
 
@@ -53,35 +68,6 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         maxLength={64}
       />
 
-      <fieldset>
-        <legend className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">Tono por defecto</legend>
-        <div className="space-y-2">
-          {[
-            { value: 'voseo-cr', label: 'Voseo', description: 'vos sabés, vos tenés' },
-            { value: 'tuteo', label: 'Tuteo', description: 'tú sabes, tú tienes' },
-            { value: 'ustedeo', label: 'Ustedeo', description: 'usted sabe, usted tiene' },
-          ].map((tone) => (
-            <label
-              key={tone.value}
-              className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50
-                dark:border-slate-600 dark:hover:bg-slate-700/50 dark:has-[:checked]:border-blue-400 dark:has-[:checked]:bg-blue-950/40"
-            >
-              <input
-                type="radio"
-                name="defaultTone"
-                value={tone.value}
-                defaultChecked={profile?.defaultTone === tone.value}
-                className="mt-0.5 accent-blue-600"
-              />
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-slate-100">{tone.label}</p>
-                <p className="text-xs text-gray-500 font-mono dark:text-slate-400">{tone.description}</p>
-              </div>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
       <div>
         <label htmlFor="preferredLocale" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-300">
           Localización preferida
@@ -89,7 +75,8 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         <select
           id="preferredLocale"
           name="preferredLocale"
-          defaultValue={profile?.preferredLocale ?? 'es-CR'}
+          value={selectedLocale}
+          onChange={(e) => setSelectedLocale(e.target.value)}
           className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500
             dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:focus:ring-blue-400"
         >

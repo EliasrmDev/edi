@@ -8,7 +8,6 @@
   "host_permissions": ["<all_urls>"],
   "externally_connectable": {
     "matches": [
-      "http://localhost:3000/*",
       "https://edi.eliasrm.dev/*"
     ]
   },
@@ -39,7 +38,7 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src https://api.edi.eliasrm.dev http://localhost:3001 blob: https:"
+    "extension_pages": "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src https://api.edi.eliasrm.dev blob: https:"
   },
   "icons": {
     "16": "icons/icon16.png",

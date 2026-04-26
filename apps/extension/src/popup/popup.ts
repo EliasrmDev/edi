@@ -1225,7 +1225,7 @@ function escHtml(str: string): string {
 
 // ─── Auth ──────────────────────────────────────────────────────────────────
 
-const API_BASE: string = import.meta.env['VITE_API_URL'] ?? 'http://localhost:3001';
+const API_BASE: string = import.meta.env['VITE_API_URL'] ?? 'https://api.edi.eliasrm.dev';
 
 // Locale from the authenticated user's profile — updated on login and refreshed in background.
 // Defaults to 'es-CR' so local transforms always work without a network call.
@@ -1558,7 +1558,6 @@ async function loadProviderUsage(credentialId: string): Promise<ProviderUsageRes
     });
     if (!res.ok) return null;
     const body = (await res.json()) as { data?: ProviderUsageResult };
-    console.log('/provider-usage', body);
     return body.data ?? null;
   } catch {
     return null;
@@ -1625,19 +1624,7 @@ function renderUsageBlock(container: HTMLElement, usage: ProviderUsageResult | n
 
 function renderCredentialList(creds: CredentialInfo[]): void {
   // Update active provider chip in the editor panel
-  const chip = document.getElementById('active-provider-chip');
-  const chipText = document.getElementById('active-provider-chip-text');
   const activeCred = creds.find((c) => c.isActive && !c.isExpired);
-  if (chip && chipText) {
-    if (activeCred) {
-      const providerLabel = PROVIDER_LABELS[activeCred.provider] ?? activeCred.provider;
-      const model = activeCred.selectedModel ?? AI_MODELS[activeCred.provider] ?? activeCred.label;
-      chipText.textContent = `${providerLabel} · ${model}`;
-      chip.hidden = false;
-    } else {
-      chip.hidden = true;
-    }
-  }
 
   if (creds.length === 0) {
     aiInfoCard.hidden = true;
@@ -1835,7 +1822,7 @@ function setupAuth(): void {
   openWebBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     const extId = chrome.runtime.id;
-    const webUrl = import.meta.env['VITE_WEB_URL'] ?? 'http://localhost:3000';
+    const webUrl = import.meta.env['VITE_WEB_URL'] ?? 'https://edi.eliasrm.dev';
     const authUrl = `${webUrl}/extension-auth?extId=${encodeURIComponent(extId)}`;
 
     void chrome.tabs.create({ url: authUrl }, (tab) => {
