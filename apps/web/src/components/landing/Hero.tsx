@@ -389,7 +389,7 @@ export function Hero() {
             >
               {/* ImagePopup — spring-animates between front and back */}
               <div
-                className="absolute left-0 top-0 touch-none cursor-grab active:cursor-grabbing transition-all duration-[480ms] ease-[cubic-bezier(.34,1.56,.64,1)]"
+                className="absolute left-0 top-0 touch-pan-y cursor-grab active:cursor-grabbing transition-all duration-[480ms] ease-[cubic-bezier(.34,1.56,.64,1)]"
                 style={
                   imageInFront
                     ? { transform: 'translate(182px,0) scale(1)', zIndex: 20, opacity: 1 }
@@ -405,7 +405,7 @@ export function Hero() {
 
               {/* TextPopup — spring-animates between front and back */}
               <div
-                className="absolute right-0 top-0 touch-none cursor-grab active:cursor-grabbing transition-all duration-[480ms] ease-[cubic-bezier(.34,1.56,.64,1)]"
+                className="absolute right-0 top-0 touch-pan-y cursor-grab active:cursor-grabbing transition-all duration-[480ms] ease-[cubic-bezier(.34,1.56,.64,1)]"
                 style={
                   imageInFront
                     ? { transform: 'translate(-180px,40px) scale(0.95)', zIndex: 10, opacity: 0.72 }
