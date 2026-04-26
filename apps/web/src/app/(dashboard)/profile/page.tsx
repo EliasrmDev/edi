@@ -8,7 +8,7 @@ export default async function ProfilePage() {
   const currentUser = await getCurrentUser();
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-xl mx-auto">
       <h1 className="mb-6 text-2xl font-semibold text-gray-900 dark:text-slate-100">Mi perfil</h1>
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <ProfileForm profile={currentUser?.profile ?? null} />

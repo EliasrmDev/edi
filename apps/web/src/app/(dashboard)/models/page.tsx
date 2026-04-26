@@ -8,7 +8,7 @@ export default async function ModelsPage() {
   const credentials = await getCredentials();
 
   return (
-    <div>
+    <div className="max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">Modelos de IA</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">

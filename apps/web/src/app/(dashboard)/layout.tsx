@@ -21,7 +21,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <aside className="fixed left-0 top-0 hidden h-full w-60 flex-col bg-gray-900 lg:flex">
         <div className="flex h-16 items-center border-b border-gray-800 px-5">
           <Link
-            href="/dashboard"
+            href="/editor"
             className="flex items-center gap-2 text-white font-semibold text-base hover:text-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
           >
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -74,7 +74,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-slate-700 dark:bg-slate-900 lg:hidden">
-        <Link href="/dashboard" className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
+        <Link href="/editor" className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
           <svg className="h-6 w-6" viewBox="0 0 28 28" fill="currentColor" aria-hidden="true">
             <rect x="0" y="0" width="28" height="28" rx="7" />
             <text x="6" y="21" fontSize="16" fontWeight="700" fill="white" fontFamily="system-ui">E</text>

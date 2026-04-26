@@ -9,7 +9,7 @@ export default async function AccountPage() {
   if (!currentUser) redirect('/login');
 
   return (
-    <div className="max-w-xl space-y-8">
+    <div className="max-w-xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-100">Cuenta</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
