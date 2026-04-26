@@ -419,9 +419,11 @@ export function Hero() {
                 <TextPopup />
               </div>
 
+            </div>
+
               {/* Accessible nav dots — outside aria-hidden, keyboard reachable */}
               <div
-                className="flex items-center justify-center w-full gap-2" role="group" aria-label="Vista de la extensión"
+                className="flex items-center justify-center gap-2 w-[520px] max-[520px]:origin-top" role="group" aria-label="Vista de la extensión"
                 style={{ position: 'relative', bottom: '-100%' }}
               >
                 <button
@@ -441,7 +443,7 @@ export function Hero() {
                   onClick={() => setImageInFront(false)}
                 />
               </div>
-            </div>
+
           </div>
 
         </div>
