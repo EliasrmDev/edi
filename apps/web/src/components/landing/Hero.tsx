@@ -252,7 +252,7 @@ function TextPopup() {
 
 /* ─── Main Hero section ─────────────────────────────── */
 export function Hero() {
-  const [imageInFront, setImageInFront] = useState(false);
+  const [imageInFront, setImageInFront] = useState(true);
   const dragStartX = useRef<number | null>(null);
   const didDrag = useRef(false);
   const dragInvert = useRef(false);
