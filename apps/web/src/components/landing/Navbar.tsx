@@ -75,7 +75,6 @@ export function Navbar() {
         <div
           ref={menuRef}
           id="nav-menu"
-          role="list"
           className={`flex gap-7 max-sm:absolute max-sm:inset-x-0 max-sm:top-15 max-sm:z-50 max-sm:flex-col max-sm:gap-0 max-sm:border-b max-sm:border-[var(--c-border)] max-sm:bg-white max-sm:py-2 max-sm:shadow-lg dark:max-sm:bg-[#1e293b] ${
             open ? 'max-sm:flex' : 'max-sm:hidden'
           }`}
@@ -84,7 +83,6 @@ export function Navbar() {
             <a
               key={href}
               href={href}
-              role="listitem"
               className="text-sm font-medium text-[var(--c-text-2)] hover:text-[var(--c-text-1)] hover:no-underline max-sm:px-6 max-sm:py-3 max-sm:text-[15px] max-sm:hover:bg-[var(--c-bg)]"
               onClick={() => setOpen(false)}
             >
@@ -98,7 +96,7 @@ export function Navbar() {
           href={CHROME_STORE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4.5 py-2 text-sm font-semibold text-white no-underline hover:bg-[var(--color-primary-dark)] hover:text-white hover:no-underline max-sm:hidden"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-700 px-4.5 py-2 text-sm font-semibold text-white no-underline hover:bg-indigo-800 hover:text-white hover:no-underline max-sm:hidden"
         >
           <DownloadIconSmall />
           Agregar a Chrome

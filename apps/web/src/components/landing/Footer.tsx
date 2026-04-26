@@ -28,7 +28,7 @@ export function Footer() {
             <a
               key={href}
               href={href}
-              className="text-[13px] text-[var(--c-text-3)] hover:text-white hover:no-underline"
+              className="text-[13px] text-[var(--c-text-3)] hover:text-white hover:no-underline dark:text-slate-400"
               {...('external' in rest
                 ? { target: '_blank', rel: 'noopener noreferrer' }
                 : {})}
@@ -39,7 +39,7 @@ export function Footer() {
           ))}
         </nav>
 
-        <p className="text-[13px]">
+        <p className="text-[13px] dark:text-slate-400">
           <span aria-hidden="true">©</span>
           <span className="sr-only">Copyright</span> 2026 EDI. MIT License.
         </p>

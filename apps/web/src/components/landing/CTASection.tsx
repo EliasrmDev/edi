@@ -24,7 +24,7 @@ export function CTASection() {
           href={CHROME_STORE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-[10px] bg-[var(--color-primary)] px-7 py-3.5 text-[15px] font-bold text-white shadow-[0_4px_14px_rgba(99,102,241,.3)] transition-all hover:-translate-y-0.5 hover:bg-[var(--color-primary-dark)] hover:text-white hover:shadow-[0_8px_24px_rgba(99,102,241,.4)] hover:no-underline"
+          className="inline-flex items-center gap-2 rounded-[10px] bg-indigo-600 px-7 py-3.5 text-[15px] font-bold text-white shadow-[0_4px_14px_rgba(99,102,241,.3)] transition-all hover:-translate-y-0.5 hover:bg-indigo-700 hover:text-white hover:shadow-[0_8px_24px_rgba(99,102,241,.4)] hover:no-underline"
         >
           <DownloadIcon />
           Agregar a Chrome — Gratis
