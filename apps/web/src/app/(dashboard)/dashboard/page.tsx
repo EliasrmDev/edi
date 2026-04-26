@@ -60,7 +60,7 @@ export default async function DashboardPage() {
         />
         <StatCard
           label="Tono por defecto"
-          value={toneLabel(profile?.defaultTone)}
+          value={toneLabel(profile?.defaultTone, profile?.preferredLocale)}
           href="/profile"
           icon={
             <svg className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} aria-hidden="true">
@@ -119,9 +119,10 @@ export default async function DashboardPage() {
   );
 }
 
-function toneLabel(tone?: string): string {
+function toneLabel(tone?: string, locale?: string): string {
+  const voseoName = locale === 'es-419' ? 'Voseo' : locale === 'es' ? 'Voseo ES' : 'Voseo CR';
   const labels: Record<string, string> = {
-    'voseo-cr': 'Voseo (CR)',
+    'voseo-cr': voseoName,
     tuteo: 'Tuteo',
     ustedeo: 'Ustedeo',
   };

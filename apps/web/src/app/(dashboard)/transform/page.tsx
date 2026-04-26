@@ -1,12 +1,18 @@
 import type { Metadata } from 'next';
 import { getCredentials } from '@/lib/actions/credentials';
+import { getCurrentUser } from '@/lib/actions/user';
 import { TextEditorClient } from './_TextEditorClient';
 
 export const metadata: Metadata = { title: 'Editor de texto' };
 
 export default async function TransformPage() {
-  const credentials = (await getCredentials()).filter((c) => c.isEnabled);
-  const activeCredential = credentials.find((c) => c.isActive && !c.isExpired) ?? null;
+  const [credentials, currentUser] = await Promise.all([
+    getCredentials(),
+    getCurrentUser(),
+  ]);
+  const enabledCredentials = credentials.filter((c) => c.isEnabled);
+  const activeCredential = enabledCredentials.find((c) => c.isActive && !c.isExpired) ?? null;
+  const locale = (currentUser?.profile.preferredLocale ?? 'es-CR') as 'es-CR' | 'es-419' | 'es';
 
   return (
     <div className="flex flex-col items-center">
@@ -17,7 +23,7 @@ export default async function TransformPage() {
         </p>
       </div>
       <div className="w-full max-w-3xl">
-        <TextEditorClient activeCredential={activeCredential} allCredentials={credentials} />
+        <TextEditorClient activeCredential={activeCredential} allCredentials={enabledCredentials} locale={locale} />
       </div>
     </div>
   );

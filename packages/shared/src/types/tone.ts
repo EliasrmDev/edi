@@ -1,5 +1,7 @@
 export type ToneType = 'voseo-cr' | 'tuteo' | 'ustedeo';
 
+export type LocaleCode = 'es-CR' | 'es-419' | 'es';
+
 export type VerbalMode = 'indicativo' | 'imperativo';
 
 export type TransformationType =
@@ -42,7 +44,7 @@ export interface TransformationRequest {
   transformation: TransformationType;
   tone?: ToneType;
   verbalMode?: VerbalMode;
-  locale: 'es-CR' | 'es-419' | 'es';
+  locale: LocaleCode;
   requestAIValidation: boolean;
   copyConfig?: CopyConfig;
 }

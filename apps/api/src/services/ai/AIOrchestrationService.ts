@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm';
-import type { TransformationResult, TransformationRequest, ToneType } from '@edi/shared';
+import type { TransformationResult, TransformationRequest, ToneType, LocaleCode } from '@edi/shared';
 import type { DB } from '../../db/index.js';
 import { quotaLimits, usageRecords } from '../../db/schema.js';
 import { AppError } from '../../middleware/errorHandler.js';
@@ -40,8 +40,13 @@ export class AIOrchestrationService {
     const { rawKey, provider, selectedModel } = await this.credentialService.getForAIUse(credentialId, userId);
 
     const adapter = getAdapter(provider);
-    const tone: ToneType = request.tone ?? 'voseo-cr';
-    const systemPrompt = this.promptService.buildSystemPrompt(request.transformation, tone, request.verbalMode, request.copyConfig);
+    const DEFAULT_TONE_BY_LOCALE: Record<LocaleCode, ToneType> = {
+      'es-CR':  'voseo-cr',
+      'es-419': 'tuteo',
+      'es':     'tuteo',
+    };
+    const tone: ToneType = request.tone ?? DEFAULT_TONE_BY_LOCALE[request.locale] ?? 'voseo-cr';
+    const systemPrompt = this.promptService.buildSystemPrompt(request.transformation, tone, request.verbalMode, request.copyConfig, request.locale);
 
     const start = Date.now();
 

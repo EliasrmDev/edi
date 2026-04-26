@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { db } from '../db/index.js';
 import { users, userProfiles, quotaLimits, oauthAccounts } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
-import { findUserByEmail, createUser, toSafeUser } from '../services/users/UserService.js';
+import { findUserByEmail, createUser, toSafeUser, getUserProfile } from '../services/users/UserService.js';
 import { validatePasswordStrength, hashPassword, verifyPassword } from '../services/auth/PasswordService.js';
 import { createSession, revokeSession, revokeAllUserSessions } from '../services/auth/SessionService.js';
 import {
@@ -312,6 +312,7 @@ auth.post('/reset-password', authLimiter(), async (c) => {
 // ---- GET /auth/me ----
 auth.get('/me', requireAuth(), async (c) => {
   const user = c.get('user');
+  const profile = await getUserProfile(user.id);
 
   return c.json({
     data: {
@@ -323,6 +324,10 @@ auth.get('/me', requireAuth(), async (c) => {
         hasPassword: user.hasPassword,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
+      },
+      profile: {
+        preferredLocale: profile.preferredLocale,
+        defaultTone: profile.defaultTone,
       },
     },
   });

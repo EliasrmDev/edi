@@ -2,6 +2,7 @@
 export type {
   ToneType,
   VerbalMode,
+  LocaleCode,
   TransformationType,
   TransformationSource,
   TransformationRequest,

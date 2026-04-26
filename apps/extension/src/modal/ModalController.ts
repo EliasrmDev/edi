@@ -1,6 +1,6 @@
 /// <reference types="chrome" />
 
-import type { TransformationType, TransformationWarning, ToneType, VerbalMode, CopyConfig } from '@edi/shared';
+import type { TransformationType, TransformationWarning, ToneType, VerbalMode, CopyConfig, LocaleCode } from '@edi/shared';
 import { ToneEngine } from '../tone-engine/ToneEngine';
 import { createModalHTML, setModalTextSafe } from './modal-template';
 import { createModalStyles } from './modal-styles';
@@ -59,6 +59,7 @@ export class ModalController {
   private toneMode: 'local' | 'ai' = 'local';
   private verbalMode: VerbalMode = 'indicativo';
   private activeToneTarget: 'voseo' | 'tuteo' | 'ustedeo' = 'voseo';
+  private userLocale: LocaleCode = 'es-CR';
   private copyConfigDefaults: Pick<CopyConfig, 'contexto' | 'objetivo' | 'formalidad' | 'canal' | 'intensidadCambio'> = {
     contexto: 'anuncio',
     objetivo: 'convertir',
@@ -105,6 +106,9 @@ export class ModalController {
 
     this.bindEvents(options);
     this.trapFocus();
+
+    // Apply cached locale immediately (loadCredentials may update it async)
+    this.updateVoseoButton();
 
     // Auto-clean formatting silently on open
     this.runLocalPreprocess();
@@ -269,7 +273,7 @@ export class ModalController {
           body: {
             text: this.currentText,
             transformation: 'correct-orthography',
-            locale: 'es-CR',
+            locale: this.userLocale,
             requestAIValidation: true,
           },
         },
@@ -363,7 +367,7 @@ export class ModalController {
           body: {
             text: this.currentText,
             transformation: 'copy-writing-cr',
-            locale: 'es-CR',
+            locale: this.userLocale,
             requestAIValidation: true,
             copyConfig,
           },
@@ -418,6 +422,19 @@ export class ModalController {
     } finally {
       this.setLoadingState(false);
     }
+  }
+
+  // ── Locale helpers ───────────────────────────────────────────────────────────
+
+  private voseoLabel(): string {
+    if (this.userLocale === 'es-CR') return 'Voseo CR';
+    if (this.userLocale === 'es-419') return 'Voseo';
+    return 'Voseo ES';
+  }
+
+  private updateVoseoButton(): void {
+    const btn = this.shadowRoot.querySelector<HTMLButtonElement>('#btn-voseo');
+    if (btn) btn.textContent = this.voseoLabel();
   }
 
   // ── Tone mode ────────────────────────────────────────────────────────────────
@@ -479,7 +496,7 @@ export class ModalController {
             transformation,
             tone,
             verbalMode: this.verbalMode,
-            locale: 'es-CR',
+            locale: this.userLocale,
             requestAIValidation: true,
           },
         },
@@ -945,11 +962,25 @@ export class ModalController {
         return;
       }
 
-      const authCheck = await this.proxyGet<{ data?: { user?: { id?: string } } }>('/api/auth/me');
+      const authCheck = await this.proxyGet<{ data?: { user?: { id?: string }; profile?: { preferredLocale?: string; defaultTone?: string } } }>('/api/auth/me');
       const unauthorized = authCheck?.error === 'NOT_AUTHENTICATED' || authCheck?.status === 401 || authCheck?.status === 403;
       if (!authCheck || unauthorized) {
         this.showCredentialAccessMessage('No hay acceso a tus claves de IA. Iniciá sesión de nuevo.');
         return;
+      }
+
+      const profileData = authCheck.data?.data?.profile;
+      if (profileData?.preferredLocale) {
+        this.userLocale = profileData.preferredLocale as LocaleCode;
+        this.updateVoseoButton();
+      }
+      if (profileData?.defaultTone) {
+        const toneToTarget: Record<string, 'voseo' | 'tuteo' | 'ustedeo'> = {
+          'voseo-cr': 'voseo',
+          'tuteo': 'tuteo',
+          'ustedeo': 'ustedeo',
+        };
+        this.activeToneTarget = toneToTarget[profileData.defaultTone] ?? 'voseo';
       }
 
       let response: ProxyResponse<{ data?: CredentialItem[] }> | null = null;

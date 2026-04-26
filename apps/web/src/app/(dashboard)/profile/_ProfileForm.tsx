@@ -57,7 +57,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         <legend className="mb-2 block text-sm font-medium text-gray-700 dark:text-slate-300">Tono por defecto</legend>
         <div className="space-y-2">
           {[
-            { value: 'voseo-cr', label: 'Voseo costarricense', description: 'vos sabés, vos tenés' },
+            { value: 'voseo-cr', label: 'Voseo', description: 'vos sabés, vos tenés' },
             { value: 'tuteo', label: 'Tuteo', description: 'tú sabes, tú tienes' },
             { value: 'ustedeo', label: 'Ustedeo', description: 'usted sabe, usted tiene' },
           ].map((tone) => (

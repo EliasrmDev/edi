@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { ProviderCredential, CopyConfig } from '@edi/shared';
+import type { ProviderCredential, CopyConfig, LocaleCode } from '@edi/shared';
 import { transformTextAction, recordLocalUsageAction, type ApiTransformation } from '@/lib/actions/transform';
 import { activateCredentialAction } from '@/lib/actions/credentials';
 import { Button } from '@/components/ui/Button';
@@ -421,12 +421,19 @@ const AI_MODELS: Record<string, string> = {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+function voseoLabel(locale: LocaleCode): string {
+  if (locale === 'es-CR') return 'Voseo CR';
+  if (locale === 'es-419') return 'Voseo';
+  return 'Voseo ES';
+}
+
 interface TextEditorClientProps {
   activeCredential?: ProviderCredential | null;
   allCredentials?: ProviderCredential[];
+  locale?: LocaleCode;
 }
 
-export function TextEditorClient({ activeCredential, allCredentials = [] }: TextEditorClientProps) {
+export function TextEditorClient({ activeCredential, allCredentials = [], locale = 'es-CR' }: TextEditorClientProps) {
   const router = useRouter();
   const [text, setText] = useState('');
   const [status, setStatus] = useState<Status>(null);
@@ -435,18 +442,15 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
   const [localActiveId, setLocalActiveId] = useState(activeCredential?.id ?? null);
   const [toneMode, setToneMode] = useState<'local' | 'ai'>('local');
   const [verbalMode, setVerbalMode] = useState<'indicativo' | 'imperativo'>('indicativo');
-  const [copyConfig, setCopyConfig] = useState<CopyConfig>(DEFAULT_COPY_CONFIG);
-
-  // Read from localStorage after mount only — avoids SSR/client hydration mismatch
-  // caused by `typeof window === 'undefined'` returning different values on server vs client.
-  useEffect(() => {
+  const [copyConfig, setCopyConfig] = useState<CopyConfig>(() => {
+    if (typeof window === 'undefined') return DEFAULT_COPY_CONFIG;
     try {
       const saved = localStorage.getItem(COPY_LS_KEY);
-      if (saved) setCopyConfig(JSON.parse(saved) as CopyConfig);
+      return saved ? (JSON.parse(saved) as CopyConfig) : DEFAULT_COPY_CONFIG;
     } catch {
-      // ignore corrupt/missing storage
+      return DEFAULT_COPY_CONFIG;
     }
-  }, []);
+  });
 
   // Diff panel state
   const [diffData, setDiffData] = useState<{ origHtml: string; transHtml: string } | null>(null);
@@ -519,7 +523,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
     setStatus(null);
     startTransition(async () => {
       const cfg = cfgOverride ?? (transformation === 'copy-writing-cr' ? copyConfig : undefined);
-      const res = await transformTextAction(capturedText, transformation, verbalMode, cfg);
+      const res = await transformTextAction(capturedText, transformation, verbalMode, cfg, locale);
       if (res.error) {
         setStatus({
           type: 'error',
@@ -892,7 +896,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
               disabled={toneMode === 'ai' && isPending}
               onClick={() => handleTone('tone-voseo-cr')}
             >
-              Voseo (CR)
+              {voseoLabel(locale)}
             </button>
             <button
               type="button"
@@ -966,7 +970,7 @@ export function TextEditorClient({ activeCredential, allCredentials = [] }: Text
                 onChange={(e) => updateCopyConfig({ tratamiento: e.target.value as CopyConfig['tratamiento'] })}
                 className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               >
-                <option value="voseo">Voseo (CR)</option>
+                <option value="voseo">{voseoLabel(locale)}</option>
                 <option value="tuteo">Tuteo</option>
                 <option value="ustedeo">Ustedeo</option>
               </select>

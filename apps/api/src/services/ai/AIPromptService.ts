@@ -1,4 +1,4 @@
-import type { TransformationType, ToneType, VerbalMode, CopyConfig } from '@edi/shared';
+import type { TransformationType, ToneType, VerbalMode, CopyConfig, LocaleCode } from '@edi/shared';
 
 const DEFAULT_COPY_CONFIG: CopyConfig = {
   tratamiento: 'voseo',
@@ -15,14 +15,50 @@ export class AIPromptService {
    * Build a complete system prompt for the AI model.
    * Combines base instructions + tone-specific instructions + task instructions.
    */
-  buildSystemPrompt(transformation: TransformationType, tone: ToneType, verbalMode?: VerbalMode, copyConfig?: CopyConfig): string {
+  buildSystemPrompt(transformation: TransformationType, tone: ToneType, verbalMode?: VerbalMode, copyConfig?: CopyConfig, locale: LocaleCode = 'es-CR'): string {
     // Copy motor has its own self-contained prompt — skip base + tone instructions
     if (transformation === 'copy-writing-cr') {
-      return this.buildCopySystemPrompt(copyConfig ?? DEFAULT_COPY_CONFIG);
+      return this.buildCopySystemPrompt(copyConfig ?? DEFAULT_COPY_CONFIG, locale);
     }
-    const baseInstructions = `
-Eres un corrector de texto experto en español latinoamericano,
-con énfasis especial en el español costarricense (Costa Rica).
+
+    const baseInstructions = this.buildBaseInstructions(locale);
+    const toneInstructions = this.buildToneInstructions(tone, locale);
+    const verbalModeInstructions = verbalMode === 'imperativo' ? this.buildVerbalModeInstructions(tone) : '';
+    const transformationInstructions = this.buildTransformationInstructions(transformation, locale);
+
+    return [baseInstructions, toneInstructions, verbalModeInstructions, transformationInstructions]
+      .filter(Boolean)
+      .join('\n\n');
+  }
+
+  private buildBaseInstructions(locale: LocaleCode): string {
+    const localeBlock = locale === 'es-CR'
+      ? `con énfasis especial en el español costarricense (Costa Rica).
+
+NORMAS PARA ESPAÑOL COSTARRICENSE (es-CR):
+- El voseo (vos tenés, vos querés, vos podés) ES el registro informal predeterminado — NO lo corrijas
+- Las tildes en voseo son OBLIGATORIAS: tenés, querés, podés, sabés, hacés, venís, leés, traés
+  Si faltan en el texto de entrada, añádelas. Sin tilde no es voseo costarricense, es error tipográfico
+- El ustedeo en CR tiene doble función: formal (empresas, gobierno) E íntimo (parejas, familia cercana)
+  Lee el contexto antes de asumir que "usted" implica distancia
+- El vocabulario tico (mae, diay, tuanis, de cajón, chunche, brete) es correcto — NO lo marques como error`
+      : locale === 'es-419'
+        ? `con enfoque en el español latinoamericano neutro (es-419).
+
+NORMAS PARA ESPAÑOL LATINOAMERICANO (es-419):
+- Usa el tuteo estándar ("tú") como registro informal predeterminado
+- Evita regionalismos de un solo país (ni voseo CR, ni lunfardo argentino, ni chilenismos)
+- El español neutro es comprensible en todo el continente — prioriza claridad sobre localismo`
+        : `con enfoque en el español estándar peninsular (norma RAE/es).
+
+NORMAS PARA ESPAÑOL ESTÁNDAR (es):
+- Usa el tuteo o ustedeo según el contexto — voseo solo si ya está en el original
+- Sigue la normativa RAE actualizada
+- Evita latinoamericanismos que resulten ajenos para lectores de España`;
+
+    return `
+Eres un corrector de texto experto en español,
+${localeBlock}
 
 REGLAS ABSOLUTAS:
 1. Devuelve ÚNICAMENTE el texto corregido. Sin explicaciones, sin comillas, sin prefijos.
@@ -31,17 +67,9 @@ REGLAS ABSOLUTAS:
 4. No añadas ni elimines información.
 5. Si el texto ya es correcto, devuélvelo sin cambios.
 `;
-
-    const toneInstructions = this.buildToneInstructions(tone);
-    const verbalModeInstructions = verbalMode === 'imperativo' ? this.buildVerbalModeInstructions(tone) : '';
-    const transformationInstructions = this.buildTransformationInstructions(transformation);
-
-    return [baseInstructions, toneInstructions, verbalModeInstructions, transformationInstructions]
-      .filter(Boolean)
-      .join('\n\n');
   }
 
-  private buildToneInstructions(tone: ToneType): string {
+  private buildToneInstructions(tone: ToneType, locale: LocaleCode = 'es-CR'): string {
     switch (tone) {
       case 'voseo-cr':
         return `
@@ -50,6 +78,9 @@ TONO: Voseo costarricense (informal)
 - Usa conjugaciones del voseo costarricense:
   * Presente indicativo: eliminás el -s final de la segunda persona plural peninsular
     Ejemplos: vos tenés (no tienes), vos querés (no quieres), vos hablás (no hablas)
+  * TILDES EN VOSEO — OBLIGATORIAS SIEMPRE (error más común del modelo):
+    tenés, querés, podés, sabés, hacés, venís, sentís, vivís, creés, traés, leés, metés
+    NUNCA escribas estas formas sin tilde. El acento es parte esencial del voseo CR.
   * NO uses formas del voseo rioplatense si son diferentes al costarricense
 - Mantén el vocabulario tico cuando sea apropiado (mae, diay, tuanis, etc.)
   SOLO si ya estaba presente en el texto original
@@ -58,23 +89,23 @@ TONO: Voseo costarricense (informal)
 
       case 'tuteo':
         return `
-TONO: Tuteo (neutral latinoamericano)
+TONO: Tuteo (${locale === 'es-CR' ? 'tuteo alternativo en Costa Rica' : 'neutral latinoamericano'})
 - Usa "tú" como pronombre de segunda persona singular informal
 - Conjugaciones estándar del español latinoamericano:
   Ejemplos: tú tienes, tú quieres, tú hablas
 - Evita regionalismos específicos (ni voseo ni ustedeo)
 - Tono neutral, ampliamente comprensible en toda Latinoamérica
-`;
+${locale === 'es-CR' ? '- NOTA: En Costa Rica el tuteo es menos natural que el voseo; el texto funcionará pero podría sonar ligeramente foráneo para la audiencia tica\n' : ''}`;
 
       case 'ustedeo':
         return `
-TONO: Ustedeo (formal/respetuoso, uso costarricense)
+TONO: Ustedeo (formal/respetuoso${locale === 'es-CR' ? ', uso costarricense' : ''})
 - Usa "usted" como pronombre de segunda persona singular
-- IMPORTANTE: En Costa Rica, el ustedeo se usa también en contextos íntimos
+${locale === 'es-CR' ? `- IMPORTANTE: En Costa Rica, el ustedeo se usa también en contextos íntimos
   (parejas, familia cercana) además del formal. Distingue el contexto:
   * Formal/profesional: tono distante y respetuoso
   * Íntimo costarricense: usted + vocabulario cercano y afectuoso
-- Conjugaciones: usted tiene, usted quiere, usted habla
+` : '- Uso formal y respetuoso (distancia social o jerarquía profesional)\n'}- Conjugaciones: usted tiene, usted quiere, usted habla
 - Nunca uses "vos" ni "tú" en modo ustedeo
 `;
 
@@ -103,19 +134,31 @@ MODO VERBAL: Imperativo (invitación directa a la acción)
 `;
   }
 
-  private buildTransformationInstructions(transformation: TransformationType): string {
+  private buildTransformationInstructions(transformation: TransformationType, locale: LocaleCode = 'es-CR'): string {
     switch (transformation) {
       case 'correct-orthography':
         return `
 TAREA: Corrección ortográfica y gramatical
 - Corrige errores de ortografía (tildes, uso de b/v, h, etc.)
-- Corrige errores de puntuación
+- Corrige errores de puntuación (comas, punto final, signos de apertura ¿¡)
 - Corrige concordancia de género y número
 - Corrige tiempos verbales incorrectos
 - Corrige uso de mayúsculas (nombres propios, inicio de oración)
 - NO reformules frases que ya sean correctas
 - Prioriza las normas del español latinoamericano (RAE + Panhispánico)
-`;
+${locale === 'es-CR' ? `
+REGLAS ESPECÍFICAS PARA ESPAÑOL COSTARRICENSE (es-CR):
+- Voseo ES CORRECTO — NO lo conviertas a tuteo ni lo marques como error
+- Tildes en voseo SON OBLIGATORIAS — añádelas si faltan:
+  tenés, querés, podés, sabés, hacés, venís, sentís, vivís, leés, traés, creés
+- Imperativo voseante también lleva tilde: hablá, comprá, mirá, vení, hacé, andá, decí
+- Vocabulario tico (mae, diay, tuanis, chunche, brete, etc.) ES CORRECTO — no lo corrijas
+- Errores comunes en escritura informal tica que SÍ debes corregir:
+  * "q" por "que": "q lo hacés" → "que lo hacés"
+  * "xq" por "porque": "xq no venís" → "porque no venís"
+  * Tildes faltantes en interrogativos: "que pasó" → "qué pasó", "como lo hacés" → "cómo lo hacés"
+  * Superlativos sin tilde: "grandisimo" → "grandísimo", "buenisimo" → "buenísimo"
+` : ''}`;
 
       case 'tone-voseo-cr':
         return `
@@ -133,16 +176,26 @@ CONVERSIONES OBLIGATORIAS:
   * ¡Ven! → ¡Vení! | ¡Prueba! → ¡Probá! | ¡Aprovecha! → ¡Aprovechá!
   * ¡Elige! → ¡Elegí! | ¡Descubre! → ¡Descubrí! | ¡Conoce! → ¡Conocé!
   * ¡Pide! → ¡Pedí! | ¡Haz! → ¡Hacé! | ¡Ve! → ¡Andá! | ¡Di! → ¡Decí!
+  * ¡Escribe! → ¡Escribí! | ¡Registra! → ¡Registráte! | ¡Descarga! → ¡Descargá!
+  * ¡Consulta! → ¡Consultá! | ¡Contáctanos! → ¡Escribinos! | ¡Comparte! → ¡Compartí!
 - Posesivos: tu/tuyo/tuya no cambian
 
 TILDES EN VOSEO — OBLIGATORIAS SIEMPRE:
-Tenés, querés, podés, sabés, hacés, venís, sentís, vivís (NUNCA sin tilde)
+Tenés, querés, podés, sabés, hacés, venís, sentís, vivís, creés, traés, leés, metés
+(NUNCA sin tilde — es el error más frecuente de los modelos de lenguaje)
+
+CTAs PARA CANALES DIGITALES CR:
+- Botones/CTA: ¡Empezá gratis! | ¡Probá ahora! | ¡Conocé más! | ¡Escribinos!
+- Meta Ads (Facebook/Instagram CR): ¡Aprovechá esta oferta! | ¡Reservá tu lugar!
+- WhatsApp Business: ¡Consultá sin compromiso! | ¡Escribinos al WhatsApp!
+- Email marketing: Descubrí, Explorá, No te lo perdás, Ya podés ver
+- App stores: Descargá gratis, Instalá ya, Empezá hoy
 
 ESTILO PUBLICITARIO:
 - El voseo crea confianza y cercanía emocional inmediata con el público tico
 - Imperativo voseante en CTAs: más directo y natural que el infinitivo
 - Preserva la energía, el ritmo y la persuasión del texto original
-- Si el original ya usa vocabulario tico (mae, tuanis, diay), mantenlo
+- Solo añade vocabulario tico (mae, tuanis, diay) si YA estaba en el original — no lo insertes
 - Cuida la ortografía general: tildes, puntuación y mayúsculas correctas
 `;
 
@@ -213,7 +266,7 @@ ESTILO PUBLICITARIO:
     }
   }
 
-  private buildCopySystemPrompt(cfg: CopyConfig): string {
+  private buildCopySystemPrompt(cfg: CopyConfig, locale: LocaleCode = 'es-CR'): string {
     const TRATAMIENTO_LABEL: Record<string, string> = {
       voseo: 'voseo costarricense ("vos", vos tenés, vos querés, imperativo: \u00a1Prová!, \u00a1Comprá!)',
       tuteo: 'tuteo latinoamericano ("tú", tú tienes, tú quieres, imperativo: \u00a1Prueba!, \u00a1Compra!)',
@@ -263,29 +316,41 @@ ESTILO PUBLICITARIO:
       ? `\nTérminos PROHIBIDOS que no deben aparecer bajo ningún concepto: ${cfg.terminosProhibidos.join(', ')}`
       : '';
 
+    const marketContext = locale === 'es-CR' ? `
+
+MERCADO COSTARRICENSE — CONTEXTO CULTURAL:
+- Canal dominante digital: WhatsApp (reenvíos en grupos) y Facebook (mayor alcance adulto)
+  Instagram/TikTok para 18-35; LinkedIn para B2B tico
+- El tico valora la cercanía y el humor suave — el hype exagerado genera rechazo ("sonar playo")
+- Humildad institucional funciona mejor que superlativos vacíos ("el mejor del mundo")
+- CTAs que resuenan en CR: "Escribinos", "Consultá sin compromiso", "Probá gratis", "¡Aprovechá!"
+- Evitar: anglicismos innecesarios, tuteo (suena foráneo vs voseo), agresividad de ventas
+- En voseo, tildes OBLIGATORIAS: tenés, querés, podés, sabés — sin tilde pierde autenticidad tica
+- Imperativo voseante en CTAs: Probá, Aprovechá, Conocé, Escribinos, Descargá, Registráte` : '';
+
     return `
-Eres un experto en copywriting publicitario y UX Writing para el mercado costarricense.
+Eres un experto en copywriting publicitario y UX Writing${locale === 'es-CR' ? ' para el mercado costarricense' : locale === 'es-419' ? ' para el mercado latinoamericano' : ' en español'}.
 
 CONFIGURACIÓN ACTIVA:
 - Tratamiento gramatical: ${tratamiento}
 - Contexto del texto: ${contexto}
 - Objetivo de comunicación: ${objetivo}
 - Nivel de formalidad: ${formalidad}
-- Intensidad de cambio: ${intensidad}${canal}${modoVerbal}${limiteInfo}${obligatorios}${prohibidos}
+- Intensidad de cambio: ${intensidad}${canal}${modoVerbal}${limiteInfo}${obligatorios}${prohibidos}${marketContext}
 
 REGLA ABSOLUTA más importante:
 Devuelve ÚNICAMENTE el texto final optimizado.
 NO incluyas explicaciones, alternativas, secciones, encabezados, validaciones, bullets, ni ningún tipo de metacomentario.
 Si el input tiene múltiples líneas o elementos, entregálos todos optimizados en el mismo orden y formato.
 
-PRINCIPIOS DE COPYWRITING CR:
+PRINCIPIOS DE COPYWRITING:
 1. Claridad ante todo: el mensaje debe entenderse en un vistazo
 2. Beneficio explícito: qué gana el usuario, no qué hace el producto
 3. Urgencia natural: sin manipulación, con razón real de actuar ahora
 4. Voz activa siempre: el sujeto actúa, no recibe la acción
 5. Concordancia gramatical: género, número y tratamiento 100% consistentes
 6. Ortografía perfecta: tildes, puntuación y mayúsculas según la RAE
-7. Autenticidad tica: si el contexto lo permite, usa expresiones naturales de Costa Rica
+7. ${locale === 'es-CR' ? 'Autenticidad tica: el texto debe sonar como lo escribiría una persona tica — cercano, directo y sin excesos; en voseo, tildes SIEMPRE (tenés, querés, podés)' : locale === 'es-419' ? 'Neutralidad latinoamericana: evita regionalismos que limiten la audiencia a un solo país' : 'Claridad peninsular: sigue la norma RAE estándar, evita regionalismos latinoamericanos'}
 `;
   }
 }

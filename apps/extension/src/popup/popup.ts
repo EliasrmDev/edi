@@ -1227,6 +1227,24 @@ function escHtml(str: string): string {
 
 const API_BASE: string = import.meta.env['VITE_API_URL'] ?? 'http://localhost:3001';
 
+// Locale from the authenticated user's profile — updated on login and refreshed in background.
+// Defaults to 'es-CR' so local transforms always work without a network call.
+let popupLocale = 'es-CR';
+
+/** Update the voseo card name and subtitle to reflect the user's locale. */
+function applyVoseoCardLocale(locale: string): void {
+  const card = document.querySelector('[data-transform="tone-voseo-cr"]');
+  if (!card) return;
+  const nameEl = card.querySelector<HTMLElement>('.mini-tone-card-name');
+  const subEl = card.querySelector<HTMLElement>('.mini-tone-card-sub');
+  if (nameEl) {
+    nameEl.textContent = locale === 'es-419' ? 'Voseo' : locale === 'es' ? 'Voseo ES' : 'Voseo CR';
+  }
+  if (subEl) {
+    subEl.textContent = locale === 'es-CR' ? 'Costa Rica' : `${locale}`;
+  }
+}
+
 /** Fire-and-forget: record a local transform in the usage DB. */
 async function recordLocalTransform(
   transformationType: string,
@@ -1466,7 +1484,7 @@ async function runMiniAITransform(
       body: JSON.stringify({
         text,
         transformation,
-        locale: 'es-CR',
+        locale: popupLocale,
         requestAIValidation: true,
         verbalMode,
         ...(copyConfig ? { copyConfig } : {}),
@@ -1776,6 +1794,7 @@ async function loadAICredential(token: string): Promise<void> {
 interface MeResponse {
   data?: {
     user?: { email?: string; displayName?: string | null };
+    profile?: { preferredLocale?: string };
   };
 }
 
@@ -1852,19 +1871,26 @@ async function checkAndRenderAuth(): Promise<void> {
   // The token expiry is set by the server at login time; trust it locally
   // (same approach as the service worker's GET_AUTH_TOKEN handler).
   const stored = await chrome.storage.local.get([
-    'authToken', 'tokenExpiresAt', 'authUserEmail', 'authUserName',
+    'authToken', 'tokenExpiresAt', 'authUserEmail', 'authUserName', 'preferredLocale',
   ]) as {
     authToken?: string;
     tokenExpiresAt?: number;
     authUserEmail?: string;
     authUserName?: string | null;
+    preferredLocale?: string;
   };
 
   if (!stored.authToken || !stored.tokenExpiresAt || Date.now() > stored.tokenExpiresAt) {
-    await chrome.storage.local.remove(['authToken', 'tokenExpiresAt', 'authUserEmail', 'authUserName']);
+    await chrome.storage.local.remove(['authToken', 'tokenExpiresAt', 'authUserEmail', 'authUserName', 'preferredLocale']);
     renderAIInfo(null);
     showAuthState('logged-out');
     return;
+  }
+
+  // Apply cached locale immediately so the card subtitle is correct on popup open.
+  if (stored.preferredLocale) {
+    popupLocale = stored.preferredLocale;
+    applyVoseoCardLocale(stored.preferredLocale);
   }
 
   renderLoggedIn(stored.authUserName ?? null, stored.authUserEmail ?? '', stored.authToken);
@@ -1942,7 +1968,9 @@ async function doLogout(): Promise<void> {
     }).catch(() => { /* ignore */ });
   }
 
-  await chrome.storage.local.remove(['authToken', 'tokenExpiresAt', 'authUserEmail', 'authUserName']);
+  await chrome.storage.local.remove(['authToken', 'tokenExpiresAt', 'authUserEmail', 'authUserName', 'preferredLocale']);
+  popupLocale = 'es-CR';
+  applyVoseoCardLocale('es-CR');
   renderAIInfo(null);
   showAuthState('logged-out');
 }
@@ -1965,6 +1993,26 @@ function renderLoggedIn(displayName: string | null, email: string, token: string
   void loadQuota(token);
   // Load AI credential info in background
   void loadAICredential(token);
+  // Refresh locale from profile in background (updates voseo card subtitle + API calls)
+  void loadAndApplyLocale(token);
+}
+
+async function loadAndApplyLocale(token: string): Promise<void> {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const body = (await res.json()) as MeResponse;
+    const locale = body.data?.profile?.preferredLocale;
+    if (locale && locale !== popupLocale) {
+      popupLocale = locale;
+      applyVoseoCardLocale(locale);
+      await chrome.storage.local.set({ preferredLocale: locale });
+    }
+  } catch {
+    // best-effort — locale defaults to 'es-CR'
+  }
 }
 
 async function loadQuota(token: string): Promise<void> {

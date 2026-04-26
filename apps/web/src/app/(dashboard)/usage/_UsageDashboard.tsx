@@ -69,10 +69,11 @@ function fmtMs(ms: number): string {
 
 function fmtDateTime(iso: string): string {
   const d = new Date(iso);
+  const tz = 'America/Costa_Rica';
   return (
-    d.toLocaleDateString('es-CR', { day: 'numeric', month: 'short' }) +
+    d.toLocaleDateString('es-CR', { day: 'numeric', month: 'short', timeZone: tz }) +
     ' ' +
-    d.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })
+    d.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', timeZone: tz })
   );
 }
 
@@ -133,6 +134,11 @@ function QuotaBar({
         ? 'text-amber-500'
         : 'text-gray-400 dark:text-slate-500';
 
+  const barFillRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (barFillRef.current) barFillRef.current.style.width = `${pct}%`;
+  }, [pct]);
+
   // Computed client-side to avoid server (UTC) vs client (UTC-6) date formatting mismatch.
   const [resetLabel, setResetLabel] = React.useState('');
   React.useEffect(() => {
@@ -161,8 +167,8 @@ function QuotaBar({
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-slate-700">
         <div
+          ref={barFillRef}
           className={`h-2 rounded-full transition-all duration-500 ${barColor}`}
-          style={{ width: `${pct}%` }}
           role="progressbar"
           aria-valuenow={used}
           aria-valuemin={0}
@@ -205,6 +211,19 @@ function StatCard({
 
 // ── Bar list ──────────────────────────────────────────────────────────────
 
+function BarFill({ pct }: { pct: number }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (ref.current) ref.current.style.width = `${pct}%`;
+  }, [pct]);
+  return (
+    <div
+      ref={ref}
+      className="h-1.5 rounded-full bg-indigo-500 transition-all duration-500"
+    />
+  );
+}
+
 function BarList({
   items,
   total,
@@ -241,10 +260,7 @@ function BarList({
               </span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-slate-700">
-              <div
-                className="h-1.5 rounded-full bg-indigo-500 transition-all duration-500"
-                style={{ width: `${barPct}%` }}
-              />
+              <BarFill pct={barPct} />
             </div>
             {item.sub && (
               <p className="mt-0.5 text-xs text-gray-400 dark:text-slate-500">
@@ -259,6 +275,75 @@ function BarList({
 }
 
 // ── Daily chart ───────────────────────────────────────────────────────────
+
+interface DayData {
+  date: string;
+  requestCount: number;
+  totalTokens: number;
+  localCount: number;
+  aiCount: number;
+}
+
+function DayBar({ day, isToday, maxCount }: { day: DayData; isToday: boolean; maxCount: number }) {
+  const isEmpty = day.requestCount === 0;
+  const totalHeightPct = Math.round((day.requestCount / maxCount) * 100);
+  const aiSharePct = day.requestCount > 0
+    ? Math.round((day.aiCount / day.requestCount) * 100)
+    : 0;
+  const localSharePct = 100 - aiSharePct;
+  const barHeight = isEmpty ? '2px' : `${Math.max(totalHeightPct, 6)}%`;
+
+  const emptyRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const aiRef = React.useRef<HTMLDivElement>(null);
+  const localRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (emptyRef.current) emptyRef.current.style.height = barHeight;
+    if (containerRef.current) containerRef.current.style.height = barHeight;
+    if (aiRef.current) aiRef.current.style.height = `${aiSharePct}%`;
+    if (localRef.current) localRef.current.style.height = `${localSharePct}%`;
+  }, [barHeight, aiSharePct, localSharePct]);
+
+  const tooltipParts = [
+    `${fmtShortDate(day.date)}: ${day.requestCount} req`,
+    day.aiCount > 0 ? `${day.aiCount} IA` : null,
+    day.localCount > 0 ? `${day.localCount} local` : null,
+    day.totalTokens > 0 ? `${day.totalTokens} tokens` : null,
+  ].filter(Boolean).join(' · ');
+
+  return (
+    <div
+      className="group relative flex flex-1 items-end"
+      title={tooltipParts}
+    >
+      {isEmpty ? (
+        <div
+          ref={emptyRef}
+          className="w-full rounded-sm bg-gray-100 dark:bg-slate-700"
+        />
+      ) : (
+        <div
+          ref={containerRef}
+          className="flex w-full flex-col overflow-hidden rounded-sm transition-all duration-300"
+        >
+          {day.aiCount > 0 && (
+            <div
+              ref={aiRef}
+              className={`w-full shrink-0 ${isToday ? 'bg-indigo-700' : 'bg-indigo-400 dark:bg-indigo-500 group-hover:bg-indigo-500 dark:group-hover:bg-indigo-400'}`}
+            />
+          )}
+          {day.localCount > 0 && (
+            <div
+              ref={localRef}
+              className={`w-full shrink-0 ${isToday ? 'bg-teal-500' : 'bg-teal-400 dark:bg-teal-500 group-hover:bg-teal-500 dark:group-hover:bg-teal-400'}`}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function DailyChart({
   data,
@@ -296,61 +381,14 @@ function DailyChart({
         role="img"
         aria-label="Gráfico de actividad diaria de los últimos 30 días"
       >
-        {days.map((day) => {
-          const totalHeightPct = Math.round((day.requestCount / maxCount) * 100);
-          const isToday = day.date === todayStr;
-          const isEmpty = day.requestCount === 0;
-
-          // Share of each segment within the bar
-          const aiSharePct = day.requestCount > 0
-            ? Math.round((day.aiCount / day.requestCount) * 100)
-            : 0;
-          const localSharePct = 100 - aiSharePct;
-
-          const barHeight = isEmpty ? '2px' : `${Math.max(totalHeightPct, 6)}%`;
-
-          const tooltipParts = [
-            `${fmtShortDate(day.date)}: ${day.requestCount} req`,
-            day.aiCount > 0 ? `${day.aiCount} IA` : null,
-            day.localCount > 0 ? `${day.localCount} local` : null,
-            day.totalTokens > 0 ? `${day.totalTokens} tokens` : null,
-          ].filter(Boolean).join(' · ');
-
-          return (
-            <div
-              key={day.date}
-              className="group relative flex flex-1 items-end"
-              title={tooltipParts}
-            >
-              {isEmpty ? (
-                <div
-                  className="w-full rounded-sm bg-gray-100 dark:bg-slate-700"
-                  style={{ height: barHeight }}
-                />
-              ) : (
-                <div
-                  className="flex w-full flex-col overflow-hidden rounded-sm transition-all duration-300"
-                  style={{ height: barHeight }}
-                >
-                  {/* AI segment — top */}
-                  {day.aiCount > 0 && (
-                    <div
-                      className={`w-full shrink-0 ${isToday ? 'bg-indigo-700' : 'bg-indigo-400 dark:bg-indigo-500 group-hover:bg-indigo-500 dark:group-hover:bg-indigo-400'}`}
-                      style={{ height: `${aiSharePct}%` }}
-                    />
-                  )}
-                  {/* Local segment — bottom */}
-                  {day.localCount > 0 && (
-                    <div
-                      className={`w-full shrink-0 ${isToday ? 'bg-teal-500' : 'bg-teal-400 dark:bg-teal-500 group-hover:bg-teal-500 dark:group-hover:bg-teal-400'}`}
-                      style={{ height: `${localSharePct}%` }}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {days.map((day) => (
+          <DayBar
+            key={day.date}
+            day={day}
+            isToday={day.date === todayStr}
+            maxCount={maxCount}
+          />
+        ))}
       </div>
       <div className="mt-2 flex justify-between text-xs text-gray-400 dark:text-slate-500">
         <span>{fmtShortDate(days[0]!.date)}</span>

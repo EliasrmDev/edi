@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(pnpm db:generate)",
-      "Bash(pnpm db:migrate)"
+      "Bash(pnpm db:migrate)",
+      "Bash(pnpm --filter @edi/api typecheck)",
+      "Bash(pnpm --filter @edi/extension typecheck)",
+      "Bash(pnpm typecheck *)"
     ]
   }
 }
