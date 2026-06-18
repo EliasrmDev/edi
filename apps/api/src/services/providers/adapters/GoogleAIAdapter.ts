@@ -57,7 +57,7 @@ export class GoogleAIAdapter implements ProviderAdapter {
   }
 
   /**
-   * Run a text transformation via gemini-1.5-flash.
+   * Run a text transformation via gemini-2.5-flash.
    * - max_tokens: 4096
    * - temperature: 0.3
    * - timeout: 30s

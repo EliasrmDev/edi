@@ -64,7 +64,7 @@ export async function fetchAnthropicModels(rawKey: string): Promise<ModelInfo[]>
       m.id.includes('claude-3') ||
       m.id.includes('claude-sonnet') ||
       m.id.includes('claude-opus') ||
-      m.id.includes('claude-haiku-3'),
+      m.id.includes('claude-haiku'),
     supportsStreaming: true,
     maxOutputTokens: null,
   }));

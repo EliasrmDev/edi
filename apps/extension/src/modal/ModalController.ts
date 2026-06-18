@@ -46,8 +46,8 @@ const PROVIDER_LABELS: Record<string, string> = {
 
 const AI_MODELS: Record<string, string> = {
   openai: 'gpt-4o-mini',
-  anthropic: 'claude-3-5-haiku-20241022',
-  'google-ai': 'gemini-1.5-flash',
+  anthropic: 'claude-haiku-4-5-20251001',
+  'google-ai': 'gemini-2.5-flash',
 };
 
 export class ModalController {

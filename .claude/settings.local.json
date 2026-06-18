@@ -5,7 +5,12 @@
       "Bash(pnpm db:migrate)",
       "Bash(pnpm --filter @edi/api typecheck)",
       "Bash(pnpm --filter @edi/extension typecheck)",
-      "Bash(pnpm typecheck *)"
+      "Bash(pnpm typecheck *)",
+      "Bash(xargs grep -l \"selectedModel\\\\|favoriteModel\\\\|getCredentialModels\")",
+      "Bash(npx tsc *)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm --filter @edi/api test -- --run)",
+      "Bash(pnpm --filter @edi/extension test -- --run)"
     ]
   }
 }

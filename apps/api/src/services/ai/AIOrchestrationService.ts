@@ -50,16 +50,35 @@ export class AIOrchestrationService {
 
     const start = Date.now();
 
+    const callParams = {
+      rawKey,
+      text: request.text,
+      transformation: request.transformation,
+      tone: request.tone,
+      locale: request.locale,
+      systemPrompt,
+    } as const;
+
     try {
-      const { result, tokensUsed } = await adapter.validateText({
-        rawKey,
-        text: request.text,
-        transformation: request.transformation,
-        tone: request.tone,
-        locale: request.locale,
-        systemPrompt,
-        model: selectedModel ?? undefined,
-      });
+      let retried = false;
+      let aiResult: { result: string; tokensUsed: number };
+
+      try {
+        aiResult = await adapter.validateText({ ...callParams, model: selectedModel ?? undefined });
+      } catch (firstErr) {
+        if (
+          selectedModel &&
+          firstErr instanceof ProviderError &&
+          (firstErr.statusCode === 404 || firstErr.statusCode === 400)
+        ) {
+          // Selected model no longer available — retry with provider default
+          retried = true;
+          void this.credentialService.clearSelectedModel(credentialId, userId).catch(() => {});
+          aiResult = await adapter.validateText({ ...callParams, model: undefined });
+        } else {
+          throw firstErr;
+        }
+      }
 
       const processingMs = Date.now() - start;
 
@@ -70,19 +89,27 @@ export class AIOrchestrationService {
         provider,
         request.transformation,
         'ai-validated',
-        tokensUsed,
+        aiResult.tokensUsed,
         processingMs,
       );
 
       // Increment quota counters (best-effort; resets handled atomically via SQL CASE)
       await this.incrementQuota(userId);
 
+      const warnings: Array<{ code: string; message: string }> = [];
+      if (retried) {
+        warnings.push({
+          code: 'MODEL_NOT_FOUND',
+          message: `El modelo "${selectedModel}" ya no está disponible. Se usó el modelo predeterminado del proveedor.`,
+        });
+      }
+
       return {
         original: request.text,
-        result,
+        result: aiResult.result,
         transformation: request.transformation,
         source: 'ai-validated',
-        warnings: [],
+        warnings,
         processingMs,
       };
     } catch (err) {
